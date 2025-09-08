@@ -27,3 +27,8 @@ dist-ssr
 !.env
 .env
 .dockerignore
+
+
+# Database and sensitive data files
+server/data/db.json
+server/data/outbox.json
