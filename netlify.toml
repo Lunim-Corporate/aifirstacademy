@@ -11,9 +11,11 @@
     "dotenv",
     "nodemailer",
     "resend",
-    "zod"
+    "zod",
+    "serverless-http"
   ]
   node_bundler = "esbuild"
+  
   
   [functions.timeout]
     default = 30 
