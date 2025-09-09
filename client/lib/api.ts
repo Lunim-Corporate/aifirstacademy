@@ -328,6 +328,26 @@ export async function apiCreateChallenge(body: { title: string; description: str
   if (!res.ok) throw new Error((await res.json()).error || "Create failed");
   return res.json();
 }
+export async function apiListChallengesAdmin(): Promise<{ challenges: any[] }> {
+  const res = await fetch(`/api/admin/challenges`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Fetch failed");
+  return res.json();
+}
+export async function apiGetChallengeAdmin(id: string): Promise<{ challenge: any }> {
+  const res = await fetch(`/api/admin/challenges/${id}`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Fetch failed");
+  return res.json();
+}
+export async function apiUpdateChallenge(id: string, body: { title?: string; description?: string; startAt?: string; endAt?: string; criteria?: any }): Promise<{ challenge: any }> {
+  const res = await fetch(`/api/admin/challenges/${id}`, { method: "PUT", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error((await res.json()).error || "Update failed");
+  return res.json();
+}
+export async function apiDeleteChallenge(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/admin/challenges/${id}`, { method: "DELETE", headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Delete failed");
+  return res.json();
+}
 
 // Search
 export async function apiSearch(q: string): Promise<SearchResponse> {
