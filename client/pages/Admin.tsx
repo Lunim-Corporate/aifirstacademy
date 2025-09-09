@@ -36,9 +36,9 @@ import {
   Copy,
   Trophy
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminHeader from "@/components/AdminHeader";
-import { apiCreateChallenge } from "@/lib/api";
+import { apiCreateChallenge, apiListChallengesAdmin, apiUpdateChallenge, apiDeleteChallenge } from "@/lib/api";
 
 const cohorts = [
   {
@@ -155,6 +155,13 @@ export default function Admin() {
   const [challengeStartDate, setChallengeStartDate] = useState("");
   const [challengeEndDate, setChallengeEndDate] = useState("");
   const [challengeSubmitting, setChallengeSubmitting] = useState(false);
+  
+  // Challenge management states
+  const [challenges, setChallenges] = useState<any[]>([]);
+  const [loadingChallenges, setLoadingChallenges] = useState(true);
+  const [isEditChallengeOpen, setIsEditChallengeOpen] = useState(false);
+  const [editingChallenge, setEditingChallenge] = useState<any>(null);
+  const [deletingChallengeId, setDeletingChallengeId] = useState<string | null>(null);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,6 +171,61 @@ export default function Admin() {
     
     return matchesSearch && matchesFilter && matchesCohort;
   });
+
+  // Load challenges on mount
+  useEffect(() => {
+    loadChallenges();
+  }, []);
+
+  const loadChallenges = async () => {
+    try {
+      setLoadingChallenges(true);
+      const { challenges: challengeData } = await apiListChallengesAdmin();
+      setChallenges(challengeData);
+    } catch (e: any) {
+      console.error("Failed to load challenges:", e);
+      // Only show alert if it's not an auth error
+      if (!e?.message?.toLowerCase().includes('unauthorized')) {
+        alert("Failed to load challenges: " + (e?.message || "Unknown error"));
+      }
+    } finally {
+      setLoadingChallenges(false);
+    }
+  };
+
+  const handleEditChallenge = (challenge: any) => {
+    setEditingChallenge(challenge);
+    setChallengeTitle(challenge.title || "");
+    setChallengeDescription(challenge.description || "");
+    setChallengeStartDate(challenge.startAt ? new Date(challenge.startAt).toISOString().slice(0, 16) : "");
+    setChallengeEndDate(challenge.endAt ? new Date(challenge.endAt).toISOString().slice(0, 16) : "");
+    setIsEditChallengeOpen(true);
+  };
+
+  const handleDeleteChallenge = async (challengeId: string) => {
+    if (!confirm("Are you sure you want to delete this challenge? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      setDeletingChallengeId(challengeId);
+      await apiDeleteChallenge(challengeId);
+      alert("Challenge deleted successfully!");
+      loadChallenges(); // Reload the challenges list
+    } catch (e: any) {
+      alert("Failed to delete challenge: " + (e?.message || "Unknown error"));
+    } finally {
+      setDeletingChallengeId(null);
+    }
+  };
+
+  const resetChallengeForm = () => {
+    setChallengeTitle("");
+    setChallengeDescription("");
+    setChallengeStartDate("");
+    setChallengeEndDate("");
+    setEditingChallenge(null);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -657,7 +719,10 @@ export default function Admin() {
                     </div>
                   </div>
                   <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsCreateChallengeOpen(false)} disabled={challengeSubmitting}>
+                    <Button variant="outline" onClick={() => {
+                      setIsCreateChallengeOpen(false);
+                      resetChallengeForm();
+                    }} disabled={challengeSubmitting}>
                       Cancel
                     </Button>
                     <Button onClick={async () => {
@@ -686,12 +751,9 @@ export default function Admin() {
                           }
                         });
                         
-                        // Reset form
-                        setChallengeTitle("");
-                        setChallengeDescription("");
-                        setChallengeStartDate("");
-                        setChallengeEndDate("");
+                        resetChallengeForm();
                         setIsCreateChallengeOpen(false);
+                        loadChallenges(); // Refresh the challenges list
                         
                         alert("Challenge created successfully!");
                       } catch (e: any) {
@@ -712,19 +774,210 @@ export default function Admin() {
               </Dialog>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Challenges</CardTitle>
-                <CardDescription>Challenges created for the community</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Trophy className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Challenge management is now available!</p>
-                  <p className="text-sm mt-1">Create challenges that will appear in the Community tab for all users to participate in.</p>
+            {/* Edit Challenge Dialog */}
+            <Dialog open={isEditChallengeOpen} onOpenChange={(open) => {
+              setIsEditChallengeOpen(open);
+              if (!open) resetChallengeForm();
+            }}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Challenge</DialogTitle>
+                  <DialogDescription>
+                    Update challenge details
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-challenge-title">Challenge Title</Label>
+                    <Input 
+                      id="edit-challenge-title" 
+                      placeholder="e.g. Creative Writing Challenge" 
+                      value={challengeTitle}
+                      onChange={(e) => setChallengeTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-challenge-description">Description</Label>
+                    <Textarea 
+                      id="edit-challenge-description" 
+                      placeholder="Describe the challenge, rules, and what participants should create..."
+                      value={challengeDescription}
+                      onChange={(e) => setChallengeDescription(e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-challenge-start-date">Start Date</Label>
+                      <Input 
+                        id="edit-challenge-start-date" 
+                        type="datetime-local" 
+                        value={challengeStartDate}
+                        onChange={(e) => setChallengeStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-challenge-end-date">End Date</Label>
+                      <Input 
+                        id="edit-challenge-end-date" 
+                        type="datetime-local" 
+                        value={challengeEndDate}
+                        onChange={(e) => setChallengeEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => {
+                    setIsEditChallengeOpen(false);
+                    resetChallengeForm();
+                  }} disabled={challengeSubmitting}>
+                    Cancel
+                  </Button>
+                  <Button onClick={async () => {
+                    if (!editingChallenge?.id) return;
+                    
+                    if (!challengeTitle.trim() || !challengeDescription.trim() || !challengeStartDate || !challengeEndDate) {
+                      alert("Please fill in all required fields.");
+                      return;
+                    }
+                    
+                    if (new Date(challengeStartDate) >= new Date(challengeEndDate)) {
+                      alert("End date must be after start date.");
+                      return;
+                    }
+                    
+                    setChallengeSubmitting(true);
+                    try {
+                      await apiUpdateChallenge(editingChallenge.id, {
+                        title: challengeTitle,
+                        description: challengeDescription,
+                        startAt: new Date(challengeStartDate).toISOString(),
+                        endAt: new Date(challengeEndDate).toISOString(),
+                        criteria: {
+                          likesWeight: 3,
+                          savesWeight: 2,
+                          runsWeight: 1,
+                          viewsWeight: 0.1
+                        }
+                      });
+                      
+                      resetChallengeForm();
+                      setIsEditChallengeOpen(false);
+                      loadChallenges(); // Refresh the challenges list
+                      
+                      alert("Challenge updated successfully!");
+                    } catch (e: any) {
+                      const msg = e?.message || "Failed to update challenge";
+                      if (msg.toLowerCase().includes("unauthorized")) {
+                        alert("You don't have permission to edit challenges.");
+                      } else {
+                        alert(msg);
+                      }
+                    } finally {
+                      setChallengeSubmitting(false);
+                    }
+                  }} disabled={challengeSubmitting}>
+                    {challengeSubmitting ? "Updating..." : "Update Challenge"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Challenges List */}
+            <div className="space-y-4">
+              {loadingChallenges ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p>Loading challenges...</p>
+                  </CardContent>
+                </Card>
+              ) : challenges.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8 text-muted-foreground">
+                    <Trophy className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No challenges created yet.</p>
+                    <p className="text-sm mt-1">Create your first challenge to get started!</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                challenges.map((challenge) => (
+                  <Card key={challenge.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center space-x-2">
+                            <span>{challenge.title}</span>
+                            <Badge variant={challenge.stats?.isActive ? "default" : challenge.stats?.isUpcoming ? "secondary" : "outline"}>
+                              {challenge.stats?.isActive ? "Active" : challenge.stats?.isUpcoming ? "Upcoming" : "Ended"}
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription className="mt-2">{challenge.description}</CardDescription>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditChallenge(challenge)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteChallenge(challenge.id)}
+                            disabled={deletingChallengeId === challenge.id}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            {deletingChallengeId === challenge.id ? "Deleting..." : "Delete"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                          <div className="text-sm text-muted-foreground">Start Date</div>
+                          <div className="font-medium">
+                            {new Date(challenge.startAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">End Date</div>
+                          <div className="font-medium">
+                            {new Date(challenge.endAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Total Entries</div>
+                          <div className="text-2xl font-bold">{challenge.stats?.totalEntries || 0}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Participants</div>
+                          <div className="text-2xl font-bold">{challenge.stats?.totalParticipants || 0}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                          <div className="text-sm text-muted-foreground">Total Likes</div>
+                          <div className="text-lg font-bold">{challenge.stats?.totalLikes || 0}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Total Views</div>
+                          <div className="text-lg font-bold">{challenge.stats?.totalViews || 0}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">Created</div>
+                          <div className="text-sm">{challenge.id ? `ID: ${challenge.id}` : 'N/A'}</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </TabsContent>
 
           {/* Reports Tab */}
