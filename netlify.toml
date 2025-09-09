@@ -14,8 +14,9 @@
     "zod"
   ]
   node_bundler = "esbuild"
-  # Increase timeout for functions
-  timeout = 30
+  
+  [functions.timeout]
+    default = 30 
   
 [[redirects]]
   force = true
