@@ -123,3 +123,6 @@ export function createServer() {
 
   return app;
 }
+
+// Also export as default for compatibility
+export default { createServer };
