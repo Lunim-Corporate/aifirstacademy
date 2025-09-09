@@ -27,6 +27,7 @@ dist-ssr
 !.env
 .env
 .dockerignore
+.env.example
 
 
 # Database and sensitive data files
