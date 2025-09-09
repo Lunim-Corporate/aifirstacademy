@@ -379,8 +379,19 @@ export interface DB {
 const DATA_DIR = path.resolve(process.cwd(), "server/data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
+// In-memory fallback for serverless environments where file system isn't writable
+let memoryDB: DB | null = null;
+let isServerless = false;
+
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (error) {
+    console.warn('Cannot create data directory, using memory storage:', error);
+    isServerless = true;
+  }
 }
 
 function initDB(): DB {
@@ -872,44 +883,65 @@ function initDB(): DB {
 
 export function readDB(): DB {
   ensureDataDir();
-  if (!fs.existsSync(DB_FILE)) {
-    const db = initDB();
-    const admin = db.users[0];
-    admin.passwordHash = hashPassword("admin", admin.salt);
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
-    return db;
+  
+  // If we're in serverless mode or memory DB exists, use memory
+  if (isServerless || memoryDB) {
+    if (!memoryDB) {
+      console.log('Initializing memory database for serverless environment');
+      memoryDB = initDB();
+      const admin = memoryDB.users[0];
+      admin.passwordHash = hashPassword("admin", admin.salt);
+    }
+    return JSON.parse(JSON.stringify(memoryDB)); // Deep copy to avoid mutations
   }
-  const raw = fs.readFileSync(DB_FILE, "utf-8");
-  const data = JSON.parse(raw) as Partial<DB>;
-  // Backfill new fields/arrays for older DB files
-  const db: DB = {
-    users: (data.users || []).map((u: any) => ({ ...u, isVerified: typeof u.isVerified === "boolean" ? u.isVerified : true })),
-    prompts: data.prompts || [],
-    promptComments: data.promptComments || [],
-    promptLikes: data.promptLikes || [],
-    promptSaves: data.promptSaves || [],
-    certificates: data.certificates || [],
-    tracks: data.tracks || [],
-    libraryAcademy: data.libraryAcademy || [],
-    libraryByUser: data.libraryByUser || [],
-    discussions: data.discussions || [],
-    discussionReplies: data.discussionReplies || [],
-    challenges: data.challenges || [],
-    challengeEntries: data.challengeEntries || [],
-    challengeEntryLikes: (data as any).challengeEntryLikes || [],
-    challengeEntrySaves: (data as any).challengeEntrySaves || [],
-    otps: (data as any).otps || [],
-    notifications: (data as any).notifications || [],
-    userLearning: (data as any).userLearning || [],
-    userProfiles: (data as any).userProfiles || [],
-    notificationSettings: (data as any).notificationSettings || [],
-    securitySettings: (data as any).securitySettings || [],
-    billingSettings: (data as any).billingSettings || [],
-    userPreferences: (data as any).userPreferences || [],
-  } as any;
-
-  // Seed or backfill academy library with high-quality templates and guides
+  
   try {
+    if (!fs.existsSync(DB_FILE)) {
+      const db = initDB();
+      const admin = db.users[0];
+      admin.passwordHash = hashPassword("admin", admin.salt);
+      try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
+      } catch (writeError) {
+        console.warn('Cannot write to file system, switching to memory mode:', writeError);
+        isServerless = true;
+        memoryDB = db;
+        return JSON.parse(JSON.stringify(db));
+      }
+      return db;
+    }
+    const raw = fs.readFileSync(DB_FILE, "utf-8");
+    const data = JSON.parse(raw) as Partial<DB>;
+    
+    // Backfill new fields/arrays for older DB files
+    const db: DB = {
+      users: (data.users || []).map((u: any) => ({ ...u, isVerified: typeof u.isVerified === "boolean" ? u.isVerified : true })),
+      prompts: data.prompts || [],
+      promptComments: data.promptComments || [],
+      promptLikes: data.promptLikes || [],
+      promptSaves: data.promptSaves || [],
+      certificates: data.certificates || [],
+      tracks: data.tracks || [],
+      libraryAcademy: data.libraryAcademy || [],
+      libraryByUser: data.libraryByUser || [],
+      discussions: data.discussions || [],
+      discussionReplies: data.discussionReplies || [],
+      challenges: data.challenges || [],
+      challengeEntries: data.challengeEntries || [],
+      challengeEntryLikes: (data as any).challengeEntryLikes || [],
+      challengeEntrySaves: (data as any).challengeEntrySaves || [],
+      otps: (data as any).otps || [],
+      notifications: (data as any).notifications || [],
+      userLearning: (data as any).userLearning || [],
+      userProfiles: (data as any).userProfiles || [],
+      notificationSettings: (data as any).notificationSettings || [],
+      securitySettings: (data as any).securitySettings || [],
+      billingSettings: (data as any).billingSettings || [],
+      userPreferences: (data as any).userPreferences || [],
+    } as any;
+
+    // Seed or backfill academy library with high-quality templates and guides
+    try {
     const now = new Date().toISOString();
     // Remove previously seeded external-only guides to comply with in-app guide policy
     if (Array.isArray(db.libraryAcademy) && db.libraryAcademy.length) {
@@ -987,20 +1019,42 @@ export function readDB(): DB {
       { id: "lr_guide_comprehensive_handbook", type: "guide", title: "The AI-First Prompting Handbook", tags: ["handbook"], createdAt: now, description: "End-to-end guide tying all sections together.", content: "Contents\n1) Foundations\n2) Structure\n3) Examples\n4) Reasoning\n5) Structured outputs\n6) Tool use\n7) RAG\n8) Evaluation\n9) Safety\n10) Production\n11) Workflows in app\n12) Checklists\nEach section includes patterns, examples, and pitfalls." },
     ];
 
-    const toAdd = seeds.filter((r) => !existingById.has(r.id) && !existingByTitle.has((r as any).title?.toLowerCase?.() || ""));
-    if (toAdd.length) {
-      db.libraryAcademy = [...(db.libraryAcademy || []), ...toAdd];
-      // Persist backfill immediately so subsequent reads are fast
-      writeDB(db);
-    }
-  } catch {}
+      const toAdd = seeds.filter((r) => !existingById.has(r.id) && !existingByTitle.has((r as any).title?.toLowerCase?.() || ""));
+      if (toAdd.length) {
+        db.libraryAcademy = [...(db.libraryAcademy || []), ...toAdd];
+        // Persist backfill immediately so subsequent reads are fast
+        writeDB(db);
+      }
+    } catch {}
 
-  return db;
+    return db;
+  } catch (error) {
+    console.warn('Error reading from file system, using memory fallback:', error);
+    isServerless = true;
+    if (!memoryDB) {
+      memoryDB = initDB();
+      const admin = memoryDB.users[0];
+      admin.passwordHash = hashPassword("admin", admin.salt);
+    }
+    return JSON.parse(JSON.stringify(memoryDB));
+  }
 }
 
 export function writeDB(db: DB) {
-  ensureDataDir();
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
+  if (isServerless) {
+    // In serverless mode, just update memory
+    memoryDB = JSON.parse(JSON.stringify(db)); // Deep copy
+    return;
+  }
+  
+  try {
+    ensureDataDir();
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
+  } catch (error) {
+    console.warn('Cannot write to file system, switching to memory mode:', error);
+    isServerless = true;
+    memoryDB = JSON.parse(JSON.stringify(db));
+  }
 }
 
 export function hashPassword(password: string, salt: string) {

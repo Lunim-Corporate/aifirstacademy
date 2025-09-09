@@ -5,6 +5,10 @@ import nodemailer from "nodemailer";
 const DATA_DIR = path.resolve(process.cwd(), "server/data");
 const OUTBOX_FILE = path.join(DATA_DIR, "outbox.json");
 
+// In-memory fallback for serverless environments
+let memoryOutbox: OutboxMail[] = [];
+let isServerless = false;
+
 export interface OutboxMail {
   id: string;
   to: string;
@@ -17,22 +21,44 @@ export interface OutboxMail {
 }
 
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  } catch (error) {
+    console.warn('Cannot create mail data directory, using memory storage:', error);
+    isServerless = true;
+  }
 }
 
 function readOutbox(): OutboxMail[] {
-  ensureDataDir();
-  if (!fs.existsSync(OUTBOX_FILE)) return [];
+  if (isServerless) {
+    return [...memoryOutbox]; // Return copy
+  }
+  
   try {
+    ensureDataDir();
+    if (!fs.existsSync(OUTBOX_FILE)) return [];
     return JSON.parse(fs.readFileSync(OUTBOX_FILE, "utf-8")) as OutboxMail[];
-  } catch {
-    return [];
+  } catch (error) {
+    console.warn('Cannot read outbox from filesystem, using memory fallback:', error);
+    isServerless = true;
+    return [...memoryOutbox];
   }
 }
 
 function writeOutbox(mails: OutboxMail[]) {
-  ensureDataDir();
-  fs.writeFileSync(OUTBOX_FILE, JSON.stringify(mails, null, 2), "utf-8");
+  if (isServerless) {
+    memoryOutbox = [...mails]; // Store copy
+    return;
+  }
+  
+  try {
+    ensureDataDir();
+    fs.writeFileSync(OUTBOX_FILE, JSON.stringify(mails, null, 2), "utf-8");
+  } catch (error) {
+    console.warn('Cannot write outbox to filesystem, switching to memory mode:', error);
+    isServerless = true;
+    memoryOutbox = [...mails];
+  }
 }
 
 // Email service configurations
