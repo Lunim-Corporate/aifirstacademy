@@ -1,48 +1,63 @@
-import serverless from "serverless-http";
+const serverless = require("serverless-http");
 
 // Create the handler with proper error handling
-export const handler = async (event: any, context: any) => {
+exports.handler = async (event, context) => {
   try {
     // Dynamically import the createServer function with proper error handling
     let createServer;
     try {
-      const serverModule = await import("../../server/index");
+      // Use dynamic import for ES modules from CommonJS
+      const serverModule = await import("../../server/index.js");
+      
       // Handle both ES module and CommonJS exports
       createServer = serverModule.createServer || serverModule.default?.createServer || serverModule.default;
       
       if (!createServer) {
+        console.error('Available exports:', Object.keys(serverModule));
         throw new Error('createServer function not found in server module');
       }
-    } catch (importError: any) {
+      
+      console.log('Successfully imported createServer function');
+    } catch (importError) {
       console.error('Failed to import server module:', importError);
+      console.error('Import error details:', {
+        message: importError.message,
+        stack: importError.stack,
+        code: importError.code
+      });
       throw new Error(`Module import failed: ${importError.message}`);
     }
     
     // Create the Express app
+    console.log('Creating Express app...');
     const app = createServer();
     
     if (!app) {
       throw new Error('Failed to create Express app - createServer returned null/undefined');
     }
     
+    console.log('Express app created successfully');
+    
     // Create the serverless handler
     const serverlessHandler = serverless(app, {
       binary: false,
-      request(req: any, event: any, context: any) {
+      request(req, event, context) {
         req.netlifyContext = context;
         req.netlifyEvent = event;
       },
     });
     
+    console.log('Executing serverless handler...');
     return await serverlessHandler(event, context);
-  } catch (error: any) {
+  } catch (error) {
     console.error('=== Netlify Function Error Debug Info ===');
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    console.error('Event:', JSON.stringify(event, null, 2));
-    console.error('Context:', JSON.stringify(context, null, 2));
+    console.error('Event path:', event?.path);
+    console.error('HTTP method:', event?.httpMethod);
     console.error('Environment NODE_ENV:', process.env.NODE_ENV);
     console.error('Function directory:', __dirname);
+    console.error('Process versions:', process.versions);
     
     return {
       statusCode: 500,
