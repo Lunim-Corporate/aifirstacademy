@@ -940,6 +940,11 @@ export function readDB(): DB {
       userPreferences: (data as any).userPreferences || [],
     } as any;
 
+    // If using Supabase for learning content, clear local example tracks to avoid duplication
+    if (process.env.SUPABASE_URL) {
+      (db as any).tracks = [];
+    }
+
     // Seed or backfill academy library with high-quality templates and guides
     try {
     const now = new Date().toISOString();
