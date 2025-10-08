@@ -31,5 +31,12 @@ dist-ssr
 
 
 # Database and sensitive data files
-server/data/db.json
-server/data/outbox.json
+# Ignore all JSON data files and common backups in server/data
+server/data/*.json
+server/data/**/*.json
+# Common backup patterns
+server/data/*backup*.json
+server/data/*.bak
+server/data/*.backup.json
+server/data/*.old.json
+server/data/*.orig.json
