@@ -141,7 +141,7 @@ const smtpService: EmailConfig = {
         const pass = process.env.SMTP_PASS!;
         const secure = String(process.env.SMTP_SECURE || "false").toLowerCase() === "true";
         
-        smtpTransporter = nodemailer.createTransporter({
+        smtpTransporter = nodemailer.createTransport({
           host,
           port,
           secure,
@@ -176,7 +176,7 @@ const gmailService: EmailConfig = {
   async send(mail: OutboxMail): Promise<boolean> {
     try {
       if (!gmailTransporter) {
-        gmailTransporter = nodemailer.createTransporter({
+        gmailTransporter = nodemailer.createTransport({
           service: 'gmail',
           auth: {
             user: process.env.GMAIL_USER!,
