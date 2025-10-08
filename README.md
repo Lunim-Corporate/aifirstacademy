@@ -229,6 +229,3 @@ Coding standards
 ## License
 MIT — see LICENSE.
 
----
-
-Ready to learn and ship with AI? Let’s go.
