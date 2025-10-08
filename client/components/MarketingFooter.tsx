@@ -4,7 +4,7 @@ import SafeLink from "@/components/SafeLink";
 
 export default function MarketingFooter() {
   return (
-    <footer className="bg-background border-t border-border/40">
+    <footer className="bg-background border-t border-gray-200 dark:border-gray-700/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           <div className="space-y-4">
@@ -62,10 +62,11 @@ export default function MarketingFooter() {
             </ul>
           </div>
         </div>
-        <div className="border-t border-border/40 mt-12 pt-8 text-center text-sm text-muted-foreground">
+        <div className="border-t border-gray-200 dark:border-gray-700/40 mt-12 pt-8 text-center text-sm text-muted-foreground">
           <p>&copy; 2025 AI-First Academy. All rights reserved.</p>
         </div>
       </div>
     </footer>
   );
 }
+

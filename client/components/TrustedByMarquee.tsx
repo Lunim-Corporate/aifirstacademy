@@ -100,7 +100,7 @@ export default function TrustedByMarquee({
   const list = [...logos, ...logos];
 
   return (
-    <section className={`py-10 border-b border-border/40 ${className || ""}`} aria-label="Trusted by teams section">
+    <section className={`py-10 border-b border-gray-200 dark:border-gray-700/40 ${className || ""}`} aria-label="Trusted by teams section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={wrapperRef} className="relative overflow-hidden text-muted-foreground">
           <div className="flex items-center gap-x-6 mb-4">
@@ -124,3 +124,4 @@ export default function TrustedByMarquee({
     </section>
   );
 }
+
