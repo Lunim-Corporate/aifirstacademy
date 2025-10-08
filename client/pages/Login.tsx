@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, Eye, EyeOff } from "lucide-react";
+import { BrainCircuit, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { apiLoginStart, apiOAuthMock, apiOAuthProviders } from "@/lib/api";
@@ -13,6 +13,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,19 +23,42 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous errors
+    setError("");
 
     if (!email || !password) {
-      alert("Please fill in all fields");
+      setError("Please fill in all fields");
       return;
     }
 
+    if (isLoading) return; // Prevent double submission
+    
+    setIsLoading(true);
     try {
-      const { pendingId } = await apiLoginStart(email, password);
+      // Use enhanced auth-v2 endpoint
+      const res = await fetch('/api/auth-v2/login/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Login failed');
+      }
+      
+      const { pendingId } = await res.json();
       sessionStorage.setItem("auth_pending_id", pendingId);
       sessionStorage.setItem("auth_pending_email", email);
+      sessionStorage.setItem("auth_flow", "login"); // Set flow for verification page
       navigate(`/verify-otp?pending=${encodeURIComponent(pendingId)}&email=${encodeURIComponent(email)}`);
     } catch (err: any) {
-      alert(err.message || "Login failed");
+      const errorMessage = err.message || "Login failed";
+      setError(errorMessage);
+      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -71,7 +96,7 @@ export default function Login() {
           </Link>
         </div>
 
-        <Card className="border-border/50 shadow-2xl bg-background/80 backdrop-blur">
+        <Card className="border-gray-200 dark:border-gray-700/50 shadow-2xl bg-background/80 backdrop-blur">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription>
@@ -137,8 +162,12 @@ export default function Login() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError(""); // Clear error on input change
+                    }}
                     required
+                    className={error ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
                   <Button
                     type="button"
@@ -154,6 +183,14 @@ export default function Login() {
                     )}
                   </Button>
                 </div>
+                {error && (
+                  <p className="text-sm text-red-500 flex items-center gap-1 mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                      <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Z" clipRule="evenodd" />
+                    </svg>
+                    {error}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-between text-sm">
@@ -166,8 +203,19 @@ export default function Login() {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700">
-                Sign In
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700 disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
 
@@ -208,3 +256,4 @@ export default function Login() {
     </div>
   );
 }
+

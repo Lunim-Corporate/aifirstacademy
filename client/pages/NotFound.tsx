@@ -156,7 +156,7 @@ export default function NotFound() {
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
 
       <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center p-6 text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur-md">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700/60 bg-background/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur-md">
           <Sparkles className="h-3.5 w-3.5 text-brand-600" />
           <span>A whimsical detour in our library</span>
         </div>
@@ -169,3 +169,4 @@ export default function NotFound() {
     </section>
   );
 }
+

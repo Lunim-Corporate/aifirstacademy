@@ -116,7 +116,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
             <nav className="p-4 space-y-2">
               {sidebarItems.map((item) => {
                 const Icon = item.icon;
@@ -212,7 +212,7 @@ export default function Dashboard() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="space-y-2 p-3 border border-border rounded-lg">
+                      <div key={i} className="space-y-2 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                         <Skeleton className="h-4 w-64" />
                         <Skeleton className="h-3 w-40" />
                         <div className="flex items-center justify-between">
@@ -237,7 +237,7 @@ export default function Dashboard() {
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
@@ -389,7 +389,7 @@ export default function Dashboard() {
                     { title: "API Integration Patterns", track: "Engineering", duration: "20 min", difficulty: "Advanced" },
                     { title: "Error Handling & Validation", track: "Engineering", duration: "12 min", difficulty: "Beginner" },
                   ]).map((lesson, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                       <div className="space-y-1">
                         <h4 className="font-medium">{lesson.title}</h4>
                         <div className="flex items-center space-x-2 text-xs text-muted-foreground">
@@ -461,7 +461,7 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(data?.events ?? upcomingEvents).map((event, index) => (
-                    <div key={index} className="space-y-2 p-3 border border-border rounded-lg">
+                    <div key={index} className="space-y-2 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                       <h4 className="font-medium text-sm">{event.title}</h4>
                       <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3" />
@@ -522,3 +522,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

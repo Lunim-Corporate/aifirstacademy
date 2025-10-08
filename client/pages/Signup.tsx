@@ -8,7 +8,23 @@ import { Button } from "@/components/ui/button";
 import { BrainCircuit, Eye, EyeOff, Code, Megaphone, Palette, Search, Users, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { apiSignupStart, apiOAuthMock, apiOAuthProviders } from "@/lib/api";
+import { apiOAuthMock, apiOAuthProviders } from "@/lib/api";
+
+// Enhanced signup API function
+const apiSignupStartEnhanced = async (name: string, email: string, password: string): Promise<{ pendingId: string }> => {
+  const res = await fetch('/api/auth-v2/signup/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password })
+  });
+  
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Signup failed');
+  }
+  
+  return res.json();
+};
 
 interface FormData {
   firstName: string;
@@ -66,9 +82,10 @@ export default function Signup() {
       }
       try {
         const name = `${formData.firstName} ${formData.lastName}`.trim();
-        const { pendingId } = await apiSignupStart(name, formData.email, formData.password);
+        const { pendingId } = await apiSignupStartEnhanced(name, formData.email, formData.password);
         sessionStorage.setItem("auth_pending_id", pendingId);
         sessionStorage.setItem("auth_pending_email", formData.email);
+        sessionStorage.setItem("auth_flow", "signup"); // Set flow for verification page
         navigate(`/verify-otp?pending=${encodeURIComponent(pendingId)}&email=${encodeURIComponent(formData.email)}`);
       } catch (err: any) {
         alert(err.message || "Signup failed");
@@ -124,7 +141,7 @@ export default function Signup() {
           </Link>
         </div>
 
-        <Card className="border-border/50 shadow-2xl bg-background/80 backdrop-blur">
+        <Card className="border-gray-200 dark:border-gray-700/50 shadow-2xl bg-background/80 backdrop-blur">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold">
               {step === 1 && "Create your account"}
@@ -291,7 +308,7 @@ export default function Signup() {
                           <RadioGroupItem value={role.id} id={role.id} />
                           <label 
                             htmlFor={role.id} 
-                            className="flex items-center space-x-3 cursor-pointer flex-1 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                            className="flex items-center space-x-3 cursor-pointer flex-1 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-muted/50 transition-colors"
                           >
                             <Icon className="h-5 w-5 text-brand-600" />
                             <div>
@@ -355,7 +372,7 @@ export default function Signup() {
                       <RadioGroupItem value="engineering" id="engineering" />
                       <label 
                         htmlFor="engineering" 
-                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-muted/50 transition-colors"
                       >
                         <Code className="h-6 w-6 text-blue-600" />
                         <div>
@@ -370,7 +387,7 @@ export default function Signup() {
                       <RadioGroupItem value="marketing" id="marketing" />
                       <label 
                         htmlFor="marketing" 
-                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-muted/50 transition-colors"
                       >
                         <Megaphone className="h-6 w-6 text-green-600" />
                         <div>
@@ -385,7 +402,7 @@ export default function Signup() {
                       <RadioGroupItem value="design" id="design" />
                       <label 
                         htmlFor="design" 
-                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-muted/50 transition-colors"
                       >
                         <Palette className="h-6 w-6 text-purple-600" />
                         <div>
@@ -400,7 +417,7 @@ export default function Signup() {
                       <RadioGroupItem value="research" id="research" />
                       <label 
                         htmlFor="research" 
-                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-muted/50 transition-colors"
                       >
                         <Search className="h-6 w-6 text-orange-600" />
                         <div>
@@ -476,3 +493,4 @@ export default function Signup() {
     </div>
   );
 }
+

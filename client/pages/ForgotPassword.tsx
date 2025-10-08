@@ -6,7 +6,21 @@ import { Button } from "@/components/ui/button";
 import { BrainCircuit, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { apiForgot } from "@/lib/api";
+// We'll create a new API function for the enhanced auth
+const apiForgotPasswordStart = async (email: string): Promise<{ pendingId?: string; message: string }> => {
+  const res = await fetch('/api/auth-v2/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to send reset code');
+  }
+  
+  return res.json();
+};
 
 export default function ForgotPassword() {
   const nav = useNavigate();
@@ -16,7 +30,7 @@ export default function ForgotPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await apiForgot(email);
+      const res = await apiForgotPasswordStart(email);
       if (res.pendingId) {
         sessionStorage.setItem("reset_pending_id", res.pendingId);
         sessionStorage.setItem("reset_pending_email", email);
@@ -39,7 +53,7 @@ export default function ForgotPassword() {
             <span className="ml-2 text-xl font-bold gradient-text">AI-First Academy</span>
           </Link>
         </div>
-        <Card className="border-border/50 shadow-2xl bg-background/80 backdrop-blur">
+        <Card className="border-gray-200 dark:border-gray-700/50 shadow-2xl bg-background/80 backdrop-blur">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold">Reset your password</CardTitle>
             <CardDescription>We'll send a verification code to your email</CardDescription>
@@ -72,3 +86,4 @@ export default function ForgotPassword() {
     </div>
   );
 }
+

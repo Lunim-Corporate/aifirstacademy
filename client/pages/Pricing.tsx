@@ -16,7 +16,7 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -48,7 +48,7 @@ export default function Pricing() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {(data?.plans || []).map((p) => (
-              <Card key={p.id} className={p.id === "pro" ? "border-brand-200 bg-brand-50/50 relative" : "border-border/50"}>
+              <Card key={p.id} className={p.id === "pro" ? "border-brand-200 bg-brand-50/50 relative" : "border-gray-200 dark:border-gray-700/50"}>
                 {p.id === "pro" && <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-600">Most Popular</Badge>}
                 <CardHeader>
                   <CardTitle>{p.name}</CardTitle>
@@ -97,7 +97,7 @@ export default function Pricing() {
                   </thead>
                   <tbody>
                     {(data?.comparison||[]).map((row)=> (
-                      <tr key={row.key} className="border-t border-border/40">
+                      <tr key={row.key} className="border-t border-gray-200 dark:border-gray-700/40">
                         <td className="py-2 pr-4 text-muted-foreground">{row.label}</td>
                         {(data?.plans||[]).map(p=> {
                           const v = row.availability[p.id];
@@ -124,3 +124,4 @@ export default function Pricing() {
     </div>
   );
 }
+

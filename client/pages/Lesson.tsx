@@ -174,7 +174,7 @@ export default function Lesson() {
       const [speed, setSpeed] = [undefined, undefined] as any; // placeholder to satisfy lints when using iframe-only
       return (
         <div className="space-y-4">
-          <div className="aspect-video rounded-md overflow-hidden border border-border/50">
+          <div className="aspect-video rounded-md overflow-hidden border border-gray-200 dark:border-gray-700/50">
             {isMp4 ? (
               <video className="w-full h-full" controls controlsList="nodownload" src={current.videoUrl} onRateChange={(e)=>{}}>
                 Sorry, your browser doesn't support embedded videos.
@@ -195,7 +195,7 @@ export default function Lesson() {
     if (current.type === "sandbox") {
       return (
         <div className="space-y-3">
-          <Card className="border-border/50">
+          <Card className="border-gray-200 dark:border-gray-700/50">
             <CardHeader>
               <CardTitle>Practice Prompt</CardTitle>
               <CardDescription>Copy to Sandbox and try it out</CardDescription>
@@ -233,7 +233,7 @@ export default function Lesson() {
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
             <nav className="p-4 space-y-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="space-y-2">
@@ -250,7 +250,7 @@ export default function Lesson() {
             <Skeleton className="h-5 w-96" />
             <Skeleton className="h-80 w-full" />
           </main>
-          <aside className="hidden xl:block w-96 border-l border-border/40 p-4 space-y-3">
+          <aside className="hidden xl:block w-96 border-l border-gray-200 dark:border-gray-700/40 p-4 space-y-3">
             <Skeleton className="h-6 w-40" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-64 w-full" />
@@ -264,7 +264,7 @@ export default function Lesson() {
     <div className="min-h-screen bg-background">
       <LoggedInHeader />
       <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="px-6 py-3 border-b border-border/40 flex items-center gap-4" role="region" aria-label="Progress bar">
+        <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-4" role="region" aria-label="Progress bar">
           <div className="min-w-24 text-xs text-muted-foreground">{progress.index}/{progress.total}</div>
           <Progress value={progress.percent} className="h-2" />
           <div className="ml-auto flex items-center gap-2">
@@ -272,7 +272,7 @@ export default function Lesson() {
           </div>
         </div>
         <div className="flex flex-1 overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto" aria-label="Course outline">
+          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto" aria-label="Course outline">
             <nav className="p-4 space-y-4">
               <div className="px-2 text-xs uppercase tracking-wide text-muted-foreground">{track?.title}</div>
               {moduleList.map((m) => (
@@ -336,8 +336,8 @@ export default function Lesson() {
             </Card>
           </main>
 
-          <aside className="hidden xl:flex w-96 border-l border-border/40 h-full flex-col">
-            <div className="p-4 border-b border-border/40 flex items-center gap-2">
+          <aside className="hidden xl:flex w-96 border-l border-gray-200 dark:border-gray-700/40 h-full flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input ref={searchInputRef} value={transcriptQuery} onChange={(e)=> setTranscriptQuery(e.target.value)} placeholder="Search transcript (/)" aria-label="Search transcript" />
             </div>
@@ -380,3 +380,4 @@ export default function Lesson() {
     </div>
   );
 }
+

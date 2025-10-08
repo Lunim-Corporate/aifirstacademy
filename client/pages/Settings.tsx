@@ -41,6 +41,7 @@ import LoggedInHeader from "@/components/LoggedInHeader";
 import { useEffect, useState } from "react";
 import { 
   apiMe, 
+  apiMeCookie,
   apiUpdateMe, 
   apiGetSettingsProfile, 
   apiSaveSettingsProfile,
@@ -162,15 +163,29 @@ useEffect(() => {
   // Load all settings data
   const loadSettingsData = async () => {
     try {
-      // Load user profile
-      const [userRes, profileRes, notifRes, secRes, billRes, prefRes] = await Promise.allSettled([
-        apiMe(),
-        apiGetSettingsProfile(),
-        apiGetNotificationSettings(),
-        apiGetSecuritySettings(),
-        apiGetBillingSettings(),
-        apiGetPreferences()
-      ]);
+      // Load user profile with fallback to cookie auth
+      let userRes, profileRes, notifRes, secRes, billRes, prefRes;
+      try {
+        [userRes, profileRes, notifRes, secRes, billRes, prefRes] = await Promise.allSettled([
+          apiMe(),
+          apiGetSettingsProfile(),
+          apiGetNotificationSettings(),
+          apiGetSecuritySettings(),
+          apiGetBillingSettings(),
+          apiGetPreferences()
+        ]);
+      } catch (error: any) {
+        // If token-based auth fails, try cookie-based auth
+        console.log('Token-based auth failed, trying cookie auth:', error.message);
+        [userRes, profileRes, notifRes, secRes, billRes, prefRes] = await Promise.allSettled([
+          apiMeCookie(),
+          apiGetSettingsProfile(),
+          apiGetNotificationSettings(),
+          apiGetSecuritySettings(),
+          apiGetBillingSettings(),
+          apiGetPreferences()
+        ]);
+      }
       
       // Update profile
       if (userRes.status === 'fulfilled') {
@@ -186,7 +201,13 @@ useEffect(() => {
       
       if (profileRes.status === 'fulfilled') {
         const { profile: profileData } = profileRes.value;
-        setProfile(prev => ({ ...prev, ...profileData }));
+        // Merge profile data carefully, preserving user.email from userRes
+        setProfile(prev => ({ 
+          ...prev, 
+          ...profileData,
+          // Don't overwrite email from apiMe if it exists
+          email: prev.email || profileData.email || ""
+        }));
       }
       
       if (notifRes.status === 'fulfilled') {
@@ -394,7 +415,7 @@ useEffect(() => {
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
             <nav className="p-4 space-y-2">
               {Array.from({ length: 7 }).map((_, i) => (
                 <div key={i} className="flex items-center space-x-3 px-3 py-2 rounded-lg">
@@ -446,7 +467,7 @@ useEffect(() => {
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
@@ -944,7 +965,7 @@ useEffect(() => {
 
                       <div className="space-y-4">
                         <h4 className="font-medium">Two-Factor Authentication</h4>
-                        <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                        <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                           <div>
                             <div className="font-medium">Authenticator App</div>
                             <div className="text-sm text-muted-foreground">
@@ -973,7 +994,7 @@ useEffect(() => {
                         <h4 className="font-medium">Connected Accounts</h4>
                         
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                          <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                                 <span className="text-red-600 font-bold text-sm">G</span>
@@ -986,7 +1007,7 @@ useEffect(() => {
                             <Button variant="outline" size="sm">Disconnect</Button>
                           </div>
 
-                          <div className="flex items-center justify-between p-4 border border-dashed border-border rounded-lg">
+                          <div className="flex items-center justify-between p-4 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                                 <span className="text-blue-600 font-bold text-sm">M</span>
@@ -1041,7 +1062,7 @@ useEffect(() => {
 
                     <div className="space-y-4">
                       <h4 className="font-medium">Payment Method</h4>
-                      <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                      <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
                           <div>
@@ -1310,3 +1331,4 @@ useEffect(() => {
     </div>
   );
 }
+
