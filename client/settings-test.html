@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .section { margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 4px; }
+        .section h3 { margin-top: 0; color: #333; }
+        .error { color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 4px; }
+        .success { color: #388e3c; background: #e8f5e9; padding: 10px; border-radius: 4px; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Settings API Testing</h1>
+        
+        <div class="section">
+            <h3>Authentication Test</h3>
+            <div>
+                <input type="email" id="email" placeholder="Email" value="admin@aifirst.academy">
+                <button onclick="testLogin()">Login</button>
+                <button onclick="testMe()">Test /api/auth/me</button>
+                <button onclick="testMeCookie()">Test /api/auth/me (Cookie)</button>
+                <button onclick="logout()">Logout</button>
+            </div>
+            <div id="auth-result"></div>
+        </div>
+
+        <div class="section">
+            <h3>Settings API Test</h3>
+            <button onclick="testProfile()">Get Profile</button>
+            <button onclick="testNotifications()">Get Notifications</button>
+            <button onclick="testSecurity()">Get Security</button>
+            <button onclick="testBilling()">Get Billing</button>
+            <button onclick="testPreferences()">Get Preferences</button>
+            <button onclick="testAllSettings()">Test All Settings</button>
+            <div id="settings-result"></div>
+        </div>
+
+        <div class="section">
+            <h3>Debug Info</h3>
+            <button onclick="showDebugInfo()">Show Debug Info</button>
+            <div id="debug-info"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = isError ? 'error' : 'success';
+            element.innerHTML = `<pre>${content}</pre>`;
+        }
+
+        async function testLogin() {
+            try {
+                const email = document.getElementById('email').value;
+                const response = await fetch('/api/auth/dev/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    // Store token if provided
+                    if (data.token) {
+                        localStorage.setItem('auth_token', data.token);
+                    }
+                    showResult('auth-result', `Login successful:\\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    showResult('auth-result', `Login failed: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult('auth-result', `Login error: ${error.message}`, true);
+            }
+        }
+
+        async function testMe() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch('/api/auth/me', { 
+                    headers,
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showResult('auth-result', `Me (Token) successful:\\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    showResult('auth-result', `Me failed: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult('auth-result', `Me error: ${error.message}`, true);
+            }
+        }
+
+        async function testMeCookie() {
+            try {
+                const response = await fetch('/api/auth/me', { 
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    showResult('auth-result', `Me (Cookie) successful:\\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    showResult('auth-result', `Me (Cookie) failed: ${data.error}`, true);
+                }
+            } catch (error) {
+                showResult('auth-result', `Me (Cookie) error: ${error.message}`, true);
+            }
+        }
+
+        async function logout() {
+            try {
+                localStorage.removeItem('auth_token');
+                const response = await fetch('/api/auth/logout', { 
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                showResult('auth-result', `Logout: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                showResult('auth-result', `Logout error: ${error.message}`, true);
+            }
+        }
+
+        async function testAPI(endpoint, name) {
+            try {
+                const token = localStorage.getItem('auth_token');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch(endpoint, { 
+                    headers,
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    return { success: true, data, name };
+                } else {
+                    return { success: false, error: data.error, name };
+                }
+            } catch (error) {
+                return { success: false, error: error.message, name };
+            }
+        }
+
+        async function testProfile() {
+            const result = await testAPI('/api/settings/profile', 'Profile');
+            showResult('settings-result', 
+                result.success 
+                    ? `${result.name} successful:\\n${JSON.stringify(result.data, null, 2)}`
+                    : `${result.name} failed: ${result.error}`,
+                !result.success
+            );
+        }
+
+        async function testNotifications() {
+            const result = await testAPI('/api/settings/notifications', 'Notifications');
+            showResult('settings-result', 
+                result.success 
+                    ? `${result.name} successful:\\n${JSON.stringify(result.data, null, 2)}`
+                    : `${result.name} failed: ${result.error}`,
+                !result.success
+            );
+        }
+
+        async function testSecurity() {
+            const result = await testAPI('/api/settings/security', 'Security');
+            showResult('settings-result', 
+                result.success 
+                    ? `${result.name} successful:\\n${JSON.stringify(result.data, null, 2)}`
+                    : `${result.name} failed: ${result.error}`,
+                !result.success
+            );
+        }
+
+        async function testBilling() {
+            const result = await testAPI('/api/settings/billing', 'Billing');
+            showResult('settings-result', 
+                result.success 
+                    ? `${result.name} successful:\\n${JSON.stringify(result.data, null, 2)}`
+                    : `${result.name} failed: ${result.error}`,
+                !result.success
+            );
+        }
+
+        async function testPreferences() {
+            const result = await testAPI('/api/settings/preferences', 'Preferences');
+            showResult('settings-result', 
+                result.success 
+                    ? `${result.name} successful:\\n${JSON.stringify(result.data, null, 2)}`
+                    : `${result.name} failed: ${result.error}`,
+                !result.success
+            );
+        }
+
+        async function testAllSettings() {
+            try {
+                const tests = [
+                    testAPI('/api/settings/profile', 'Profile'),
+                    testAPI('/api/settings/notifications', 'Notifications'),
+                    testAPI('/api/settings/security', 'Security'),
+                    testAPI('/api/settings/billing', 'Billing'),
+                    testAPI('/api/settings/preferences', 'Preferences')
+                ];
+
+                const results = await Promise.all(tests);
+                let summary = 'All Settings Test Results:\\n\\n';
+                
+                results.forEach(result => {
+                    summary += `${result.name}: ${result.success ? 'SUCCESS' : 'FAILED - ' + result.error}\\n`;
+                });
+
+                const successful = results.filter(r => r.success);
+                summary += `\\nSummary: ${successful.length}/${results.length} successful`;
+
+                showResult('settings-result', summary, successful.length < results.length);
+            } catch (error) {
+                showResult('settings-result', `All Settings Test error: ${error.message}`, true);
+            }
+        }
+
+        function showDebugInfo() {
+            const token = localStorage.getItem('auth_token');
+            const cookies = document.cookie;
+            
+            const debug = {
+                localStorage_token: token ? `${token.substring(0, 20)}...` : 'None',
+                cookies: cookies || 'None',
+                location: window.location.href,
+                userAgent: navigator.userAgent
+            };
+
+            showResult('debug-info', JSON.stringify(debug, null, 2));
+        }
+
+        // Auto-load debug info on page load
+        window.onload = () => showDebugInfo();
+    </script>
+</body>
+</html>
