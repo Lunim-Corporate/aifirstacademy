@@ -4,7 +4,8 @@
  * Data Migration Script: Local Storage to Supabase
  * 
  * This script migrates all data from your local JSON storage to Supabase
- * Run with: npx tsx scripts/migrate-to-supabase.ts
+ * Run with: npx tsx scripts/migrate-to-supabase.ts [path-to-db.json]
+ * Default path: ./server/data/db.json
  */
 
 // Load environment variables first BEFORE any other imports
@@ -224,7 +225,7 @@ class DataMigrator {
     errors: 0,
   };
 
-  async migrate(localDbPath: string = './data.json') {
+  async migrate(localDbPath: string = './server/data/db.json') {
     console.log('🚀 Starting migration from local storage to Supabase...');
     console.log(`📁 Reading from: ${localDbPath}`);
 
@@ -237,9 +238,13 @@ class DataMigrator {
         // Try common locations
         const possiblePaths = [
           './data.json',
+          './server/data/db.json',
           './server/data.json',
+          './data/db.json',
           '../data.json',
-          './db.json'
+          './db.json',
+          'server\\data\\db.json', // Windows path
+          'server/data/db.json'   // Unix-style path
         ];
         
         for (const possiblePath of possiblePaths) {
@@ -812,7 +817,7 @@ class DataMigrator {
 const migrator = new DataMigrator();
 
 // Get path from command line argument or use default
-const dbPath = process.argv[2] || './data.json';
+const dbPath = process.argv[2] || './server/data/db.json';
 
 migrator.migrate(dbPath).catch((error) => {
   console.error('Migration failed:', error);
