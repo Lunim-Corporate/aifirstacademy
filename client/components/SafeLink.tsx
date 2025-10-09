@@ -15,3 +15,4 @@ export default function SafeLink(props: Props) {
   }
   return <a href={props.to} className={props.className} onClick={props.onClick}>{props.children}</a>;
 }
+

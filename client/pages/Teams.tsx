@@ -20,7 +20,7 @@ export default function Teams() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -53,7 +53,7 @@ export default function Teams() {
 
           <div className="grid md:grid-cols-3 gap-6 mb-12">
             {[{ icon: Users2, title: 'Cohort onboarding', desc: 'Spin up cohorts and assign tracks by role.' }, { icon: BarChart3, title: 'Progress analytics', desc: 'Measure adoption and skill improvement.' }, { icon: ShieldCheck, title: 'Enterprise ready', desc: 'SSO, SCIM, and admin controls.' }].map(({icon:Icon,title,desc},i)=> (
-              <Card key={i} className="border-border/50">
+              <Card key={i} className="border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center mb-3"><Icon className="h-5 w-5"/></div>
                   <CardTitle>{title}</CardTitle>
@@ -83,7 +83,7 @@ export default function Teams() {
             </Card>
 
             <div className="space-y-6">
-              <Card className="border-border/50">
+              <Card className="border-gray-200 dark:border-gray-700/50">
                 <CardHeader><CardTitle>Benefits</CardTitle></CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm text-muted-foreground">
@@ -93,7 +93,7 @@ export default function Teams() {
                   </ul>
                 </CardContent>
               </Card>
-              <Card className="border-border/50">
+              <Card className="border-gray-200 dark:border-gray-700/50">
                 <CardHeader><CardTitle>Security & Compliance</CardTitle><CardDescription>Enterprise controls</CardDescription></CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm text-muted-foreground">
@@ -113,3 +113,4 @@ export default function Teams() {
     </div>
   );
 }
+

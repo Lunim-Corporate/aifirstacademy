@@ -1,128 +1,231 @@
-# AI-First Academy – Monorepo
+# 🎓 AI-First Academy
+Professional AI prompting education for working professionals.
 
-This repository contains a React (Vite) frontend under `client/` and an Express API under `server/` with shared TypeScript types in `shared/`.
+---
 
-- Dev mode: Vite serves the frontend and mounts the Express API as middleware (single process, single URL)
-- Prod mode: SPA is built to `dist/spa` and served by the compiled Express server from `dist/server`
+## Overview
+AI-First Academy is a learning platform that teaches practical, role‑specific AI workflows. Learners practice with real models, track progress, and earn certificates. The codebase is a full‑stack TypeScript app: React 19 + Vite on the client and Express on the server, with optional Supabase for persistence and Netlify for deployment.
 
-## Prerequisites
-- Node.js 20+ (recommended) – matches the server build target
-- pnpm (package manager)
-  - If not installed: enable via Corepack
-    - macOS/Linux/Windows (PowerShell): `corepack enable pnpm`
+---
 
-## Quick Start (Development)
-1) Install dependencies
-   - `pnpm install`
-2) (Optional) Create a `.env` in the repo root to customize behavior (see .env section below)
-3) Start the dev server
-   - `pnpm dev`
-4) Open the app
-   - Frontend + API: http://localhost:8080
-   - All API routes are available under the same origin at `/api/*`
+## Features
+- Role‑specific learning tracks (Engineer, Marketer, Designer, Manager, Researcher)
+- OTP email verification and JWT sessions; optional OAuth (Google/Microsoft)
+- Interactive AI sandbox (in progress) with multi‑model support
+- Community features (prompts, discussions) and progress dashboards
+- Production‑ready middleware: security headers, CORS, rate limiting, health checks
+
+---
+
+## Tech stack
+```
+Frontend:  React 19 + TypeScript + Vite + Tailwind CSS + Radix UI
+Backend:   Express.js + TypeScript
+Database:  Supabase (PostgreSQL) — optional, with SQL scripts and helpers
+Auth:      OTP via email + JWT sessions; optional OAuth (Google/Microsoft)
+Email:     Resend API (recommended) with SMTP fallback via Nodemailer
+Hosting:   Netlify (SPA + serverless function proxy)
+```
 
 Notes
-- First run seeds a local database at `server/data/db.json`
-- OTP/Emails are written to `server/data/outbox.json` and also printed to the console unless SMTP is configured
-- To “factory reset” data, stop the server and delete `server/data/db.json`
+- The AI sandbox API and Supabase routes are present under server/routes but may be uncommitted yet (see working tree). They are wired in server/index.ts.
+- Vite dev server proxies API requests by mounting the Express app only for /api/* paths.
 
-## Project Structure
-- `client/` – React app (Vite + Tailwind + Radix UI)
-- `server/` – Express app with routes (auth, community, library, marketing, etc.)
-- `shared/` – Shared TypeScript interfaces used by both client and server
-- `dist/` – Build output (created after `pnpm build`)
+---
 
-## Scripts
-- `pnpm dev` – Run Vite dev server (serves client + mounts API)
-- `pnpm build` – Build client and server for production
-- `pnpm start` – Start the compiled server (serves built SPA + API)
-- `pnpm test` – Run unit tests (Vitest)
-- `pnpm typecheck` – TypeScript type check
+## Quick start
+Prerequisites
+- Node.js 20+
+- pnpm
+- Git
 
-## Environment Variables (.env)
-Create a `.env` file at the repo root to configure optional features. Reasonable defaults exist for local development.
+Clone and run
+```bash
+git clone <your-repo-url>
+cd aifirstacademy
+pnpm install
 
-Recommended local `.env` template:
+# Configure env (see Environment)
+# Create .env and set required variables
 
+# Start dev (Vite + Express middleware)
+pnpm dev
+# Default: http://localhost:3000 (uses PORT env var if set)
+```
+
+Build and serve
+```bash
+# Build SPA
+yarn build # or: pnpm build
+# Build server bundle only
+pnpm build:server
+# Run production server
+pnpm start
+```
+
+---
+
+## Project structure
+```
+aifirstacademy/
+├─ client/                 # React SPA (Vite)
+│  ├─ components/          # Reusable UI (shadcn/radix based)
+│  │  └─ ui/               # Generated UI primitives
+│  ├─ pages/               # Route components
+│  ├─ lib/                 # Client utilities (API, helpers)
+│  └─ App.tsx              # Router and app providers
+├─ server/                 # Express API
+│  ├─ routes/              # API endpoints
+│  │  ├─ auth.ts           # OTP + JWT (legacy/dev-friendly)
+│  │  ├─ auth-enhanced.ts  # Enhanced auth (sessions + OAuth helpers)
+│  │  ├─ sandbox-ai.ts     # AI sandbox endpoints (in progress)
+│  │  ├─ *-supabase.ts     # Supabase-backed routes
+│  ├─ utils/               # jwt, mailer, etc.
+│  ├─ middleware/          # auth-enhanced middleware
+│  ├─ storage.ts           # Local/dev storage helpers
+│  └─ storage-supabase.ts  # Supabase storage helpers
+├─ shared/                 # Shared types/interfaces
+├─ database/               # SQL schema, RLS, seeders
+├─ netlify/                # Serverless function entry (proxy)
+├─ scripts/                # Migrate/verify Supabase helpers
+├─ vite.config.ts          # Dev server with Express mount for /api
+├─ vite.config.server.ts   # Server build config (SSR library build)
+└─ tailwind.config.ts      # Tailwind theme and tokens
+```
+
+---
+
+## Environment
+Create a .env file at the repo root. Variables used across the app include:
+```env
+# Frontend/Server
 PORT=3000
-PING_MESSAGE=ping
-JWT_SECRET=dev-secret
-OAUTH_REDIRECT_BASE=http://localhost:3000
+FRONTEND_URL=http://localhost:3000
+NODE_ENV=development
 
-# SMTP (optional)
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
-SMTP_PASS=
-SMTP_SECURE=false
-SMTP_FROM=AI-First Academy <no-reply@example.com>
+# Auth (JWT)
+JWT_SECRET=your-secure-jwt-secret
 
 # OAuth (optional)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/oauth/google/callback
 MS_CLIENT_ID=
 MS_CLIENT_SECRET=
-MS_REDIRECT_URI=http://localhost:3000/api/auth/oauth/microsoft/callback
+# Optional explicit redirect base
+OAUTH_REDIRECT_BASE=http://localhost:3000
 
-# Notifications/marketing (optional)
-SALES_EMAIL=
-NEWSLETTER_EMAIL=
+# Email
+RESEND_API_KEY=
+# SMTP fallback (optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
 
-How env is used
-- Server reads `process.env.*` for auth, marketing, mailer, and diagnostics.
-- In dev, Vite runs the server in the same process. If you need custom env values in dev, export them in your shell before `pnpm dev` (or use a `.env` loader in your shell). Defaults cover local usage.
+# Supabase (optional)
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
 
-## Running in Production (Locally)
-1) Build
-   - `pnpm build`
-2) Start
-   - `pnpm start`
-3) Access
-   - Frontend: http://localhost:3000
-   - API: http://localhost:3000/api
+Dev tips
+- OTP codes print to the server console in development.
+- CORS is open in dev; in production, FRONTEND_URL governs allowed origins.
+- Health check: GET /api/health returns service status (includes Supabase connectivity check).
 
-## Frontend (client) Details
-- Tech: React 18, Vite 7, TailwindCSS, Radix UI
-- Aliases:
-  - `@` -> `./client`
-  - `@shared` -> `./shared`
-- Dev URL: http://localhost:8080
-- Build output: `dist/spa`
+---
 
-## Backend (server) Details
-- Tech: Express 5, TypeScript
-- Routes mounted under `/api/*` (auth, community, dashboard, learning, library, marketing, notifications, search, sandbox)
-- Local DB: JSON file at `server/data/db.json` (auto-created and migrated on start)
-- Outbox mail: `server/data/outbox.json`
-- Build output: `dist/server/node-build.mjs`
+## Scripts (package.json)
+```bash
+pnpm dev             # Start Vite dev server (Express mounted at /api)
+pnpm build           # Build client + server
+pnpm build:client    # Build SPA only
+pnpm build:server    # Build server bundle (dist/server)
+pnpm build:netlify   # Build for Netlify (SPA + functions)
+pnpm start           # Run production server (node dist/server/node-build.mjs)
+pnpm test            # Run unit tests (vitest --run)
+pnpm typecheck       # tsc type check
+pnpm format.fix      # prettier --write .
+```
 
-## Authentication & Email
-- **OTP Authentication**: Users receive 6-digit codes for secure login/signup
-- **Multiple Email Services**: Supports Resend, Gmail, SMTP, and Ethereal
-- **Development Mode**: OTP codes display in console automatically (no setup required)
-- **Production Ready**: Configure any email service for production use
-- **Fallback System**: If email services fail, codes still appear in console
+---
 
-### Email Setup (Optional)
-For **immediate testing**, no setup needed! OTP codes appear in the server console.
+## API overview
+Mounted in server/index.ts
+- GET /api/ping — ping message
+- GET /api/health — service health and environment flags
+- GET /api/placeholder/:width/:height — SVG placeholder
+- Auth (legacy): /api/auth (signup, login, otp flows, me, logout)
+- Auth (enhanced): /api/auth-v2 (session managed, optional OAuth)
+- Additional routers: /api/sandbox, /api/community, /api/learning, /api/library,
+  /api/search, /api/notifications, /api/marketing, /api/dashboard, /api/certificates,
+  /api/settings, /api/admin
 
-For **production**, configure one of these in your `.env` file:
-- **Resend API** (recommended): `RESEND_API_KEY=re_xxxxxxxxxx`
-- **Gmail**: `GMAIL_USER=email@gmail.com` + `GMAIL_APP_PASSWORD=xxxxxxxx`
-- **Custom SMTP**: Standard SMTP configuration
-- **Ethereal**: Automatic test accounts (development only)
+Note: Some “*-supabase” and “sandbox-ai” routes are currently present as untracked files in your working tree.
 
-See `EMAIL_SETUP.md` for detailed setup instructions.
+---
+
+## Deployment (Netlify)
+- Netlify config is in netlify.toml (redirect /api/* → /.netlify/functions/api/*; SPA fallback to /index.html)
+- The server is compiled and served via a single Netlify function (see netlify/functions/api.ts)
+- Set required environment variables in Netlify dashboard
+
+Manual steps
+```bash
+pnpm build:netlify
+netlify deploy --prod --dir=dist/spa
+```
+
+---
 
 ## Troubleshooting
-- Port 8080 busy (dev): change Vite port in `vite.config.ts` or stop the other process
-- Port 3000 busy (prod): set `PORT` in `.env` before `pnpm start`
-- Reset DB: delete `server/data/db.json` (with server stopped)
-- OAuth not showing: missing Google/Microsoft client IDs; see `.env` template
+Dev server won’t start
+```bash
+# Windows PowerShell example
+rm -r -fo node_modules; Remove-Item pnpm-lock.yaml
+pnpm install
+pnpm dev
+```
 
-## Deployment (Optional)
-- **Netlify**: Connect your repository to Netlify and it will build from source automatically. Ensure `pnpm build` works locally first.
-- **Vercel**: Connect your repository to Vercel for automatic deployments. The platform will handle the build process.
-- **Manual Deployment**: Run `pnpm build` and serve the contents of `dist/` directory with any static hosting service.
-- **Self-hosted**: After running `pnpm build`, use `pnpm start` to run the production server on your own infrastructure.
+Wrong port
+- Vite dev server reads PORT (default 3000). Update PORT or open http://localhost:3000
+
+Auth issues
+- Ensure JWT_SECRET is set; clear browser cookies/localStorage; verify email config
+
+Supabase errors
+- Check SUPABASE_URL and keys; run scripts in database/*.sql; review RLS policies
+
+---
+
+## Documentation
+- EMAIL_SETUP.md — Email/OTP setup
+- NETLIFY_DEPLOYMENT.md — Netlify deployment guide
+- DOCUMENTATION.md — Additional docs (present but uncommitted yet)
+- MIGRATION_GUIDE.md — Supabase migration notes
+- PROJECT_STATUS.md — Current scope and progress
+- AI-First-Academy-PRD.md — Product requirements (high‑level)
+
+---
+
+## Contributing
+```bash
+# Standard flow
+1. Fork
+2. git checkout -b feature/my-change
+3. pnpm typecheck && pnpm test
+4. git commit -m "feat(scope): concise message"
+5. git push origin feature/my-change
+6. Open PR
+```
+
+Coding standards
+- TypeScript throughout; keep typings in shared/ when useful
+- Prettier formatting; prefer small, focused PRs
+- Tests with vitest (where applicable)
+
+---
+
+## License
+MIT — see LICENSE.
+

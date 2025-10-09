@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dev Auth Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-4">Development Authentication Test</h1>
+        <p class="text-gray-600 mb-4">Quick login for migrated users (development only)</p>
+        
+        <div class="space-y-4">
+            <button onclick="devLogin('admin@aifirst.academy')" 
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Login as Admin
+            </button>
+            <button onclick="devLogin('freedomseven6@gmail.com')" 
+                    class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                Login as Student (Freedom Digger)
+            </button>
+            <button onclick="devLogin('thatboy@gmail.com')" 
+                    class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                Login as Student (Se7en Seven)
+            </button>
+            
+            <div class="border-t pt-4">
+                <h3 class="font-semibold mb-2">Custom Login:</h3>
+                <input type="email" id="customEmail" placeholder="Enter email" 
+                       class="w-full border px-3 py-2 rounded mb-2">
+                <button onclick="devLogin(document.getElementById('customEmail').value)" 
+                        class="w-full bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Login with Custom Email
+                </button>
+            </div>
+        </div>
+        
+        <div id="status" class="mt-4 text-sm"></div>
+        
+        <div class="mt-6 space-y-2">
+            <button onclick="checkAuth()" 
+                    class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                Check Current Auth Status
+            </button>
+            <button onclick="logout()" 
+                    class="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Logout
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `mt-4 text-sm ${isError ? 'text-red-600' : 'text-green-600'}`;
+        }
+
+        async function devLogin(email) {
+            if (!email.trim()) {
+                showStatus('Please enter an email', true);
+                return;
+            }
+
+            try {
+                showStatus('Logging in...');
+                const response = await fetch('/api/auth/dev/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showStatus(`Error: ${data.error}${data.hint ? '\nAvailable: ' + data.hint : ''}`, true);
+                    return;
+                }
+
+                // Store token
+                localStorage.setItem('auth_token', data.token);
+                showStatus(`✅ Logged in as: ${data.user.name} (${data.user.email})`);
+                
+                // Redirect to main app after a short delay
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+                
+            } catch (error) {
+                showStatus(`Network error: ${error.message}`, true);
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                showStatus('Checking auth...');
+                const response = await fetch('/api/auth/me', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    showStatus('❌ Not authenticated', true);
+                    return;
+                }
+
+                const data = await response.json();
+                showStatus(`✅ Authenticated as: ${data.user.name} (${data.user.email})`);
+                
+            } catch (error) {
+                showStatus(`❌ Auth check failed: ${error.message}`, true);
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                localStorage.removeItem('auth_token');
+                showStatus('✅ Logged out successfully');
+            } catch (error) {
+                showStatus(`Logout error: ${error.message}`, true);
+            }
+        }
+
+        // Check auth status on page load
+        checkAuth();
+    </script>
+</body>
+</html>

@@ -167,7 +167,7 @@ export default function Library() {
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
@@ -282,7 +282,7 @@ export default function Library() {
                       if (loadingList) {
                         return (
                           Array.from({ length: 6 }).map((_, idx) => (
-                            <Card key={idx} className="border-border/50">
+                            <Card key={idx} className="border-gray-200 dark:border-gray-700/50">
                               <CardHeader className="space-y-2">
                                 <div className="flex items-center justify-between">
                                   <Skeleton className="h-5 w-40" />
@@ -312,7 +312,7 @@ export default function Library() {
                         );
                       }
                       return list.map((i) => (
-                        <Card key={(i as any).id} className="group border-border/50 hover:shadow-lg transition-all">
+                        <Card key={(i as any).id} className="group border-gray-200 dark:border-gray-700/50 hover:shadow-lg transition-all">
                           <CardHeader className="space-y-1">
                             <div className="flex items-center justify-between">
                               <CardTitle className="text-base truncate">{i.title}</CardTitle>
@@ -420,7 +420,7 @@ export default function Library() {
                     </div>
                   ) : (
                     savedPrompts.map((p) => (
-                      <Card key={p.id} className="group border-border/50 hover:shadow-lg transition-all">
+                      <Card key={p.id} className="group border-gray-200 dark:border-gray-700/50 hover:shadow-lg transition-all">
                         <CardHeader className="space-y-1">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-base truncate">{p.title}</CardTitle>
@@ -540,3 +540,4 @@ export default function Library() {
     </div>
   );
 }
+

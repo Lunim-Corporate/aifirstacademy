@@ -1,12 +1,24 @@
 [build]
-  command = "npm run build:client"
+  command = "npm run build"
   functions = "netlify/functions"
   publish = "dist/spa"
 
-
 [functions]
-  external_node_modules = ["express"]
+  external_node_modules = [
+    "express",
+    "@react-email/render", 
+    "cors",
+    "dotenv",
+    "nodemailer",
+    "resend",
+    "zod",
+    "serverless-http"
+  ]
   node_bundler = "esbuild"
+  
+  
+  [functions.timeout]
+    default = 30 
   
 [[redirects]]
   force = true

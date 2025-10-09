@@ -35,7 +35,7 @@ export default function Resources() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -153,3 +153,4 @@ export default function Resources() {
     </div>
   );
 }
+

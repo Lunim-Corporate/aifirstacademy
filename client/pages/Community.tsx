@@ -325,7 +325,7 @@ export default function Community() {
       <LoggedInHeader />
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
@@ -344,7 +344,7 @@ export default function Community() {
             })}
           </nav>
 
-          <div className="p-4 border-t border-border/40">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700/40">
             <h3 className="font-semibold mb-3 flex items-center">
               <Trophy className="h-4 w-4 mr-2 text-amber-500" />
               Top Contributors
@@ -409,7 +409,7 @@ export default function Community() {
 
         <main className="flex-1 overflow-y-auto">
           <Tabs value={tab} onValueChange={(v:any)=>setTab(v)} className="h-full">
-            <div className="border-b border-border/40 p-6 pb-0">
+            <div className="border-b border-gray-200 dark:border-gray-700/40 p-6 pb-0">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h1 className="text-3xl font-bold">Community</h1>
@@ -513,7 +513,7 @@ export default function Community() {
               {loading.prompts && (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i} className="border-border/50">
+                    <Card key={i} className="border-gray-200 dark:border-gray-700/50">
                       <CardHeader className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Skeleton className="h-4 w-40" />
@@ -537,7 +537,7 @@ export default function Community() {
               )}
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(filteredPrompts || []).map((p) => (
-                  <Card key={p.id} className="group border-border/50 hover:shadow-lg transition-all" onMouseEnter={() => markViewed(p.id)}>
+                  <Card key={p.id} className="group border-gray-200 dark:border-gray-700/50 hover:shadow-lg transition-all" onMouseEnter={() => markViewed(p.id)}>
                     <CardHeader className="space-y-1">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base truncate">{p.title}</CardTitle>
@@ -660,7 +660,7 @@ export default function Community() {
                 {loading.discussions && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      <Card key={i} className="border-border/50">
+                      <Card key={i} className="border-gray-200 dark:border-gray-700/50">
                         <CardHeader className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Skeleton className="h-4 w-40" />
@@ -684,7 +684,7 @@ export default function Community() {
                 )}
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {((discussions as Discussion[]) || []).map((d) => (
-                    <Card key={d.id} className="group border-border/50 hover:shadow-lg transition-all cursor-pointer" onClick={async () => {
+                    <Card key={d.id} className="group border-gray-200 dark:border-gray-700/50 hover:shadow-lg transition-all cursor-pointer" onClick={async () => {
                       try {
                         setLoadingReplies(true);
                         await apiViewDiscussion(d.id);
@@ -774,7 +774,7 @@ export default function Community() {
                 {loading.challenges && (
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      <Card key={i} className="border-border/50">
+                      <Card key={i} className="border-gray-200 dark:border-gray-700/50">
                         <CardHeader className="space-y-2">
                           <Skeleton className="h-5 w-40" />
                           <Skeleton className="h-3 w-32" />
@@ -800,7 +800,7 @@ export default function Community() {
                     const isEnded = new Date() > new Date(c.endAt);
                     
                     return (
-                      <Card key={c.id} className="group border-border/50 hover:shadow-lg transition-all cursor-pointer" onClick={async () => {
+                      <Card key={c.id} className="group border-gray-200 dark:border-gray-700/50 hover:shadow-lg transition-all cursor-pointer" onClick={async () => {
                         try {
                           const resp = await apiGetChallenge(c.id);
                           setSelectedChallengeForView({ ...resp.challenge, entries: resp.challenge.entries || [] });
@@ -1060,7 +1060,7 @@ export default function Community() {
               {selectedChallengeForView?.entries && selectedChallengeForView.entries.length > 0 ? (
                 <div className="grid gap-4">
                   {selectedChallengeForView.entries.map((e) => (
-                    <Card key={e.id} className="border-border/50">
+                    <Card key={e.id} className="border-gray-200 dark:border-gray-700/50">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-base">{e.title}</CardTitle>
@@ -1144,3 +1144,4 @@ export default function Community() {
     </div>
   );
 }
+

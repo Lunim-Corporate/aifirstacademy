@@ -48,8 +48,7 @@ const headers = { "Content-Type": "application/json" };
 // Helper function to clear all auth state
 export function clearAuthState() {
   localStorage.removeItem('auth_token');
-  // Clear auth cookie
-  document.cookie = 'auth_token=; Path=/; Max-Age=0; HttpOnly=false; SameSite=Lax';
+  // Note: HttpOnly cookies can't be cleared from JavaScript - server handles this
   // Clear any session storage
   sessionStorage.removeItem('auth_pending_id');
   sessionStorage.removeItem('auth_pending_email');
@@ -150,12 +149,14 @@ export async function apiMe(token?: string): Promise<MeResponse> {
 }
 export async function apiMeCookie(): Promise<MeResponse> {
   try {
-    return await fetchJsonOnce<MeResponse>(`/api/auth/me`, { credentials: "include" as any });
+    return await fetchJsonOnce<MeResponse>(`/api/auth/me`, { 
+      credentials: "include",
+      headers: { ...headers }
+    });
   } catch (error: any) {
-    // Clear auth cookie on failure
-    if (error.message?.includes('User not found') || error.message?.includes('Invalid') || error.message?.includes('Unauthorized')) {
-      document.cookie = 'auth_token=; Path=/; Max-Age=0; HttpOnly=false; SameSite=Lax';
-    }
+    // Server will handle clearing HttpOnly cookies
+    // Just clean up client-side storage
+    localStorage.removeItem('auth_token');
     throw error;
   }
 }
@@ -328,6 +329,26 @@ export async function apiCreateChallenge(body: { title: string; description: str
   if (!res.ok) throw new Error((await res.json()).error || "Create failed");
   return res.json();
 }
+export async function apiListChallengesAdmin(): Promise<{ challenges: any[] }> {
+  const res = await fetch(`/api/admin/challenges`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Fetch failed");
+  return res.json();
+}
+export async function apiGetChallengeAdmin(id: string): Promise<{ challenge: any }> {
+  const res = await fetch(`/api/admin/challenges/${id}`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Fetch failed");
+  return res.json();
+}
+export async function apiUpdateChallenge(id: string, body: { title?: string; description?: string; startAt?: string; endAt?: string; criteria?: any }): Promise<{ challenge: any }> {
+  const res = await fetch(`/api/admin/challenges/${id}`, { method: "PUT", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error((await res.json()).error || "Update failed");
+  return res.json();
+}
+export async function apiDeleteChallenge(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/admin/challenges/${id}`, { method: "DELETE", headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Delete failed");
+  return res.json();
+}
 
 // Search
 export async function apiSearch(q: string): Promise<SearchResponse> {
@@ -368,26 +389,50 @@ export async function apiMarkAllNotificationsRead(): Promise<MarkReadResponse> {
 
 // Settings API - Comprehensive
 export async function apiGetSettingsProfile(): Promise<{ profile: any }> {
-  return fetchJsonOnce<{ profile: any }>(`/api/settings/profile`, { headers: { ...authHeaders() } });
+  return fetchJsonOnce<{ profile: any }>(`/api/settings/profile`, { 
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
 }
 export async function apiSaveSettingsProfile(profileData: any): Promise<{ profile: any }> {
-  return fetchJsonOnce<{ profile: any }>(`/api/settings/profile`, { method: "PUT", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(profileData) });
+  return fetchJsonOnce<{ profile: any }>(`/api/settings/profile`, { 
+    method: "PUT", 
+    headers: { ...headers, ...authHeaders() }, 
+    body: JSON.stringify(profileData),
+    credentials: "include"
+  });
 }
 
 // Notifications Settings
 export async function apiGetNotificationSettings(): Promise<{ settings: any }> {
-  return fetchJsonOnce<{ settings: any }>(`/api/settings/notifications`, { headers: { ...authHeaders() } });
+  return fetchJsonOnce<{ settings: any }>(`/api/settings/notifications`, { 
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
 }
 export async function apiSaveNotificationSettings(settings: any): Promise<{ settings: any }> {
-  return fetchJsonOnce<{ settings: any }>(`/api/settings/notifications`, { method: "PUT", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(settings) });
+  return fetchJsonOnce<{ settings: any }>(`/api/settings/notifications`, { 
+    method: "PUT", 
+    headers: { ...headers, ...authHeaders() }, 
+    body: JSON.stringify(settings),
+    credentials: "include"
+  });
 }
 
 // Security Settings
 export async function apiGetSecuritySettings(): Promise<{ settings: any }> {
-  return fetchJsonOnce<{ settings: any }>(`/api/settings/security`, { headers: { ...authHeaders() } });
+  return fetchJsonOnce<{ settings: any }>(`/api/settings/security`, { 
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
 }
 export async function apiSaveSecuritySettings(settings: any): Promise<{ settings: any }> {
-  return fetchJsonOnce<{ settings: any }>(`/api/settings/security`, { method: "PUT", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(settings) });
+  return fetchJsonOnce<{ settings: any }>(`/api/settings/security`, { 
+    method: "PUT", 
+    headers: { ...headers, ...authHeaders() }, 
+    body: JSON.stringify(settings),
+    credentials: "include"
+  });
 }
 export async function apiChangePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
   return fetchJsonOnce<{ message: string }>(`/api/settings/security/change-password`, { method: "POST", headers: { ...headers, ...authHeaders() }, body: JSON.stringify({ currentPassword, newPassword }) });
@@ -395,18 +440,34 @@ export async function apiChangePassword(currentPassword: string, newPassword: st
 
 // Billing Settings
 export async function apiGetBillingSettings(): Promise<{ settings: any }> {
-  return fetchJsonOnce<{ settings: any }>(`/api/settings/billing`, { headers: { ...authHeaders() } });
+  return fetchJsonOnce<{ settings: any }>(`/api/settings/billing`, { 
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
 }
 export async function apiSaveBillingSettings(settings: any): Promise<{ settings: any }> {
-  return fetchJsonOnce<{ settings: any }>(`/api/settings/billing`, { method: "PUT", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(settings) });
+  return fetchJsonOnce<{ settings: any }>(`/api/settings/billing`, { 
+    method: "PUT", 
+    headers: { ...headers, ...authHeaders() }, 
+    body: JSON.stringify(settings),
+    credentials: "include"
+  });
 }
 
 // Preferences Settings
 export async function apiGetPreferences(): Promise<{ preferences: any }> {
-  return fetchJsonOnce<{ preferences: any }>(`/api/settings/preferences`, { headers: { ...authHeaders() } });
+  return fetchJsonOnce<{ preferences: any }>(`/api/settings/preferences`, { 
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
 }
 export async function apiSavePreferences(preferences: any): Promise<{ preferences: any }> {
-  return fetchJsonOnce<{ preferences: any }>(`/api/settings/preferences`, { method: "PUT", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(preferences) });
+  return fetchJsonOnce<{ preferences: any }>(`/api/settings/preferences`, { 
+    method: "PUT", 
+    headers: { ...headers, ...authHeaders() }, 
+    body: JSON.stringify(preferences),
+    credentials: "include"
+  });
 }
 
 // Data Export & Account Management
@@ -468,3 +529,4 @@ export async function apiGetProgress(trackId?: string): Promise<ProgressResponse
   const usp = new URLSearchParams(trackId ? { trackId } : {} as any);
   return fetchJsonOnce<ProgressResponse>(`/api/learning/progress${usp.toString()?`?${usp}`:""}`, { headers: { ...authHeaders() } });
 }
+

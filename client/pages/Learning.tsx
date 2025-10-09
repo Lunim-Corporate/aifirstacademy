@@ -28,7 +28,7 @@ import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiLearningTracks, apiGetProgress, apiSetLessonProgress, apiMeCookie, apiGetSettingsProfile } from "@/lib/api";
+import { apiLearningTracks, apiGetProgress, apiSetLessonProgress, apiMe, apiMeCookie, apiGetSettingsProfile } from "@/lib/api";
 
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -280,7 +280,7 @@ export default function Learning() {
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
             <nav className="p-4 space-y-2">
               {Array.from({ length: 7 }).map((_, i) => (
                 <div key={i} className="flex items-center space-x-3 px-3 py-2 rounded-lg">
@@ -345,7 +345,7 @@ export default function Learning() {
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
@@ -568,7 +568,7 @@ export default function Learning() {
                                 <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
                                   module.lessons.every((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'completed') ? "bg-success border-success text-white" :
                                   module.lessons.some((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'in_progress') ? "bg-brand-100 border-brand-600 text-brand-600" :
-                                  "bg-muted border-border text-muted-foreground"
+                                  "bg-muted border-gray-200 dark:border-gray-700 text-muted-foreground"
                                 }`}>
                                   {module.lessons.every((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'completed') ? (
                                     <CheckCircle className="h-4 w-4" />
@@ -625,8 +625,8 @@ export default function Learning() {
                                 key={lesson.id}
                                 className={`flex items-center justify-between p-3 rounded-lg border ${
                                   isLocked 
-                                    ? "border-border/50 bg-muted/30" 
-                                    : "border-border hover:bg-muted/50 cursor-pointer"
+                                    ? "border-gray-200 dark:border-gray-700/50 bg-muted/30" 
+                                    : "border-gray-200 dark:border-gray-700 hover:bg-muted/50 cursor-pointer"
                                 } transition-colors`}
                                 onClick={() => {
                                   if (!isLocked) {
@@ -682,7 +682,7 @@ export default function Learning() {
                             );
                           })}
                           
-                          <div className="pt-4 border-t border-border/50">
+                          <div className="pt-4 border-t border-gray-200 dark:border-gray-700/50">
                             <div className="flex items-center justify-between">
                               <div className="text-sm text-muted-foreground">
                                 Module progress: {module.lessons.filter((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === "completed").length} of {module.lessons.length} lessons
@@ -746,3 +746,4 @@ export default function Learning() {
     </div>
   );
 }
+

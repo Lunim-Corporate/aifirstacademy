@@ -70,7 +70,7 @@ export default function FAQ() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <nav className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -109,7 +109,7 @@ export default function FAQ() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-3 gap-6">
           {categories.slice(0,3).map((c,i)=> (
             <motion.div key={c.title} initial={{opacity:0, y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.05}}>
-              <Card className="border-border/50 hover:shadow-md transition-shadow">
+              <Card className="border-gray-200 dark:border-gray-700/50 hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center mb-2">
                     <c.icon className="h-5 w-5" />
@@ -129,7 +129,7 @@ export default function FAQ() {
           {categories.map((c, idx)=> (
             <motion.div key={c.title} initial={{opacity:0, y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:idx*0.05}} className="mb-8">
               <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><c.icon className="h-5 w-5" /> {c.title}</h2>
-              <Card className="border-border/50">
+              <Card className="border-gray-200 dark:border-gray-700/50">
                 <CardContent>
                   <Accordion type="single" collapsible className="w-full">
                     {c.items.map((it, i)=> (
@@ -161,3 +161,4 @@ export default function FAQ() {
     </div>
   );
 }
+

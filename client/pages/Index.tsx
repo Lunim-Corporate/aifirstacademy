@@ -27,7 +27,7 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -87,7 +87,7 @@ export default function Index() {
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-primary-400/20 rounded-2xl blur-3xl" />
-              <Card className="relative bg-background/80 backdrop-blur border-border/50 shadow-2xl">
+              <Card className="relative bg-background/80 backdrop-blur border-gray-200 dark:border-gray-700/50 shadow-2xl">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary">Prompt Sandbox</Badge>
@@ -127,7 +127,7 @@ export default function Index() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="group hover:shadow-lg transition-all duration-200 border-border/50">
+            <Card className="group hover:shadow-lg transition-all duration-200 border-gray-200 dark:border-gray-700/50">
               <CardHeader>
                 <div className="w-12 h-12 bg-brand-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-brand-200 transition-colors">
                   <Code className="h-6 w-6 text-brand-600" />
@@ -136,7 +136,7 @@ export default function Index() {
                 <CardDescription>Practice with live LLMs and get instant scoring.</CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group hover:shadow-lg transition-all duration-200 border-border/50">
+            <Card className="group hover:shadow-lg transition-all duration-200 border-gray-200 dark:border-gray-700/50">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary-200 transition-colors">
                   <BookOpen className="h-6 w-6 text-primary-600" />
@@ -145,7 +145,7 @@ export default function Index() {
                 <CardDescription>Role-based paths across engineering, marketing, and more.</CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group hover:shadow-lg transition-all duration-200 border-border/50">
+            <Card className="group hover:shadow-lg transition-all duration-200 border-gray-200 dark:border-gray-700/50">
               <CardHeader>
                 <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-success/20 transition-colors">
                   <Users className="h-6 w-6 text-success" />
@@ -154,7 +154,7 @@ export default function Index() {
                 <CardDescription>Cohorts, analytics, certificates, and SSO.</CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group hover:shadow-lg transition-all duration-200 border-border/50">
+            <Card className="group hover:shadow-lg transition-all duration-200 border-gray-200 dark:border-gray-700/50">
               <CardHeader>
                 <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-warning/20 transition-colors">
                   <Target className="h-6 w-6 text-warning" />
@@ -182,7 +182,7 @@ export default function Index() {
             },{
               name: 'Emily Parker', role: 'Marketing Director, GrowthCo', quote: 'I ship campaign briefs in hours, not days.'
             }].map((t, i)=> (
-              <Card key={i} className="border-border/50">
+              <Card key={i} className="border-gray-200 dark:border-gray-700/50">
                 <CardContent className="pt-6">
                   <div className="flex items-center mb-4">
                     {[...Array(5)].map((_, j) => (
@@ -244,3 +244,4 @@ export default function Index() {
     </div>
   );
 }
+

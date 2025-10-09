@@ -335,7 +335,7 @@ export default function Certificates() {
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
             <nav className="p-4 space-y-2">
               {Array.from({ length: 7 }).map((_, i) => (
                 <div key={i} className="flex items-center space-x-3 px-3 py-2 rounded-lg">
@@ -392,7 +392,7 @@ export default function Certificates() {
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
+        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
@@ -705,3 +705,4 @@ export default function Certificates() {
     </div>
   );
 }
+

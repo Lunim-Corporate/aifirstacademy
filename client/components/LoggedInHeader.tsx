@@ -82,7 +82,7 @@ export default function LoggedInHeader() {
   const initials = useMemo(() => (user?.name || user?.email || "U").split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase(), [user]);
 
   return (
-    <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-6">
         <Link to="/dashboard" className="flex items-center space-x-4">
           <BrainCircuit className="h-8 w-8 text-brand-600" />
@@ -103,7 +103,7 @@ export default function LoggedInHeader() {
             />
             {searching && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
             {searchOpen && results && (
-              <div className="absolute z-50 mt-2 left-0 sm:right-0 sm:left-auto w-[28rem] max-w-[95vw] max-h-[65vh] overflow-auto bg-background border border-border rounded-md shadow-lg ring-1 ring-border">
+              <div className="absolute z-50 mt-2 left-0 sm:right-0 sm:left-auto w-[28rem] max-w-[95vw] max-h-[65vh] overflow-auto bg-background border border-gray-200 dark:border-gray-700 rounded-md shadow-lg ring-1 ring-border">
                 {results.items.length === 0 ? (
                   <div className="p-3 text-sm text-muted-foreground">No results</div>
                 ) : (
@@ -139,7 +139,7 @@ export default function LoggedInHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 p-0">
-              <div className="p-2 border-b border-border flex items-center justify-between">
+              <div className="p-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="text-sm font-medium">Notifications</div>
                 <button className="text-xs text-brand-700 hover:underline disabled:text-muted-foreground" disabled={!unread} onClick={async()=>{ const res = await apiMarkAllNotificationsRead(); setNotif(n=> n ? { ...n, unread: res.unread, notifications: n.notifications.map(x=> ({...x, readAt: x.readAt || new Date().toISOString()})) } : n); }}>Mark all as read</button>
               </div>
@@ -148,7 +148,7 @@ export default function LoggedInHeader() {
                   <div className="p-4 text-sm text-muted-foreground">You're all caught up.</div>
                 ) : (
                   (notif!.notifications).map(n => (
-                    <button key={n.id} className={`w-full text-left px-3 py-2 border-b border-border/50 hover:bg-muted/50 ${!n.readAt ? "bg-brand-50/40" : ""}`} onClick={async()=>{
+                    <button key={n.id} className={`w-full text-left px-3 py-2 border-b border-gray-200 dark:border-gray-700/50 hover:bg-muted/50 ${!n.readAt ? "bg-brand-50/40" : ""}`} onClick={async()=>{
                       try { await apiMarkNotificationRead(n.id); } catch {}
                       setNotif(curr => curr ? { ...curr, notifications: curr.notifications.map(x => x.id === n.id ? { ...x, readAt: x.readAt || new Date().toISOString() } : x), unread: Math.max(0, (curr.unread||0) - (n.readAt ? 0 : 1)) } : curr);
                       if (n.href) nav(n.href);
@@ -198,3 +198,4 @@ export default function LoggedInHeader() {
     </header>
   );
 }
+

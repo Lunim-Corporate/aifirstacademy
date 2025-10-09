@@ -2,8 +2,10 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./client/**/*.{ts,tsx}"],
-  prefix: "",
+  content: [
+    "./client/**/*.{ts,tsx}",
+    "./index.html",
+  ],
   theme: {
     container: {
       center: true,
@@ -101,20 +103,20 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "Fira Code", "monospace"],
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'grid-pattern': 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+        "grid-pattern": "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
       },
       backgroundSize: {
-        'grid': '20px 20px',
+        grid: "20px 20px",
       },
       boxShadow: {
-        'glow': '0 0 20px -5px hsl(var(--brand-400))',
-        'inner-glow': 'inset 0 0 20px -5px hsl(var(--brand-400))',
+        glow: "0 0 20px -5px hsl(var(--brand-400))",
+        "inner-glow": "inset 0 0 20px -5px hsl(var(--brand-400))",
       },
       keyframes: {
         "accordion-down": {
@@ -141,7 +143,7 @@ export default {
             boxShadow: "0 0 30px -5px hsl(var(--brand-400))",
           },
         },
-        "float": {
+        float: {
           "0%, 100%": {
             transform: "translateY(0px)",
           },
@@ -154,7 +156,7 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
-        "float": "float 3s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
       },
     },
   },

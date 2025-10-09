@@ -16,7 +16,7 @@ export default function Product() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -60,7 +60,7 @@ export default function Product() {
                 </div>
               )}
             </div>
-            <Card className="border-border/50 bg-background/80 backdrop-blur">
+            <Card className="border-gray-200 dark:border-gray-700/50 bg-background/80 backdrop-blur">
               <CardHeader>
                 <CardTitle>Why AI-First Academy</CardTitle>
                 <CardDescription>Built for practical outcomes</CardDescription>
@@ -100,7 +100,7 @@ export default function Product() {
             <h2 className="text-3xl font-bold text-center mb-12">Customer Results</h2>
             <div className="grid md:grid-cols-2 gap-6">
               {data?.caseStudies?.map(cs => (
-                <Card key={cs.id} className="border-border/50">
+                <Card key={cs.id} className="border-gray-200 dark:border-gray-700/50">
                   <CardHeader>
                     <CardTitle>{cs.title}</CardTitle>
                     <CardDescription>{cs.company} • {cs.metric}</CardDescription>
@@ -118,7 +118,7 @@ export default function Product() {
           <h2 className="text-3xl font-bold text-center mb-12">What customers say</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {(data?.testimonials || []).map(t => (
-              <Card key={t.id} className="border-border/50">
+              <Card key={t.id} className="border-gray-200 dark:border-gray-700/50">
                 <CardContent className="p-6">
                   <p className="text-muted-foreground mb-4">“{t.quote}”</p>
                   <div className="text-sm font-medium">{t.name}</div>
@@ -134,7 +134,7 @@ export default function Product() {
       <section className="py-16 bg-muted/20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-3 gap-6">
           {[{icon:Sparkles,title:'Learn by Doing',desc:'Short, focused modules with live LLM feedback. Practice real-world workflows and see your score improve.'},{icon:Layers,title:'Battle‑tested Patterns',desc:'Prompt structures and templates used by high‑performing teams. Copy, adapt, and standardize.'},{icon:BarChart3,title:'Measure Outcomes',desc:'Admin analytics, cohort progress, and certificates that prove skill improvement.'}].map(({icon:Icon,title,desc},i)=> (
-            <Card key={i} className="border-border/50">
+            <Card key={i} className="border-gray-200 dark:border-gray-700/50">
               <CardHeader>
                 <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center mb-3"><Icon className="h-5 w-5"/></div>
                 <CardTitle>{title}</CardTitle>
@@ -151,7 +151,7 @@ export default function Product() {
           <h2 className="text-3xl font-bold text-center mb-10">Where we make you faster</h2>
           <div className="grid md:grid-cols-4 gap-6">
             {[{t:'Engineers',b:['PR summaries','Test generation','Code review prompts','Spec drafting']},{t:'Marketers',b:['Campaign briefs','Ad variants','SEO outlines','Customer research']},{t:'Designers',b:['Research synthesis','UX copy','Design critiques','Hand‑off notes']},{t:'Data Teams',b:['SQL drafting','RAG prompts','Eval harnesses','Report narratives']}].map((role,i)=> (
-              <Card key={role.t} className="border-border/50">
+              <Card key={role.t} className="border-gray-200 dark:border-gray-700/50">
                 <CardHeader><CardTitle className="text-lg flex items-center gap-2">{role.t}</CardTitle></CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
@@ -170,7 +170,7 @@ export default function Product() {
           <h2 className="text-3xl font-bold text-center mb-10">Everything you need to operationalize AI</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[{i:Wrench,t:'Prompt Sandbox',d:'Iterate with real models, compare outputs, and get instant scoring with actionable tips.'},{i:Gauge,t:'Evaluations',d:'Tiny eval harnesses to prevent regressions. Track accuracy, latency, and cost.'},{i:UsersIcon,t:'Team Cohorts',d:'Onboard by role, assign tracks, and track progress with completion targets.'},{i:Lock,t:'Security',d:'SSO, SCIM, RBAC, and audit logs. Enterprise data retention controls.'},{i:Layers,t:'Templates & Library',d:'Curated prompts and templates for repeatable outcomes. Keep private or share.'},{i:Rocket,t:'Certificates',d:'Verify skills with assessments and earn shareable certificates.'}].map((f,idx)=> (
-              <Card key={idx} className="border-border/50">
+              <Card key={idx} className="border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center mb-3"><f.i className="h-5 w-5"/></div>
                   <CardTitle>{f.t}</CardTitle>
@@ -186,7 +186,7 @@ export default function Product() {
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-3 gap-6 text-center">
           {[{k:'+43%',l:'Faster AI feature delivery'},{k:'-58%',l:'Marketing brief turnaround'},{k:'95%',l:'Learners show measured improvement'}].map((s)=> (
-            <Card key={s.k} className="border-border/50">
+            <Card key={s.k} className="border-gray-200 dark:border-gray-700/50">
               <CardHeader>
                 <CardTitle className="text-4xl">{s.k}</CardTitle>
                 <CardDescription>{s.l}</CardDescription>
@@ -206,7 +206,7 @@ export default function Product() {
               {['SSO & SCIM','Role‑based access control','Exportable audit logs','Data retention controls'].map(x=> (<li key={x}>{x}</li>))}
             </ul>
           </div>
-          <Card className="border-border/50">
+          <Card className="border-gray-200 dark:border-gray-700/50">
             <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5"/> Controls</CardTitle></CardHeader>
             <CardContent className="text-muted-foreground">Granular org policies ensure the right people have the right access at the right time.</CardContent>
           </Card>
@@ -229,7 +229,7 @@ export default function Product() {
               </thead>
               <tbody>
                 {[{f:'Live model feedback',us:'Yes',c:'No',p:'No'},{f:'Eval harnesses',us:'Built-in',c:'No',p:'No'},{f:'Team cohorts',us:'Yes',c:'Limited',p:'No'},{f:'Admin analytics',us:'Yes',c:'Limited',p:'No'},{f:'Certificates',us:'Verifiable',c:'Sometimes',p:'No'}].map(row=> (
-                  <tr key={row.f} className="border-t border-border/40">
+                  <tr key={row.f} className="border-t border-gray-200 dark:border-gray-700/40">
                     <td className="py-2 pr-4 text-muted-foreground">{row.f}</td>
                     <td className="py-2">{row.us}</td>
                     <td className="py-2">{row.c}</td>
@@ -258,3 +258,4 @@ export default function Product() {
     </div>
   );
 }
+
