@@ -38,7 +38,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import AdminHeader from "@/components/AdminHeader";
-import { apiCreateChallenge, apiListChallengesAdmin, apiUpdateChallenge, apiDeleteChallenge } from "@/lib/api";
+import { apiCreateChallenge, apiListChallengesAdmin, apiUpdateChallenge, apiDeleteChallenge, apiGetAdminAnalytics } from "@/lib/api";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 const cohorts = [
   {
@@ -162,6 +163,11 @@ export default function Admin() {
   const [isEditChallengeOpen, setIsEditChallengeOpen] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<any>(null);
   const [deletingChallengeId, setDeletingChallengeId] = useState<string | null>(null);
+  
+  // Analytics states
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsPeriod, setAnalyticsPeriod] = useState('30d');
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -172,10 +178,30 @@ export default function Admin() {
     return matchesSearch && matchesFilter && matchesCohort;
   });
 
-  // Load challenges on mount
+  // Load challenges and analytics on mount
   useEffect(() => {
     loadChallenges();
-  }, []);
+    loadAnalytics();
+  }, [analyticsPeriod]);
+  
+  // Chart colors
+  const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+  
+  const loadAnalytics = async () => {
+    try {
+      setAnalyticsLoading(true);
+      const data = await apiGetAdminAnalytics(analyticsPeriod);
+      setAnalyticsData(data);
+    } catch (error: any) {
+      console.error('Failed to load analytics:', error);
+      // Only show alert if it's not an auth error
+      if (!error?.message?.toLowerCase().includes('admin access')) {
+        console.warn('Analytics not available:', error.message);
+      }
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
 
   const loadChallenges = async () => {
     try {
@@ -322,61 +348,198 @@ export default function Admin() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Cohorts</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics.totalCohorts}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +2 from last month
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics.activeUsers}</div>
-                  <p className="text-xs text-muted-foreground">
-                    of {analytics.totalUsers} total users
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Completion</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{analytics.avgCompletionRate}%</div>
-                  <p className="text-xs text-muted-foreground">
-                    +5% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${analytics.revenueThisMonth.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +{analytics.monthlyGrowth}% growth
-                  </p>
-                </CardContent>
-              </Card>
+            {/* Time Period Selector */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Analytics Overview</h2>
+                <p className="text-muted-foreground">Platform performance and user insights</p>
+              </div>
+              <Select value={analyticsPeriod} onValueChange={setAnalyticsPeriod}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="1y">Last year</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            
+            {/* Key Metrics */}
+            {analyticsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[1,2,3,4].map(i => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <div className="h-16 bg-muted animate-pulse rounded"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : analyticsData ? (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.overview.totalUsers}</div>
+                    <p className="text-xs text-muted-foreground">
+                      +{analyticsData.overview.newUsers} new this period
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.overview.activeUsers}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {Math.round((analyticsData.overview.activeUsers / analyticsData.overview.totalUsers) * 100)}% active
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.overview.overallCompletionRate}%</div>
+                    <p className="text-xs text-muted-foreground">
+                      {analyticsData.overview.totalLessonsCompleted} lessons completed
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Avg Time Spent</CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.overview.averageTimeSpent}h</div>
+                    <p className="text-xs text-muted-foreground">
+                      per user this period
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card>
+                  <CardContent className="p-6 text-center text-muted-foreground">
+                    Analytics not available
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
+            {/* Analytics Charts */}
+            {analyticsData && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Growth Trend</CardTitle>
+                    <CardDescription>New user registrations over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={analyticsData.charts.userGrowth}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" fontSize={12} />
+                        <YAxis fontSize={12} />
+                        <Tooltip />
+                        <Line 
+                          type="monotone" 
+                          dataKey="value" 
+                          stroke={COLORS[0]} 
+                          strokeWidth={2}
+                          dot={{ fill: COLORS[0], strokeWidth: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Completion Trends</CardTitle>
+                    <CardDescription>Lesson completions over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <BarChart data={analyticsData.charts.completionTrends}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" fontSize={12} />
+                        <YAxis fontSize={12} />
+                        <Tooltip />
+                        <Bar dataKey="value" fill={COLORS[1]} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Track Popularity</CardTitle>
+                    <CardDescription>Most popular learning tracks</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {analyticsData.tracks.slice(0, 4).map((track: any, index: number) => (
+                        <div key={track.id} className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{track.title}</div>
+                            <div className="text-sm text-muted-foreground capitalize">{track.role}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold">{track.enrollments}</div>
+                            <div className="text-sm text-muted-foreground">enrollments</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Roles Distribution</CardTitle>
+                    <CardDescription>Breakdown by user roles</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={analyticsData.charts.roleDistribution}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ role, percent }: any) => `${role} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={70}
+                          fill="#8884d8"
+                          dataKey="count"
+                        >
+                          {analyticsData.charts.roleDistribution.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
