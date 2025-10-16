@@ -4,13 +4,43 @@ import { verifyToken } from "../utils/jwt";
 
 const router = Router();
 
-// Helper function to get user ID from JWT token
+// Helper function to get user ID from JWT token or cookies
 function getUserId(req: any): string | null {
+  // Try JWT token from Authorization header first
   const auth = req.headers.authorization as string | undefined;
-  if (!auth) return null;
-  const token = auth.split(" ")[1];
-  const payload = verifyToken(token || "");
-  return payload?.sub || null;
+  if (auth && auth.startsWith('Bearer ')) {
+    try {
+      const token = auth.split(" ")[1];
+      if (token) {
+        const payload = verifyToken(token);
+        if (payload?.sub) {
+          return payload.sub;
+        }
+      }
+    } catch (error) {
+      console.warn('Invalid JWT token in Authorization header:', error);
+    }
+  }
+  
+  // Fallback to cookie-based authentication
+  const cookieToken = req.cookies?.auth_token;
+  if (cookieToken) {
+    try {
+      const payload = verifyToken(cookieToken);
+      if (payload?.sub) {
+        return payload.sub;
+      }
+    } catch (error) {
+      console.warn('Invalid JWT token in cookies:', error);
+    }
+  }
+  
+  // Additional fallback: check for user info in req.user (set by middleware)
+  if (req.user && req.user.id) {
+    return req.user.id;
+  }
+  
+  return null;
 }
 
 // Get all tracks (optionally filtered by role)
@@ -67,9 +97,18 @@ export const getTracks: RequestHandler = async (req, res) => {
     // Transform the data to match existing API structure
     const transformedTracks = tracks?.map(track => ({
       ...track,
+      estimatedHours: track.estimated_hours,
+      certificateAvailable: track.certificate_available,
       modules: track.track_modules?.map(module => ({
         ...module,
-        lessons: module.track_lessons || []
+        estimatedHours: module.estimated_hours,
+        orderIndex: module.order_index,
+        lessons: module.track_lessons?.map(lesson => ({
+          ...lesson,
+          durationMin: lesson.duration_minutes,
+          orderIndex: lesson.order_index,
+          videoUrl: lesson.video_url
+        })) || []
       })) || []
     })) || [];
 
@@ -133,9 +172,18 @@ export const getTrack: RequestHandler = async (req, res) => {
     // Transform the data structure
     const transformedTrack = track ? {
       ...track,
+      estimatedHours: track.estimated_hours,
+      certificateAvailable: track.certificate_available,
       modules: track.track_modules?.map(module => ({
         ...module,
-        lessons: module.track_lessons || []
+        estimatedHours: module.estimated_hours,
+        orderIndex: module.order_index,
+        lessons: module.track_lessons?.map(lesson => ({
+          ...lesson,
+          durationMin: lesson.duration_minutes,
+          orderIndex: lesson.order_index,
+          videoUrl: lesson.video_url
+        })) || []
       })) || []
     } : null;
 
