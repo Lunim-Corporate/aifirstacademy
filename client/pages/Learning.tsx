@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { 
-
   Home,
   BookOpen, 
   Code, 
@@ -22,11 +23,26 @@ import {
   Video,
   FileText,
   HelpCircle,
-  Trophy
+  Trophy,
+  Star,
+  Zap,
+  Calendar,
+  TrendingUp,
+  Medal,
+  Shield,
+  Download,
+  ExternalLink,
+  Sparkles,
+  GraduationCap,
+  MapPin,
+  Timer,
+  Brain,
+  Rocket
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
-import { useEffect, useState } from "react";
+import CertificateRequirements from "@/components/CertificateRequirements";
+import { useEffect, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiLearningTracks, apiGetProgress, apiSetLessonProgress, apiMe, apiMeCookie, apiGetSettingsProfile } from "@/lib/api";
 
@@ -82,6 +98,7 @@ export default function Learning() {
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [userStats, setUserStats] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
   
   const roleOptions = [
     { value: 'engineer', label: 'Engineer', icon: Code, description: 'Software development and technical skills' },
@@ -131,11 +148,15 @@ export default function Learning() {
         
         // Filter tracks by determined user role
         const roleTracks = allTracksData.filter((track: any) => track.role === currentUserRole);
+        console.log('Role tracks found:', roleTracks.length, 'for role:', currentUserRole);
         setTracks(roleTracks);
         
         if (roleTracks.length > 0) {
           setSelectedTrack(roleTracks[0]);
-          setExpandedModules([roleTracks[0].modules[0]?.id]);
+          // Expand first module if it exists
+          if (roleTracks[0].modules && roleTracks[0].modules.length > 0) {
+            setExpandedModules([roleTracks[0].modules[0].id]);
+          }
         }
         
         // Load user progress
@@ -148,16 +169,21 @@ export default function Learning() {
         
         // Load user stats and recommendations
         try {
-          // Mock user stats for now
+          // Calculate real stats based on progress
+          const totalLessonsCount = roleTracks.reduce((total: number, track: any) => 
+            total + track.modules.reduce((moduleTotal: number, module: any) => 
+              moduleTotal + (module.lessons?.length || 0), 0), 0);
+            
+          const completedLessonsCount = (progressResponse.progress || []).filter((p: any) => p.status === 'completed').length;
+          const completionRateCalc = totalLessonsCount > 0 ? Math.round((completedLessonsCount / totalLessonsCount) * 100) : 0;
+          
           setUserStats({
-            totalLessons: roleTracks.reduce((total: number, track: any) => 
-              total + track.modules.reduce((moduleTotal: number, module: any) => 
-                moduleTotal + (module.lessons?.length || 0), 0), 0),
-            completedLessons: 0,
-            completionRate: 0,
+            totalLessons: totalLessonsCount,
+            completedLessons: completedLessonsCount,
+            completionRate: completionRateCalc,
             totalTime: roleTracks.reduce((total: number, track: any) => 
               total + (track.estimatedHours || 0), 0),
-            streakDays: 7
+            streakDays: 7 // TODO: Calculate from actual usage data
           });
           
           // Generate recommendations based on role
@@ -213,19 +239,131 @@ export default function Learning() {
   
   const getLessonStatus = (trackId: string, moduleId: string, lessonId: string) => {
     const progress = userProgress.find((p: any) => 
-      p.trackId === trackId && p.moduleId === moduleId && p.lessonId === lessonId
+      p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId
     );
     return progress?.status || 'not_started';
   };
   
-  const startLesson = async (trackId: string, moduleId: string, lessonId: string) => {
+  // New function to determine if a lesson should be locked based on strict progression rules
+  const isLessonLocked = (trackId: string, moduleId: string, lessonId: string, lessonOrder: number, moduleOrder: number) => {
+    // First lesson is never locked
+    if (moduleOrder === 0 && lessonOrder === 0) {
+      return false;
+    }
+    
+    // For subsequent lessons in the same module, check if previous lesson is completed
+    if (lessonOrder > 0) {
+      const module = selectedTrack?.modules?.find(m => m.id === moduleId);
+      const previousLesson = module?.lessons[lessonOrder - 1];
+      if (previousLesson) {
+        const prevStatus = getLessonStatus(trackId, moduleId, previousLesson.id);
+        return prevStatus !== 'completed';
+      }
+    }
+    
+    // For first lesson in a module, check if previous module is completed
+    if (lessonOrder === 0 && moduleOrder > 0) {
+      const previousModule = selectedTrack?.modules?.[moduleOrder - 1];
+      if (previousModule && previousModule.lessons) {
+        // Check if all lessons in previous module are completed
+        const allPreviousCompleted = previousModule.lessons.every(lesson => 
+          getLessonStatus(trackId, previousModule.id, lesson.id) === 'completed'
+        );
+        return !allPreviousCompleted;
+      }
+    }
+    
+    return false;
+  };
+  
+  const startLesson = async (trackId: string, moduleId: string, lessonId: string, checkLocked = true) => {
+    // Find lesson details for better error handling
+    let lessonOrder = -1;
+    let moduleOrder = -1;
+    let lessonTitle = 'Unknown Lesson';
+    
+    selectedTrack?.modules?.forEach((module: any, mIdx: number) => {
+      const lIdx = module.lessons.findIndex((l: any) => l.id === lessonId && module.id === moduleId);
+      if (lIdx !== -1) {
+        lessonOrder = lIdx;
+        moduleOrder = mIdx;
+        lessonTitle = module.lessons[lIdx].title;
+      }
+    });
+    
+    // Check if lesson is locked and prevent access
+    if (checkLocked && lessonOrder !== -1 && moduleOrder !== -1) {
+      const locked = isLessonLocked(trackId, moduleId, lessonId, lessonOrder, moduleOrder);
+      if (locked) {
+        // Show user-friendly message about why lesson is locked
+        if (lessonOrder > 0) {
+          const module = selectedTrack?.modules?.find(m => m.id === moduleId);
+          const previousLesson = module?.lessons[lessonOrder - 1];
+          alert(`Please complete "${previousLesson?.title || 'the previous lesson'}" before accessing "${lessonTitle}".`);
+        } else {
+          alert(`Please complete the previous module before accessing "${lessonTitle}".`);
+        }
+        return;
+      }
+    }
+    
     try {
+      console.log('Starting lesson:', { trackId, moduleId, lessonId, lessonTitle });
+      
+      // Check if user is authenticated by trying to get current user
+      let userInfo;
+      try {
+        userInfo = await apiMe();
+        console.log('User authenticated:', userInfo.id);
+      } catch {
+        try {
+          userInfo = await apiMeCookie();
+          console.log('User authenticated via cookie:', userInfo.id);
+        } catch (authError) {
+          console.error('Authentication failed:', authError);
+          alert('Please log in to access lessons.');
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
+      // Set lesson as in progress
+      console.log('Setting lesson progress to in_progress...');
       await apiSetLessonProgress({ trackId, moduleId, lessonId, status: 'in_progress' });
+      console.log('Progress updated successfully');
+      
+      // Navigate to lesson
       window.location.href = `/learning/${trackId}/${moduleId}/${lessonId}`;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to start lesson:', error);
-      // Fallback to direct navigation
-      window.location.href = `/learning/${trackId}/${moduleId}/${lessonId}`;
+      console.error('Error details:', { message: error?.message, status: error?.status, stack: error?.stack });
+      
+      // More specific error handling
+      if (error?.message?.includes('Unauthorized')) {
+        alert('Your session has expired. Please log in again.');
+        localStorage.removeItem('auth_token'); // Clear any stale tokens
+        window.location.href = '/login';
+        return;
+      }
+      
+      if (error?.message?.includes('not found')) {
+        alert(`Lesson "${lessonTitle}" could not be found. Please refresh the page and try again.`);
+        return;
+      }
+      
+      if (error?.message?.includes('Failed to fetch') || error?.message?.includes('Network')) {
+        alert('Network connection error. Please check your internet connection and try again.');
+        return;
+      }
+      
+      // Show generic error but still allow navigation for better UX
+      const allowNavigation = confirm(
+        `There was an issue starting "${lessonTitle}" (${error?.message || 'Unknown error'}). Your progress may not be saved. Continue anyway?`
+      );
+      
+      if (allowNavigation) {
+        window.location.href = `/learning/${trackId}/${moduleId}/${lessonId}`;
+      }
     }
   };
   
@@ -267,13 +405,33 @@ export default function Learning() {
     );
   }
 
-  // Safe calculations with null checks
-  const completedLessons = selectedTrack?.modules?.reduce((total: number, module: any) => 
-    total + module.lessons.filter((lesson: any) => getLessonStatus(selectedTrack.id, module.id, lesson.id) === "completed").length, 0
-  ) || 0;
+  // Enhanced progress calculations with proper status checking
+  const completedLessons = useMemo(() => {
+    if (!selectedTrack?.modules || userProgress.length === 0) return 0;
+    return selectedTrack.modules.reduce((total: number, module: any) => 
+      total + module.lessons.filter((lesson: any) => 
+        getLessonStatus(selectedTrack.id, module.id, lesson.id) === "completed"
+      ).length, 0
+    );
+  }, [selectedTrack, userProgress]);
   
-  const totalLessons = selectedTrack?.modules?.reduce((total: number, module: any) => total + module.lessons.length, 0) || 0;
-  const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+  const totalLessons = useMemo(() => {
+    return selectedTrack?.modules?.reduce((total: number, module: any) => total + (module.lessons?.length || 0), 0) || 0;
+  }, [selectedTrack]);
+  
+  const progressPercentage = useMemo(() => {
+    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  }, [completedLessons, totalLessons]);
+  
+  // Calculate which lessons are available vs locked
+  const availableLessons = useMemo(() => {
+    if (!selectedTrack?.modules) return 0;
+    return selectedTrack.modules.reduce((total: number, module: any, moduleIndex: number) => {
+      return total + module.lessons.filter((_: any, lessonIndex: number) => 
+        !isLessonLocked(selectedTrack.id, module.id, _.id, lessonIndex, moduleIndex)
+      ).length;
+    }, 0);
+  }, [selectedTrack, userProgress]);
 
   if (loading) {
     return (
@@ -354,8 +512,8 @@ export default function Learning() {
                   key={item.href}
                   to={item.href}
                   className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active 
-                      ? "bg-brand-100 text-brand-700 border border-brand-200" 
+                    item.active
+                      ? "bg-brand-100 text-brand-700 border border-brand-200"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                 >
@@ -371,16 +529,14 @@ export default function Learning() {
         <main className="flex-1 p-6 space-y-6 overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold">Learning Path</h1>
-                <p className="text-muted-foreground">
-                  Master AI skills tailored to your {(() => {
-                    const currentRole = roleOptions.find(r => r.value === userRole);
-                    return currentRole?.label.toLowerCase() || 'role';
-                  })()} role
-                </p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold">Learning Path</h1>
+              <p className="text-muted-foreground">
+                Master AI skills tailored to your {(() => {
+                  const currentRole = roleOptions.find(r => r.value === userRole);
+                  return currentRole?.label.toLowerCase() || 'role';
+                })()} role
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="bg-brand-50 text-brand-700 text-sm py-1 px-3">
@@ -423,15 +579,18 @@ export default function Learning() {
               </Card>
               <Card>
                 <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{userStats.completionRate}%</div>
-                  <p className="text-xs text-muted-foreground">Progress</p>
-                  <Progress value={userStats.completionRate} className="mt-2" />
+                  <div className="text-2xl font-bold">{progressPercentage}%</div>
+                  <p className="text-xs text-muted-foreground">Track Progress</p>
+                  <Progress value={progressPercentage} className="mt-2" />
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{userStats.completedLessons}</div>
-                  <p className="text-xs text-muted-foreground">of {userStats.totalLessons} lessons</p>
+                  <div className="text-2xl font-bold">{completedLessons}</div>
+                  <p className="text-xs text-muted-foreground">of {totalLessons} completed</p>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {availableLessons} lessons unlocked
+                  </div>
                 </CardContent>
               </Card>
               <Card>
@@ -449,36 +608,87 @@ export default function Learning() {
             </div>
           )}
           
-          {/* Quick Recommendations */}
+          {/* Enhanced Quick Recommendations */}
           {recommendations.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Recommended for You</h2>
-                <Button variant="ghost" size="sm">View All</Button>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-brand-400 to-purple-500 rounded-xl blur opacity-60" />
+                    <div className="relative bg-gradient-to-r from-brand-500 to-purple-600 p-2 rounded-lg">
+                      <Sparkles className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Recommended for You</h2>
+                    <p className="text-slate-600 dark:text-slate-400">Continue your AI learning journey</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="lg" className="group hover:bg-brand-50 hover:border-brand-200">
+                  View All
+                  <ExternalLink className="h-4 w-4 ml-2 group-hover:scale-110 transition-transform" />
+                </Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {recommendations.slice(0, 3).map((rec, index) => (
-                  <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
-                    startLesson(rec.trackId, rec.moduleId, rec.lessonId);
-                  }}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-3">
-                        {(() => {
-                          const Icon = getLessonIcon(rec.type);
-                          return <Icon className="h-5 w-5 text-brand-600 mt-1" />;
-                        })()}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium truncate">{rec.lessonTitle}</h3>
-                          <p className="text-sm text-muted-foreground truncate">{rec.trackTitle}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="secondary" className="text-xs">{rec.level}</Badge>
-                            <span className="text-xs text-muted-foreground">{rec.duration}</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {recommendations.slice(0, 3).map((rec, index) => {
+                  const Icon = getLessonIcon(rec.type);
+                  const gradients = [
+                    'from-blue-500/10 to-cyan-500/10 border-blue-200/60 dark:border-blue-500/20',
+                    'from-purple-500/10 to-pink-500/10 border-purple-200/60 dark:border-purple-500/20',
+                    'from-green-500/10 to-emerald-500/10 border-green-200/60 dark:border-green-500/20'
+                  ];
+                  
+                  return (
+                    <Card 
+                      key={index} 
+                      className={`group cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-500 relative overflow-hidden bg-gradient-to-br ${gradients[index % 3]}`}
+                      onClick={() => startLesson(rec.trackId, rec.moduleId, rec.lessonId)}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <CardContent className="pt-6 relative z-10">
+                        <div className="flex items-start gap-4">
+                          <div className="relative">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-brand-400 to-purple-500 rounded-xl blur opacity-0 group-hover:opacity-60 transition-opacity duration-500" />
+                            <div className="relative bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm group-hover:shadow-lg transition-shadow duration-300">
+                              <Icon className="h-6 w-6 text-brand-600 group-hover:scale-110 transition-transform duration-300" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-lg truncate group-hover:text-brand-700 transition-colors">
+                              {rec.lessonTitle}
+                            </h3>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 truncate mb-3">
+                              {rec.trackTitle}
+                            </p>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Badge 
+                                variant="secondary" 
+                                className="text-xs bg-white/60 dark:bg-slate-800/60 group-hover:bg-brand-100 group-hover:text-brand-800 transition-colors"
+                              >
+                                {rec.level}
+                              </Badge>
+                              <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                <Timer className="h-3 w-3" />
+                                {rec.duration}
+                              </span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-gradient-to-r from-brand-500 to-purple-600 hover:from-brand-600 hover:to-purple-700 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startLesson(rec.trackId, rec.moduleId, rec.lessonId);
+                              }}
+                            >
+                              <Play className="h-4 w-4 mr-2" />
+                              Start Lesson
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -615,10 +825,7 @@ export default function Learning() {
                             const lessonStatus = getLessonStatus(selectedTrack.id, module.id, lesson.id);
                             const StatusIcon = getStatusIcon(lessonStatus);
                             const statusColor = getStatusColor(lessonStatus);
-                            const isLocked = lessonStatus === 'not_started' && lessonIndex > 0 && 
-                              module.lessons.slice(0, lessonIndex).some((prevLesson: any) => 
-                                getLessonStatus(selectedTrack.id, module.id, prevLesson.id) !== 'completed'
-                              );
+                            const isLocked = isLessonLocked(selectedTrack.id, module.id, lesson.id, lessonIndex, moduleIndex);
                             
                             return (
                               <div 
@@ -731,9 +938,37 @@ export default function Learning() {
                     </div>
                     <div className="flex items-center space-x-4">
                       <Progress value={progressPercentage} className="w-32" />
-                      <Button className="bg-brand-600 hover:bg-brand-700">
+                      <Button 
+                        className="bg-brand-600 hover:bg-brand-700"
+                        onClick={() => setShowCertificateModal(true)}
+                      >
                         <Award className="mr-2 h-4 w-4" />
                         View Certificate Requirements
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          // Find the next lesson to start
+                          if (selectedTrack?.modules) {
+                            for (const [moduleIndex, module] of selectedTrack.modules.entries()) {
+                              for (const [lessonIndex, lesson] of module.lessons.entries()) {
+                                const lessonStatus = getLessonStatus(selectedTrack.id, module.id, lesson.id);
+                                const isLocked = isLessonLocked(selectedTrack.id, module.id, lesson.id, lessonIndex, moduleIndex);
+                                
+                                if (lessonStatus === 'in_progress' || (lessonStatus === 'not_started' && !isLocked)) {
+                                  startLesson(selectedTrack.id, module.id, lesson.id);
+                                  return;
+                                }
+                              }
+                            }
+                            // If no lesson found, start with the first lesson
+                            if (selectedTrack.modules[0]?.lessons[0]) {
+                              startLesson(selectedTrack.id, selectedTrack.modules[0].id, selectedTrack.modules[0].lessons[0].id);
+                            }
+                          }
+                        }}
+                      >
+                        <Play className="mr-2 h-4 w-4" />
+                        Continue Learning
                       </Button>
                     </div>
                   </div>
@@ -741,6 +976,18 @@ export default function Learning() {
               </Card>
             </>
           )}
+          
+          {/* Certificate Requirements Modal */}
+          <CertificateRequirements 
+            isOpen={showCertificateModal}
+            onClose={() => setShowCertificateModal(false)}
+            trackTitle={selectedTrack?.title || 'AI Learning Track'}
+            userRole={userRole}
+            completedLessons={completedLessons}
+            totalLessons={totalLessons}
+            userProgress={userProgress}
+            selectedTrack={selectedTrack}
+          />
         </main>
       </div>
     </div>
