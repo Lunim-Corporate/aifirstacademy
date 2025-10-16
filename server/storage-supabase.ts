@@ -7,6 +7,7 @@ import crypto from 'crypto';
 // ========================================
 
 export interface User {
+  phone?: string;
   id: string;
   email: string;
   name: string;
@@ -27,6 +28,14 @@ export interface User {
   timezone?: string;
   language?: string;
   avatar?: string;
+  // Social media links
+  twitter?: string;
+  linkedin?: string;
+  github?: string;
+  // Privacy settings
+  profile_visible?: boolean;
+  email_visible?: boolean;
+  activity_visible?: boolean;
 }
 
 export interface Prompt {
