@@ -240,6 +240,31 @@ useEffect(() => {
     initSettings();
   }, []);
   
+  // Refetch data when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !bootLoading) {
+        console.log('Settings page became visible - refetching data');
+        loadSettingsData();
+      }
+    };
+    
+    const handleFocus = () => {
+      if (!bootLoading) {
+        console.log('Settings page focused - refetching data');
+        loadSettingsData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [bootLoading]);
+  
   // Save functions
   const saveProfile = async () => {
     setSaving(prev => ({ ...prev, profile: true }));
