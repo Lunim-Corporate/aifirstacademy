@@ -51,6 +51,8 @@ export const getProfile: RequestHandler = async (req, res) => {
     const profileData = {
       userId: user.id,
       email: user.email,
+      firstName: user.name?.split(' ')[0] || '',
+      lastName: user.name?.split(' ').slice(1).join(' ') || '',
       name: user.name,
       role: user.role,
       isVerified: user.is_verified || false,
@@ -61,21 +63,22 @@ export const getProfile: RequestHandler = async (req, res) => {
       website: user.website || "",
       company: user.company || "",
       jobTitle: user.job_title || "",
+      phone: user.phone || "",
       skills: user.skills || [],
       interests: user.interests || [],
       timezone: user.timezone || "UTC",
       language: user.language || "en",
       avatar: user.avatar || "",
       socialLinks: {
-        twitter: "",
-        linkedin: "",
-        github: "",
-        portfolio: ""
+        twitter: user.twitter || "",
+        linkedin: user.linkedin || "",
+        github: user.github || "",
+        portfolio: user.website || ""
       },
       privacy: {
-        profileVisible: true,
-        emailVisible: false,
-        activityVisible: true
+        profileVisible: user.profile_visible ?? true,
+        emailVisible: user.email_visible ?? false,
+        activityVisible: user.activity_visible ?? true
       },
       createdAt: user.created_at,
       updatedAt: user.updated_at
