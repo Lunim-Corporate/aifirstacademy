@@ -50,7 +50,7 @@ class EmailService {
 
   private loadConfig(): EmailConfig {
     const provider = (process.env.EMAIL_PROVIDER || 'smtp') as EmailProvider;
-    const from = process.env.EMAIL_FROM || 'noreply@aifirstacademy.com';
+    const from = process.env.EMAIL_FROM || 'AI-First Academy <noreply@updates.lunim.io>';
 
     const config: EmailConfig = {
       provider,
@@ -358,6 +358,7 @@ class EmailService {
           <div class="footer">
             <p>This email was sent to ${email}</p>
             <p>AI-First Academy | <a href="https://aifirstacademy.com">Visit our website</a></p>
+            <p style="font-size: 12px; color: #9ca3af; margin-top: 10px;">This email was sent from updates.lunim.io on behalf of AI-First Academy</p>
           </div>
         </div>
       </body>
