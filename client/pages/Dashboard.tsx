@@ -25,7 +25,7 @@ import {
 import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import { useEffect, useState } from "react";
-import { apiMe, apiMeCookie, apiDashboard } from "@/lib/api";
+import { apiMe, apiMeCookie, apiDashboard, apiLearningTracks, apiGetProgress, apiGetSettingsProfile } from "@/lib/api";
 import type { DashboardResponse } from "@shared/api";
 
 const sidebarItems = [
@@ -91,6 +91,8 @@ export default function Dashboard() {
   const [displayName, setDisplayName] = useState<string>("there");
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [learningData, setLearningData] = useState<any>(null);
+  
   useEffect(() => {
     (async () => {
       try {
@@ -100,6 +102,97 @@ export default function Dashboard() {
         const token = localStorage.getItem("auth_token");
         if (token) try { const me = await apiMe(token); setDisplayName(me.user.name?.split(" ")[0] || me.user.email.split("@")[0]); } catch {}
       }
+      
+      // Load real learning data
+      try {
+        // Get user role
+        let userRole = 'engineer'; // Default fallback
+        try {
+          const profileInfo = await apiGetSettingsProfile();
+          if (profileInfo?.profile?.personaRole) {
+            userRole = profileInfo.profile.personaRole;
+          }
+        } catch {
+          // Keep default role
+        }
+        
+        // Load learning tracks and progress
+        const [tracksResponse, progressResponse] = await Promise.all([
+          apiLearningTracks().catch(() => ({ tracks: [] })),
+          apiGetProgress().catch(() => ({ progress: [] }))
+        ]);
+        
+        const allTracks = tracksResponse.tracks || [];
+        const userTracks = allTracks.filter((track: any) => track.role === userRole);
+        const userProgress = progressResponse.progress || [];
+        
+        // Calculate real progress statistics
+        const totalLessons = userTracks.reduce((total: number, track: any) => 
+          total + track.modules.reduce((moduleTotal: number, module: any) => 
+            moduleTotal + (module.lessons?.length || 0), 0), 0);
+        
+        const completedLessons = userProgress.filter((p: any) => p.status === 'completed').length;
+        const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+        
+        // Find current module and next lesson
+        let currentModule = null;
+        let nextLesson = null;
+        
+        for (const track of userTracks) {
+          for (const [moduleIndex, module] of track.modules.entries()) {
+            const moduleProgress = userProgress.filter((p: any) => 
+              p.track_id === track.id && p.module_id === module.id
+            );
+            
+            const moduleCompleted = module.lessons.every((lesson: any) => 
+              moduleProgress.some((p: any) => p.lesson_id === lesson.id && p.status === 'completed')
+            );
+            
+            if (!moduleCompleted) {
+              // Find next lesson in this module
+              for (const [lessonIndex, lesson] of module.lessons.entries()) {
+                const lessonProgress = moduleProgress.find((p: any) => p.lesson_id === lesson.id);
+                if (!lessonProgress || lessonProgress.status !== 'completed') {
+                  currentModule = {
+                    track: track.title,
+                    title: module.title,
+                    description: module.description,
+                    progress: Math.round((moduleProgress.filter(p => p.status === 'completed').length / module.lessons.length) * 100),
+                    lessonIndex: lessonIndex + 1,
+                    lessonsTotal: module.lessons.length,
+                    remainingMin: module.lessons.slice(lessonIndex).reduce((sum: number, l: any) => sum + (l.durationMin || 0), 0)
+                  };
+                  
+                  nextLesson = {
+                    trackId: track.id,
+                    moduleId: module.id,
+                    lessonId: lesson.id
+                  };
+                  break;
+                }
+              }
+              break;
+            }
+          }
+          if (currentModule) break;
+        }
+        
+        // Set learning data
+        setLearningData({
+          overallProgress,
+          completedLessons,
+          totalLessons,
+          currentModule,
+          nextLesson,
+          userTracks,
+          userProgress
+        });
+        
+      } catch (error) {
+        console.warn('Could not load learning data:', error);
+      }
+      
+      // Load dashboard data (keep existing fallbacks)
       try {
         const d = await apiDashboard();
         setData(d);
@@ -283,9 +376,9 @@ export default function Dashboard() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data?.progress?.overall ?? 73}%</div>
-                <p className="text-xs text-muted-foreground">+{data?.progress?.deltaWeek ?? 12}% from last week</p>
-                <Progress value={data?.progress?.overall ?? 73} className="mt-2" />
+                <div className="text-2xl font-bold">{learningData?.overallProgress ?? data?.progress?.overall ?? 0}%</div>
+                <p className="text-xs text-muted-foreground">{learningData?.completedLessons ?? 0} of {learningData?.totalLessons ?? 0} lessons completed</p>
+                <Progress value={learningData?.overallProgress ?? data?.progress?.overall ?? 0} className="mt-2" />
               </CardContent>
             </Card>
 
@@ -295,9 +388,44 @@ export default function Dashboard() {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{data?.modules?.completed ?? 18}</div>
-                <p className="text-xs text-muted-foreground">of {data?.modules?.total ?? 24} total</p>
-                <Progress value={data?.modules?.percent ?? 75} className="mt-2" />
+                <div className="text-2xl font-bold">{(() => {
+                  if (learningData?.userTracks) {
+                    const totalModules = learningData.userTracks.reduce((total: number, track: any) => total + track.modules.length, 0);
+                    const completedModules = learningData.userTracks.reduce((total: number, track: any) => {
+                      return total + track.modules.filter((module: any) => 
+                        module.lessons.every((lesson: any) => 
+                          learningData.userProgress?.some((p: any) => 
+                            p.track_id === track.id && p.module_id === module.id && p.lesson_id === lesson.id && p.status === 'completed'
+                          )
+                        )
+                      ).length;
+                    }, 0);
+                    return completedModules;
+                  }
+                  return data?.modules?.completed ?? 0;
+                })()}</div>
+                <p className="text-xs text-muted-foreground">of {(() => {
+                  if (learningData?.userTracks) {
+                    return learningData.userTracks.reduce((total: number, track: any) => total + track.modules.length, 0);
+                  }
+                  return data?.modules?.total ?? 0;
+                })()} total</p>
+                <Progress value={(() => {
+                  if (learningData?.userTracks) {
+                    const totalModules = learningData.userTracks.reduce((total: number, track: any) => total + track.modules.length, 0);
+                    const completedModules = learningData.userTracks.reduce((total: number, track: any) => {
+                      return total + track.modules.filter((module: any) => 
+                        module.lessons.every((lesson: any) => 
+                          learningData.userProgress?.some((p: any) => 
+                            p.track_id === track.id && p.module_id === module.id && p.lesson_id === lesson.id && p.status === 'completed'
+                          )
+                        )
+                      ).length;
+                    }, 0);
+                    return totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+                  }
+                  return data?.modules?.percent ?? 0;
+                })()} className="mt-2" />
               </CardContent>
             </Card>
 
@@ -329,7 +457,7 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     Current Module
-                    <Badge variant="outline">{data?.currentModule?.track ?? "Engineering Track"}</Badge>
+                    <Badge variant="outline">{learningData?.currentModule?.track ?? data?.currentModule?.track ?? "Engineering Track"}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -338,17 +466,26 @@ export default function Dashboard() {
                       <Code className="h-8 w-8 text-brand-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">{data?.currentModule?.title ?? "Advanced Prompt Engineering"}</h3>
-                      <p className="text-sm text-muted-foreground">Learn complex prompting patterns and techniques</p>
-                      <Progress value={data?.currentModule?.progress ?? 65} className="mt-2" />
-                      <p className="text-xs text-muted-foreground mt-1">Lesson {data?.currentModule?.lessonIndex ?? 3} of {data?.currentModule?.lessonsTotal ?? 6} • {data?.currentModule?.remainingMin ?? 25} min remaining</p>
+                      <h3 className="font-semibold">{learningData?.currentModule?.title ?? data?.currentModule?.title ?? "Advanced Prompt Engineering"}</h3>
+                      <p className="text-sm text-muted-foreground">{learningData?.currentModule?.description ?? "Learn complex prompting patterns and techniques"}</p>
+                      <Progress value={learningData?.currentModule?.progress ?? data?.currentModule?.progress ?? 65} className="mt-2" />
+                      <p className="text-xs text-muted-foreground mt-1">Lesson {learningData?.currentModule?.lessonIndex ?? data?.currentModule?.lessonIndex ?? 3} of {learningData?.currentModule?.lessonsTotal ?? data?.currentModule?.lessonsTotal ?? 6} • {learningData?.currentModule?.remainingMin ?? data?.currentModule?.remainingMin ?? 25} min remaining</p>
                     </div>
                   </div>
-                  <Button asChild className="w-full">
-                    <Link to="/learning">
-                      <Play className="mr-2 h-4 w-4" />
-                      Continue Learning
-                    </Link>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      if (learningData?.nextLesson) {
+                        // Navigate directly to the next lesson
+                        window.location.href = `/learning/${learningData.nextLesson.trackId}/${learningData.nextLesson.moduleId}/${learningData.nextLesson.lessonId}`;
+                      } else {
+                        // Fallback to learning page
+                        window.location.href = '/learning';
+                      }
+                    }}
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    Continue Learning
                   </Button>
                 </CardContent>
               </Card>
