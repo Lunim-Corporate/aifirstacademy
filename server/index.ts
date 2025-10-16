@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 import { handleDemo } from "./routes/demo";
 import authRouter from "./routes/auth";
 import authEnhancedRouter from "./routes/auth-enhanced";
@@ -17,6 +18,7 @@ import dashboardRouter from "./routes/dashboard";
 import certificatesRouter, { verifyCertificate as verifyCertificateHandler, issueCertificate as issueCertificateHandler } from "./routes/certificates";
 import settingsRouter from "./routes/settings-supabase";
 import adminRouter from "./routes/admin";
+import analyticsRouter from "./routes/analytics";
 import { checkSupabaseConnection } from "./supabase";
 import { cleanupExpiredSessions } from "./middleware/auth-enhanced";
 
@@ -90,6 +92,7 @@ export function createServer() {
   
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(cookieParser()); // Add cookie parser for handling cookies
   
   // Request logging middleware
   app.use((req, res, next) => {
@@ -170,6 +173,7 @@ export function createServer() {
   app.use("/api/certificates", (certificatesRouter as any));
   app.use("/api/settings", (settingsRouter as any));
   app.use("/api/admin", adminRouter);
+  app.use("/api/analytics", analyticsRouter);
 
   // Aliases
   app.post("/api/generate-certificate", issueCertificateHandler);
