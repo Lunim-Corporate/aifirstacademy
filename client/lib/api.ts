@@ -43,6 +43,80 @@ import type {
   NewsletterResponse,
 } from "@shared/api";
 
+// Certificate types
+interface CertificateRequirements {
+  completion: {
+    progress: number;
+    total: number;
+    percentage: number;
+    weight: number;
+    description: string;
+  };
+  assessment: {
+    progress: number;
+    total: number;
+    percentage: number;
+    weight: number;
+    description: string;
+  };
+  projects: {
+    progress: number;
+    total: number;
+    percentage: number;
+    weight: number;
+    description: string;
+  };
+  timeCommitment: {
+    progress: number;
+    total: number;
+    percentage: number;
+    weight: number;
+    description: string;
+  };
+  engagement: {
+    progress: number;
+    total: number;
+    percentage: number;
+    weight: number;
+    description: string;
+  };
+}
+
+interface CertificateRequirementsResponse {
+  track: any;
+  requirements: CertificateRequirements;
+  overallProgress: number;
+  isEligible: boolean;
+  completedRequirements: number;
+}
+
+interface Certificate {
+  id: string;
+  certificateId: string;
+  userId: string;
+  trackId: string;
+  trackTitle: string;
+  userRole: string;
+  completionDate: string;
+  verificationHash: string;
+  isVerified: boolean;
+  metadata: {
+    completedLessons: number;
+    totalLessons: number;
+    completionPercentage: number;
+    generatedAt: string;
+  };
+}
+
+interface GenerateCertificateResponse {
+  certificate: Certificate;
+  message: string;
+}
+
+interface UserCertificatesResponse {
+  certificates: Certificate[];
+}
+
 const headers = { "Content-Type": "application/json" };
 
 // Helper function to clear all auth state
@@ -350,6 +424,25 @@ export async function apiDeleteChallenge(id: string): Promise<{ success: boolean
   return res.json();
 }
 
+// Analytics API functions
+export async function apiGetUserAnalytics(period: string = '30d'): Promise<any> {
+  const res = await fetch(`/api/analytics/user?period=${period}`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Analytics fetch failed");
+  return res.json();
+}
+
+export async function apiGetAdminAnalytics(period: string = '30d'): Promise<any> {
+  const res = await fetch(`/api/analytics/admin?period=${period}`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Analytics fetch failed");
+  return res.json();
+}
+
+export async function apiGetTeamAnalytics(teamId: string, period: string = '30d'): Promise<any> {
+  const res = await fetch(`/api/analytics/team/${teamId}?period=${period}`, { headers: { ...authHeaders() } });
+  if (!res.ok) throw new Error((await res.json()).error || "Analytics fetch failed");
+  return res.json();
+}
+
 // Search
 export async function apiSearch(q: string): Promise<SearchResponse> {
   const usp = new URLSearchParams({ q });
@@ -523,10 +616,57 @@ export async function apiGetLesson(trackId: string, moduleId: string, lessonId: 
   return fetchJsonOnce<LessonContent>(`/api/learning/tracks/${trackId}/modules/${moduleId}/lessons/${lessonId}`, { headers: { ...authHeaders() } });
 }
 export async function apiSetLessonProgress(body: Omit<UserLessonProgress, "userId"|"updatedAt"|"startedAt"|"completedAt"> & { status: UserLessonProgress["status"] }): Promise<ProgressResponse> {
-  return fetchJsonOnce<ProgressResponse>(`/api/learning/progress`, { method: "POST", headers: { ...headers, ...authHeaders() }, body: JSON.stringify(body) });
+  return fetchJsonOnce<ProgressResponse>(`/api/learning/progress`, { 
+    method: "POST", 
+    headers: { ...headers, ...authHeaders() }, 
+    body: JSON.stringify(body),
+    credentials: "include"
+  });
 }
 export async function apiGetProgress(trackId?: string): Promise<ProgressResponse> {
   const usp = new URLSearchParams(trackId ? { trackId } : {} as any);
-  return fetchJsonOnce<ProgressResponse>(`/api/learning/progress${usp.toString()?`?${usp}`:""}`, { headers: { ...authHeaders() } });
+  return fetchJsonOnce<ProgressResponse>(`/api/learning/progress${usp.toString()?`?${usp}`:""}`, { 
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
+}
+
+// Enhanced Certificate API Functions
+export async function apiGetCertificateRequirements(trackId: string): Promise<CertificateRequirementsResponse> {
+  return fetchJsonOnce<CertificateRequirementsResponse>(`/api/certificates/requirements/${trackId}`, {
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
+}
+
+export async function apiGenerateCertificateNew(trackId: string): Promise<GenerateCertificateResponse> {
+  return fetchJsonOnce<GenerateCertificateResponse>(`/api/certificates/generate`, {
+    method: "POST",
+    headers: { ...headers, ...authHeaders() },
+    body: JSON.stringify({ trackId }),
+    credentials: "include"
+  });
+}
+
+export async function apiGetUserCertificates(): Promise<UserCertificatesResponse> {
+  return fetchJsonOnce<UserCertificatesResponse>(`/api/certificates/user`, {
+    headers: { ...authHeaders() },
+    credentials: "include"
+  });
+}
+
+export async function apiVerifyCertificateNew(certificateId: string): Promise<{
+  valid: boolean;
+  certificate?: Certificate;
+  verificationInfo?: {
+    certificateId: string;
+    trackTitle: string;
+    completionDate: string;
+    verificationStatus: 'VERIFIED' | 'INVALID';
+  };
+  verifyUrl?: string;
+  error?: string;
+}> {
+  return fetchJsonOnce(`/api/certificates/verify/${encodeURIComponent(certificateId)}`);
 }
 
