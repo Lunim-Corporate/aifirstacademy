@@ -40,7 +40,9 @@ import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import { useState, useEffect } from "react";
 import { apiSandboxRun } from "@/lib/api";
+import { sandboxApi } from "@/lib/sandboxApi";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -139,6 +141,14 @@ export default function Sandbox() {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof promptTemplates[0] | null>(null);
   const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
+  
+  // Enhanced multi-model states
+  const [availableModels, setAvailableModels] = useState<any[]>([]);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedModels, setSelectedModels] = useState<string[]>(["gpt-4"]);
+  const [comparisonResults, setComparisonResults] = useState<any[]>([]);
+  const [totalCost, setTotalCost] = useState(0);
+  const [promptOptimizationScore, setPromptOptimizationScore] = useState(0);
 
   // Load prompt from community if available
   useEffect(() => {
@@ -154,6 +164,25 @@ export default function Sandbox() {
     }
   }, []);
 
+  // Load available AI models
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const { models } = await sandboxApi.getModels();
+        setAvailableModels(models);
+        if (models.length > 0 && !selectedModels.includes(models[0].id)) {
+          setSelectedModels([models[0].id]);
+          setSelectedModel(models[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to load models:', error);
+        // Fallback to default models
+        setAvailableModels(modelOptions);
+      }
+    };
+    loadModels();
+  }, []);
+
   const handleRunPrompt = async () => {
     if (!userPrompt.trim()) {
       alert("Please enter a prompt before running");
@@ -162,26 +191,44 @@ export default function Sandbox() {
 
     setIsLoading(true);
     try {
-      const res = await apiSandboxRun({ prompt: userPrompt, temperature, maxTokens, system: systemMessage });
-      const newExecution: PromptExecution = {
-        id: res.id,
-        timestamp: new Date(res.timings.end),
-        model: selectedModel,
-        prompt: res.prompt,
-        response: res.content,
-        tokens: res.tokens.total,
-        cost: res.cost,
-        score: res.feedback.score,
-        feedback: {
-          clarity: res.feedback.clarity,
-          context: res.feedback.specificity ?? 80,
-          constraints: res.feedback.constraints,
-          effectiveness: Math.round((res.feedback.clarity + res.feedback.constraints) / 2),
-          suggestions: [res.feedback.notes],
-        },
-      };
-      setCurrentExecution(newExecution);
-      setExecutions((prev) => [newExecution, ...prev]);
+      if (compareMode && selectedModels.length > 1) {
+        // Multi-model comparison
+        const comparisonResult = await sandboxApi.comparePrompt({ 
+          prompt: userPrompt.trim(),
+          models: selectedModels 
+        });
+        
+        setComparisonResults(comparisonResult.responses);
+        setTotalCost(comparisonResult.comparison.totalCost);
+        
+        // Calculate prompt optimization score based on responses
+        const avgScore = comparisonResult.responses.reduce((sum, r) => sum + (r.score || 75), 0) / comparisonResult.responses.length;
+        setPromptOptimizationScore(Math.round(avgScore));
+        
+      } else {
+        // Single model execution (existing logic)
+        const res = await apiSandboxRun({ prompt: userPrompt, temperature, maxTokens, system: systemMessage });
+        const newExecution: PromptExecution = {
+          id: res.id,
+          timestamp: new Date(res.timings.end),
+          model: selectedModel,
+          prompt: res.prompt,
+          response: res.content,
+          tokens: res.tokens.total,
+          cost: res.cost,
+          score: res.feedback.score,
+          feedback: {
+            clarity: res.feedback.clarity,
+            context: res.feedback.specificity ?? 80,
+            constraints: res.feedback.constraints,
+            effectiveness: Math.round((res.feedback.clarity + res.feedback.constraints) / 2),
+            suggestions: [res.feedback.notes],
+          },
+        };
+        setCurrentExecution(newExecution);
+        setExecutions((prev) => [newExecution, ...prev]);
+        setTotalCost(res.cost || 0);
+      }
     } catch (err: any) {
       alert(err.message || "Run failed");
     } finally {
@@ -435,6 +482,86 @@ export default function Sandbox() {
                         className="min-h-[100px]"
                       />
                     </div>
+                    
+                    {/* Multi-model Comparison Toggle */}
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">Multi-Model Comparison</div>
+                        <div className="text-sm text-muted-foreground">
+                          Compare responses across different AI models
+                        </div>
+                      </div>
+                      <Button
+                        variant={compareMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCompareMode(!compareMode)}
+                      >
+                        {compareMode ? "Enabled" : "Enable"}
+                      </Button>
+                    </div>
+                    
+                    {/* Model Selection for Comparison */}
+                    {compareMode && (
+                      <div className="space-y-3">
+                        <Label>Select Models to Compare</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {availableModels.map((model) => (
+                            <div key={model.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`model-${model.id}`}
+                                checked={selectedModels.includes(model.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedModels(prev => [...prev, model.id]);
+                                  } else {
+                                    setSelectedModels(prev => prev.filter(id => id !== model.id));
+                                  }
+                                }}
+                                className="rounded border-border"
+                              />
+                              <label htmlFor={`model-${model.id}`} className="text-sm cursor-pointer">
+                                {model.name}
+                                <div className="text-xs text-muted-foreground">
+                                  {model.cost || `$${model.costPer1kTokens?.input || 0}/1K tokens`}
+                                </div>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Cost Estimation */}
+                        {selectedModels.length > 1 && (
+                          <div className="p-3 bg-muted/50 rounded-lg">
+                            <div className="text-sm">
+                              <span className="font-medium">Estimated Cost:</span>
+                              <span className="ml-2 text-brand-600">
+                                ${(selectedModels.length * 0.015).toFixed(4)} for ~1K tokens
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {selectedModels.length} models selected • Varies by actual usage
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Prompt Optimization Score */}
+                    {promptOptimizationScore > 0 && (
+                      <div className="space-y-2">
+                        <Label>Prompt Quality Score</Label>
+                        <div className="flex items-center space-x-3">
+                          <Progress value={promptOptimizationScore} className="flex-1" />
+                          <Badge variant={promptOptimizationScore >= 80 ? "default" : "outline"}>
+                            {promptOptimizationScore}/100
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Based on clarity, specificity, and expected effectiveness
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -493,146 +620,207 @@ export default function Sandbox() {
 
           {/* Results Panel */}
           <div className="w-1/2 border-l border-border/40 flex flex-col">
-            {currentExecution ? (
-              <Tabs defaultValue="response" className="flex-1 flex flex-col">
+            {(currentExecution || comparisonResults.length > 0) ? (
+              <div className="flex-1 flex flex-col">
+                {/* Header with stats */}
                 <div className="border-b border-border/40 p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="font-semibold">Results</h2>
+                    <h2 className="font-semibold">
+                      {comparisonResults.length > 1 ? "Model Comparison" : "Results"}
+                    </h2>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {currentExecution.tokens} tokens
-                      </Badge>
-                      <Badge variant="outline">
-                        <DollarSign className="h-3 w-3 mr-1" />
-                        ${currentExecution.cost.toFixed(4)}
-                      </Badge>
-                      <Badge className={`${
-                        currentExecution.score >= 80 ? "bg-success" :
-                        currentExecution.score >= 60 ? "bg-warning" :
-                        "bg-destructive"
-                      } text-white`}>
-                        <Star className="h-3 w-3 mr-1" />
-                        {currentExecution.score}/100
-                      </Badge>
+                      {comparisonResults.length > 1 ? (
+                        <>
+                          <Badge variant="outline">
+                            <Target className="h-3 w-3 mr-1" />
+                            {comparisonResults.length} models
+                          </Badge>
+                          <Badge variant="outline">
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            ${totalCost.toFixed(4)}
+                          </Badge>
+                          {promptOptimizationScore > 0 && (
+                            <Badge className={`${
+                              promptOptimizationScore >= 80 ? "bg-success" :
+                              promptOptimizationScore >= 60 ? "bg-warning" :
+                              "bg-destructive"
+                            } text-white`}>
+                              <Star className="h-3 w-3 mr-1" />
+                              {promptOptimizationScore}/100
+                            </Badge>
+                          )}
+                        </>
+                      ) : currentExecution ? (
+                        <>
+                          <Badge variant="outline">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {currentExecution.tokens} tokens
+                          </Badge>
+                          <Badge variant="outline">
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            ${currentExecution.cost.toFixed(4)}
+                          </Badge>
+                          <Badge className={`${
+                            currentExecution.score >= 80 ? "bg-success" :
+                            currentExecution.score >= 60 ? "bg-warning" :
+                            "bg-destructive"
+                          } text-white`}>
+                            <Star className="h-3 w-3 mr-1" />
+                            {currentExecution.score}/100
+                          </Badge>
+                        </>
+                      ) : null}
                     </div>
                   </div>
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="response">Response</TabsTrigger>
-                    <TabsTrigger value="feedback">Feedback</TabsTrigger>
-                    <TabsTrigger value="trace">Trace</TabsTrigger>
-                  </TabsList>
                 </div>
 
-                <TabsContent value="response" className="flex-1 p-4">
-                  <ScrollArea className="h-full">
-                    <div className="space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">AI Response</CardTitle>
-                            <Badge variant="secondary">{currentExecution.model}</Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <pre className="whitespace-pre-wrap text-sm">{currentExecution.response}</pre>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-
-                <TabsContent value="feedback" className="flex-1 p-4">
-                  <ScrollArea className="h-full">
-                    <div className="space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base">Prompt Effectiveness Score</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {Object.entries(currentExecution.feedback).filter(([key]) => key !== "suggestions").map(([key, value]) => {
-                            const numValue = typeof value === 'number' ? value : 0;
-                            return (
-                              <div key={key} className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium capitalize">{key}</span>
-                                  <span className="text-sm">{numValue}/100</span>
-                                </div>
-                                <div className="w-full bg-muted rounded-full h-2">
-                                  <div
-                                    className={`h-2 rounded-full ${
-                                      numValue >= 80 ? "bg-success" :
-                                      numValue >= 60 ? "bg-warning" :
-                                      "bg-destructive"
-                                    }`}
-                                    style={{ width: `${numValue}%` }}
-                                  />
+                {/* Results Content */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-4">
+                    {comparisonResults.length > 1 ? (
+                      // Multi-model comparison view
+                      <>
+                        {comparisonResults.map((result, index) => (
+                          <Card key={result.id || index} className="border-l-4 border-l-brand-500">
+                            <CardHeader>
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-base flex items-center">
+                                  <Badge variant="secondary" className="mr-2">
+                                    {result.model}
+                                  </Badge>
+                                  {result.error ? (
+                                    <Badge variant="destructive">Error</Badge>
+                                  ) : (
+                                    <Badge variant="outline">
+                                      {result.responseTime}ms
+                                    </Badge>
+                                  )}
+                                </CardTitle>
+                                <div className="flex items-center space-x-2">
+                                  {result.tokens && (
+                                    <Badge variant="outline" size="sm">
+                                      {result.tokens} tokens
+                                    </Badge>
+                                  )}
+                                  {result.cost && (
+                                    <Badge variant="outline" size="sm">
+                                      ${result.cost.toFixed(4)}
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
-                            );
-                          })}
-                        </CardContent>
-                      </Card>
+                            </CardHeader>
+                            <CardContent>
+                              {result.error ? (
+                                <div className="text-destructive text-sm">
+                                  <AlertTriangle className="h-4 w-4 inline mr-2" />
+                                  {result.error}
+                                </div>
+                              ) : (
+                                <pre className="whitespace-pre-wrap text-sm max-h-64 overflow-y-auto">
+                                  {result.content}
+                                </pre>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                        
+                        {/* Comparison Summary */}
+                        <Card className="bg-muted/30">
+                          <CardHeader>
+                            <CardTitle className="text-base">Comparison Summary</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium">Best Response Time:</span>
+                                <div className="text-brand-600">
+                                  {Math.min(...comparisonResults.map(r => r.responseTime || 0))}ms
+                                </div>
+                              </div>
+                              <div>
+                                <span className="font-medium">Total Cost:</span>
+                                <div className="text-brand-600">${totalCost.toFixed(4)}</div>
+                              </div>
+                              <div>
+                                <span className="font-medium">Success Rate:</span>
+                                <div className="text-brand-600">
+                                  {Math.round((comparisonResults.filter(r => !r.error).length / comparisonResults.length) * 100)}%
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </>
+                    ) : currentExecution ? (
+                      // Single model view
+                      <>
+                        <Card>
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-base">AI Response</CardTitle>
+                              <Badge variant="secondary">{currentExecution.model}</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <pre className="whitespace-pre-wrap text-sm">{currentExecution.response}</pre>
+                          </CardContent>
+                        </Card>
 
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base flex items-center">
-                            <Lightbulb className="h-4 w-4 mr-2" />
-                            Suggestions
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <ul className="space-y-2">
-                            {currentExecution.feedback.suggestions.map((suggestion, index) => (
-                              <li key={index} className="flex items-start space-x-2">
-                                <CheckCircle className="h-4 w-4 text-brand-600 mt-0.5 flex-shrink-0" />
-                                <span className="text-sm">{suggestion}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base">Prompt Effectiveness</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            {Object.entries(currentExecution.feedback).filter(([key]) => key !== "suggestions").map(([key, value]) => {
+                              const numValue = typeof value === 'number' ? value : 0;
+                              return (
+                                <div key={key} className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium capitalize">{key}</span>
+                                    <span className="text-sm">{numValue}/100</span>
+                                  </div>
+                                  <div className="w-full bg-muted rounded-full h-2">
+                                    <div
+                                      className={`h-2 rounded-full ${
+                                        numValue >= 80 ? "bg-success" :
+                                        numValue >= 60 ? "bg-warning" :
+                                        "bg-destructive"
+                                      }`}
+                                      style={{ width: `${numValue}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </CardContent>
+                        </Card>
 
-                <TabsContent value="trace" className="flex-1 p-4">
-                  <ScrollArea className="h-full">
-                    <div className="space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base">Execution Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="font-medium">Model:</span> {currentExecution.model}
-                            </div>
-                            <div>
-                              <span className="font-medium">Timestamp:</span> {currentExecution.timestamp.toLocaleTimeString()}
-                            </div>
-                            <div>
-                              <span className="font-medium">Tokens Used:</span> {currentExecution.tokens}
-                            </div>
-                            <div>
-                              <span className="font-medium">Cost:</span> ${currentExecution.cost.toFixed(4)}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base">Original Prompt</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <pre className="whitespace-pre-wrap text-sm bg-muted p-3 rounded-md">{currentExecution.prompt}</pre>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-              </Tabs>
+                        {currentExecution.feedback.suggestions.length > 0 && (
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-base flex items-center">
+                                <Lightbulb className="h-4 w-4 mr-2" />
+                                Improvement Suggestions
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <ul className="space-y-2">
+                                {currentExecution.feedback.suggestions.map((suggestion, index) => (
+                                  <li key={index} className="flex items-start space-x-2">
+                                    <CheckCircle className="h-4 w-4 text-brand-600 mt-0.5 flex-shrink-0" />
+                                    <span className="text-sm">{suggestion}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </>
+                    ) : null}
+                  </div>
+                </ScrollArea>
+              </div>
             ) : (
               <div className="flex-1 flex items-center justify-center text-center p-8">
                 <div className="space-y-4">
