@@ -11,9 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { copyText } from "@/lib/utils";
-import { Check, Play, BookOpen, Video, FileText, Code, ChevronLeft, ChevronRight, Search, PlusCircle, Trash2, Award } from "lucide-react";
+import { Check, Play, BookOpen, Video, FileText, Code, ChevronLeft, ChevronRight, Search, PlusCircle, Trash2, Award, Target, HelpCircle } from "lucide-react";
 import type { Track, TrackModule, TrackModuleLesson, LessonContent, LessonType } from "@shared/api";
-import { apiGetTrack, apiGetLesson, apiSetLessonProgress } from "@/lib/api";
+import { apiGetTrack, apiGetLesson, apiSetLessonProgress, apiGetProgress, apiMe, apiMeCookie } from "@/lib/api";
 
 function isPreviewHost() {
   return false; // Preview mode disabled
@@ -60,12 +60,21 @@ function mockCourse(trackId: string, moduleId: string, lessonId: string): { trac
   return { track, lesson };
 }
 
-function formatProgress(track: Track | null, current: { moduleId: string; lessonId: string }) {
+function formatProgress(track: Track | null, current: { moduleId: string; lessonId: string }, userProgress: any[] = []) {
   const modules = track?.modules || [];
   const allLessons = modules.flatMap((m) => m.lessons.map((l) => ({ m: m.id, l: l.id })));
   const idx = allLessons.findIndex((x) => x.m === current.moduleId && x.l === current.lessonId);
-  const percent = allLessons.length ? Math.round(((idx + 1) / allLessons.length) * 100) : 0;
-  return { total: allLessons.length, index: idx + 1, percent };
+  
+  // Count only completed lessons for progress percentage
+  const completedCount = userProgress.filter((p: any) => p.status === 'completed').length;
+  const percent = allLessons.length ? Math.round((completedCount / allLessons.length) * 100) : 0;
+  
+  return { 
+    total: allLessons.length, 
+    index: idx + 1, 
+    percent,
+    completed: completedCount
+  };
 }
 
 function highlight(text: string, q: string) {
@@ -81,6 +90,7 @@ export default function Lesson() {
   const [lesson, setLesson] = useState<LessonContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
 
   const [transcriptQuery, setTranscriptQuery] = useState("");
   const noteInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -107,6 +117,20 @@ export default function Lesson() {
         if (!mounted) return;
         if (l && (l as any).lesson) setLesson(l);
       } catch { setLesson(null); }
+      
+      // Load user progress for accurate progress bar
+      try {
+        const progressData = await apiGetProgress();
+        if (mounted) {
+          setUserProgress(progressData.progress || []);
+        }
+      } catch (error) {
+        console.warn('Could not load user progress:', error);
+        if (mounted) {
+          setUserProgress([]);
+        }
+      }
+      
       finally {
         if (mounted) setLoading(false);
       }
@@ -141,7 +165,7 @@ export default function Lesson() {
   }, [trackId, moduleId, lessonId]);
 
   const moduleList: TrackModule[] = useMemo(() => track?.modules || [], [track]);
-  const progress = useMemo(() => formatProgress(track, { moduleId, lessonId }), [track, moduleId, lessonId]);
+  const progress = useMemo(() => formatProgress(track, { moduleId, lessonId }, userProgress), [track, moduleId, lessonId, userProgress]);
 
   const goPrev = () => { if (lesson?.prev) navigate(`/learning/${lesson.prev.trackId}/${lesson.prev.moduleId}/${lesson.prev.lessonId}`); };
   const goNext = () => { if (lesson?.next) navigate(`/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}`); };
@@ -149,12 +173,94 @@ export default function Lesson() {
   const markComplete = async () => {
     if (!lesson) return;
     setSaving(true);
+    
     try {
-      await apiSetLessonProgress({ trackId, moduleId, lessonId, status: "completed" });
-      if (lesson.next) navigate(`/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}`);
+      console.log('Marking lesson complete:', { trackId, moduleId, lessonId });
+      
+      // Verify authentication before making the request
+      let userInfo;
+      try {
+        userInfo = await apiMe();
+        console.log('User authenticated for completion:', userInfo.id);
+      } catch {
+        try {
+          userInfo = await apiMeCookie();
+          console.log('User authenticated via cookie for completion:', userInfo.id);
+        } catch (authError) {
+          console.error('Authentication failed during completion:', authError);
+          alert('Your session has expired. Please log in again to save your progress.');
+          localStorage.removeItem('auth_token');
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
+      // Mark lesson as completed
+      console.log('Setting lesson progress to completed...');
+      const result = await apiSetLessonProgress({ trackId, moduleId, lessonId, status: "completed" });
+      console.log('Lesson marked complete successfully:', result);
+      
+      // Update local progress state to reflect completion immediately
+      if (result.progress) {
+        setUserProgress(result.progress);
+      }
+      
+      // Show success message
+      const successMessage = current?.title ? 
+        `Congratulations! You've completed "${current.title}".` :
+        'Lesson completed successfully!';
+      
+      // Optional: Show a brief success indicator
+      const markBtn = document.querySelector('[aria-label="Mark lesson complete"]') as HTMLButtonElement;
+      if (markBtn) {
+        const originalContent = markBtn.innerHTML;
+        markBtn.innerHTML = '<svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Completed!';
+        setTimeout(() => {
+          markBtn.innerHTML = originalContent;
+        }, 2000);
+      }
+      
+      // Navigate to next lesson if available, otherwise stay on current page
+      if (lesson.next) {
+        // Small delay to let user see the success state
+        setTimeout(() => {
+          navigate(`/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}`);
+        }, 1500);
+      } else {
+        // No next lesson - show completion message and option to return to learning path
+        setTimeout(() => {
+          const continueToOverview = confirm(
+            successMessage + ' This was the last lesson in the sequence. Would you like to return to the learning path overview?'
+          );
+          if (continueToOverview) {
+            navigate('/learning');
+          }
+        }, 2000);
+      }
+      
     } catch (e: any) {
-      alert(e?.message || "Failed to update progress");
-    } finally { setSaving(false); }
+      console.error('Failed to mark lesson complete:', e);
+      console.error('Error details:', { message: e?.message, status: e?.status, stack: e?.stack });
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to save your progress.';
+      
+      if (e?.message?.includes('Unauthorized')) {
+        errorMessage = 'Your session has expired. Please log in again to save your progress.';
+        localStorage.removeItem('auth_token');
+        alert(errorMessage);
+        window.location.href = '/login';
+        return;
+      } else if (e?.message?.includes('Network') || e?.message?.includes('Failed to fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (e?.message) {
+        errorMessage = `Error: ${e.message}`;
+      }
+      
+      alert(errorMessage);
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   const addNote = (text: string) => {
@@ -168,50 +274,255 @@ export default function Lesson() {
   const current = lesson?.lesson;
 
   const renderContent = () => {
-    if (!current) return <div className="text-sm text-muted-foreground">Lesson not found.</div>;
+    if (!current) return (
+      <div className="text-center py-12">
+        <div className="text-muted-foreground mb-4">⚠️ Lesson content not available</div>
+        <p className="text-sm text-muted-foreground">This lesson may be loading or there might be an issue with the content.</p>
+        <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">
+          Refresh Page
+        </Button>
+      </div>
+    );
+
+    // Enhanced video lessons with proper content support
     if (current.type === "video") {
       const isMp4 = (current.videoUrl || "").endsWith(".mp4");
-      const [speed, setSpeed] = [undefined, undefined] as any; // placeholder to satisfy lints when using iframe-only
+      const hasRealVideo = current.videoUrl && !current.videoUrl.includes('dQw4w9WgXcQ'); // Detect placeholder
+      
       return (
-        <div className="space-y-4">
-          <div className="aspect-video rounded-md overflow-hidden border border-gray-200 dark:border-gray-700/50">
-            {isMp4 ? (
-              <video className="w-full h-full" controls controlsList="nodownload" src={current.videoUrl} onRateChange={(e)=>{}}>
-                Sorry, your browser doesn't support embedded videos.
-              </video>
+        <div className="space-y-6">
+          <div className="aspect-video rounded-md overflow-hidden border border-gray-200 dark:border-gray-700/50 bg-muted/30">
+            {hasRealVideo ? (
+              isMp4 ? (
+                <video className="w-full h-full" controls controlsList="nodownload" src={current.videoUrl} onRateChange={(e)=>{}}>
+                  Sorry, your browser doesn't support embedded videos.
+                </video>
+              ) : (
+                <iframe className="w-full h-full" src={current.videoUrl || ""} title={current.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+              )
             ) : (
-              <iframe className="w-full h-full" src={current.videoUrl || ""} title={current.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
+                <div className="text-center space-y-4">
+                  <Video className="h-16 w-16 mx-auto text-muted-foreground" />
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Video content coming soon</p>
+                    <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2">
+                      Duration: {current.durationMin || 'TBD'} minutes
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">Use the Transcript and Notes panels to the right. Press / to search transcript, N to focus notes.</p>
-        </div>
-      );
-    }
-    if (current.type === "text") {
-      return (
-        <div className="prose prose-sm max-w-none whitespace-pre-wrap" aria-label="Reading content">{current.content || ""}</div>
-      );
-    }
-    if (current.type === "sandbox") {
-      return (
-        <div className="space-y-3">
-          <Card className="border-gray-200 dark:border-gray-700/50">
-            <CardHeader>
-              <CardTitle>Practice Prompt</CardTitle>
-              <CardDescription>Copy to Sandbox and try it out</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <pre className="bg-muted rounded-md p-3 text-xs overflow-auto whitespace-pre-wrap" aria-label="Sandbox prompt">{current.content || ""}</pre>
-              <div className="flex gap-2 justify-end mt-3">
-                <Button variant="outline" size="sm" onClick={async()=>{ const ok = await copyText(current.content || ""); if(!ok) alert("Failed to copy"); }} aria-label="Copy to clipboard">Copy</Button>
-                <Button size="sm" onClick={()=>{ sessionStorage.setItem("sandboxPrompt", current.content || ""); navigate("/sandbox"); }} aria-label="Open in Sandbox">Open in Sandbox</Button>
+          
+          {/* Enhanced lesson content for video lessons */}
+          {current.content && (
+            <div className="space-y-4">
+              <div className="border-l-4 border-brand-500 pl-4">
+                <h3 className="font-semibold mb-2">Lesson Overview</h3>
+                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: current.content.replace(/\n/g, '<br>') }} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          )}
+          
+          <p className="text-sm text-muted-foreground border-t pt-4">
+            💡 <strong>Pro tip:</strong> Use the Transcript and Notes panels to the right. Press <kbd className="bg-muted px-1 rounded text-xs">/</kbd> to search transcript, <kbd className="bg-muted px-1 rounded text-xs">N</kbd> to focus notes.
+          </p>
         </div>
       );
     }
-    return <div className="text-sm text-muted-foreground">Interactive quiz coming soon.</div>;
+
+    // Enhanced text lessons with better formatting
+    if (current.type === "text" || current.type === "reading") {
+      return (
+        <div className="space-y-6">
+          {current.content ? (
+            <div className="prose prose-gray dark:prose-invert max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: 
+                current.content
+                  .split('\n')
+                  .map(line => {
+                    // Convert markdown-like headings
+                    if (line.startsWith('### ')) {
+                      return `<h3 class="text-xl font-semibold mt-8 mb-4">${line.slice(4)}</h3>`;
+                    }
+                    if (line.startsWith('## ')) {
+                      return `<h2 class="text-2xl font-semibold mt-10 mb-6">${line.slice(3)}</h2>`;
+                    }
+                    if (line.startsWith('# ')) {
+                      return `<h1 class="text-3xl font-bold mt-12 mb-8">${line.slice(2)}</h1>`;
+                    }
+                    // Convert code blocks
+                    if (line.startsWith('```')) {
+                      return line; // Let the full content parser handle code blocks
+                    }
+                    // Convert bullet points
+                    if (line.trim().startsWith('- ')) {
+                      return `<li class="mb-2">${line.trim().slice(2)}</li>`;
+                    }
+                    // Regular paragraphs
+                    if (line.trim() && !line.startsWith('<')) {
+                      return `<p class="mb-4">${line}</p>`;
+                    }
+                    return line;
+                  })
+                  .join('\n')
+                  // Handle code blocks properly
+                  .replace(/```([\w]*)?\n([\s\S]*?)```/g, '<pre class="bg-muted rounded-lg p-4 overflow-x-auto my-4"><code class="text-sm">$2</code></pre>')
+                  // Handle inline code
+                  .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
+                  // Handle bold text
+                  .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+              }} />
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+              <p className="text-muted-foreground">Reading content is being prepared for this lesson.</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Enhanced sandbox lessons with better UX
+    if (current.type === "sandbox" || current.type === "interactive") {
+      return (
+        <div className="space-y-6">
+          {current.content ? (
+            <>
+              {/* Lesson instructions */}
+              <div className="bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 rounded-lg p-6">
+                <div className="flex items-start gap-3">
+                  <Code className="h-6 w-6 text-brand-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-brand-900 dark:text-brand-100 mb-2">Interactive Exercise</h3>
+                    <div className="prose prose-sm prose-brand max-w-none" dangerouslySetInnerHTML={{
+                      __html: current.content
+                        .split('\n')
+                        .slice(0, current.content.indexOf('```') > 0 ? current.content.split('\n').findIndex(line => line.includes('```')) : 5)
+                        .join('<br>')
+                    }} />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Extract and display code/prompt */}
+              {(() => {
+                const codeMatch = current.content.match(/```[\w]*\n([\s\S]*?)```/);
+                const promptContent = codeMatch ? codeMatch[1].trim() : 
+                  // Fallback: look for lines that seem like prompts
+                  current.content.split('\n').find(line => 
+                    line.includes('prompt') || line.includes('Create') || line.includes('Generate') || line.length > 50
+                  ) || current.content.split('\n').slice(-3).join('\n');
+                
+                return promptContent && (
+                  <Card className="border-gray-200 dark:border-gray-700/50">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        Practice Prompt
+                      </CardTitle>
+                      <CardDescription>
+                        Copy this prompt to the Sandbox and experiment with it
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-muted rounded-md p-4 font-mono text-sm overflow-auto max-h-64" aria-label="Sandbox prompt">
+                        <pre className="whitespace-pre-wrap">{promptContent}</pre>
+                      </div>
+                      <div className="flex gap-3 justify-end mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={async() => { 
+                            const ok = await copyText(promptContent); 
+                            if (!ok) alert("Failed to copy to clipboard"); 
+                            else {
+                              // Show success feedback
+                              const btn = document.activeElement as HTMLButtonElement;
+                              const originalText = btn?.textContent;
+                              if (btn && originalText) {
+                                btn.textContent = "Copied!";
+                                setTimeout(() => btn.textContent = originalText, 2000);
+                              }
+                            }
+                          }} 
+                          aria-label="Copy to clipboard"
+                        >
+                          <Check className="h-4 w-4 mr-1" />Copy
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => { 
+                            sessionStorage.setItem("sandboxPrompt", promptContent); 
+                            navigate("/sandbox"); 
+                          }} 
+                          aria-label="Open in Sandbox"
+                        >
+                          <Play className="h-4 w-4 mr-1" />Open in Sandbox
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()} 
+
+              {/* Additional content after the code block */}
+              {(() => {
+                const afterCodeMatch = current.content.match(/```[\w]*\n[\s\S]*?```\n\n([\s\S]+)/);
+                const additionalContent = afterCodeMatch ? afterCodeMatch[1].trim() : null;
+                
+                return additionalContent && (
+                  <div className="prose prose-sm max-w-none pt-4 border-t">
+                    <div dangerouslySetInnerHTML={{
+                      __html: additionalContent.replace(/\n/g, '<br>')
+                    }} />
+                  </div>
+                );
+              })()} 
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <Code className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+              <p className="text-muted-foreground mb-4">Interactive exercise content is being prepared.</p>
+              <Button variant="outline" onClick={() => navigate("/sandbox")}>
+                <Code className="h-4 w-4 mr-2" />Go to Sandbox
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Quiz/Assessment lessons
+    if (current.type === "quiz" || current.type === "assessment") {
+      return (
+        <div className="text-center py-12">
+          <HelpCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+          <p className="text-muted-foreground mb-4">Interactive quiz feature coming soon.</p>
+          <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 max-w-sm mx-auto">
+            This will include knowledge checks, practical assessments, and progress validation.
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback for unknown lesson types
+    return (
+      <div className="text-center py-12">
+        <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+        <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+        <p className="text-muted-foreground mb-4">Lesson type "{current.type}" is not yet supported.</p>
+        <div className="text-sm text-muted-foreground">
+          Please contact support or check back later.
+        </div>
+      </div>
+    );
   };
 
   const transcriptText = (() => {
@@ -265,10 +576,13 @@ export default function Lesson() {
       <LoggedInHeader />
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-4" role="region" aria-label="Progress bar">
-          <div className="min-w-24 text-xs text-muted-foreground">{progress.index}/{progress.total}</div>
+          <div className="min-w-24 text-xs text-muted-foreground">{progress.completed}/{progress.total}</div>
           <Progress value={progress.percent} className="h-2" />
           <div className="ml-auto flex items-center gap-2">
-            <Badge variant="outline" className="hidden sm:inline-flex">{progress.percent}% complete</Badge>
+            <Badge variant="outline" className="hidden sm:inline-flex">{progress.percent}% completed</Badge>
+            <div className="text-xs text-muted-foreground hidden md:block">
+              Lesson {progress.index}/{progress.total}
+            </div>
           </div>
         </div>
         <div className="flex flex-1 overflow-hidden">
