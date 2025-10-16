@@ -1,0 +1,19 @@
+# PWA Icons Directory
+
+This directory should contain PWA app icons in various sizes:
+
+Required icon sizes:
+- icon-72x72.png
+- icon-96x96.png  
+- icon-128x128.png
+- icon-144x144.png
+- icon-152x152.png
+- icon-192x192.png
+- icon-384x384.png
+- icon-512x512.png
+
+These icons should be generated from your main app logo.
+
+For now, create placeholder icons or use your existing favicon scaled to these sizes.
+
+The icons are referenced in manifest.json for PWA installation.
