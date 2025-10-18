@@ -35,32 +35,21 @@ export default function Login() {
     if (isLoading) return; // Prevent double submission
     
     setIsLoading(true);
-    try {
-      // Use enhanced auth-v2 endpoint
-      const res = await fetch('/api/auth-v2/login/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Login failed');
-      }
-      
-      const { pendingId } = await res.json();
-      sessionStorage.setItem("auth_pending_id", pendingId);
-      sessionStorage.setItem("auth_pending_email", email);
-      sessionStorage.setItem("auth_flow", "login"); // Set flow for verification page
-      navigate(`/verify-otp?pending=${encodeURIComponent(pendingId)}&email=${encodeURIComponent(email)}`);
-    } catch (err: any) {
-      const errorMessage = err.message || "Login failed";
-      setError(errorMessage);
-      console.error('Login error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+   try {
+    const { pendingId } = await apiLoginStart(email, password);
+    sessionStorage.setItem("auth_pending_id", pendingId);
+    sessionStorage.setItem("auth_pending_email", email);
+    sessionStorage.setItem("auth_flow", "login");
+    navigate(`/verify-otp?pending=${encodeURIComponent(pendingId)}&email=${encodeURIComponent(email)}`);
+  } catch (err: any) {
+    const errorMessage = err.message || "Login failed";
+    setError(errorMessage);
+    console.error("Login error:", err);
+  } finally {
+    setIsLoading(false);
+  }
+}; 
 
   const handleOAuthLogin = async (provider: string) => {
     const enabled = new Set(providers);

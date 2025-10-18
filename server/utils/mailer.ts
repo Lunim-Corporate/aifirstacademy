@@ -4,6 +4,8 @@ import nodemailer from "nodemailer";
 
 const DATA_DIR = path.resolve(process.cwd(), "server/data");
 const OUTBOX_FILE = path.join(DATA_DIR, "outbox.json");
+const VERIFIED_SENDER = "AI-First Academy <adarshchoudhary1818@gmail.com>";
+
 
 // In-memory fallback for serverless environments
 let memoryOutbox: OutboxMail[] = [];
@@ -80,7 +82,7 @@ const resendService: EmailConfig = {
       const from = process.env.RESEND_FROM_EMAIL || 'AI-First Academy <no-reply@aifirstacademy.com>';
       
       await resend.emails.send({
-        from,
+        from: VERIFIED_SENDER,
         to: [mail.to],
         subject: mail.subject,
         html: mail.html,

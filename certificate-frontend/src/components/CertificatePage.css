@@ -1,0 +1,102 @@
+/* CertificatePage.css */
+
+/* Container for the whole certificate page */
+.certificate-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #f4f4f4; /* subtle background for the page */
+  min-height: 100vh;
+}
+
+/* The actual certificate card */
+.certificate-card {
+  width: 800px;
+  max-width: 90%;
+  margin: 40px auto;
+  padding: 50px 60px;
+  border: 3px solid #333;
+  border-radius: 15px;
+  background-color: #fff;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  font-family: 'Georgia', serif;
+}
+
+/* Academy name at the top */
+.academy-title {
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+}
+
+/* Certificate title (e.g., Certificate of Achievement) */
+.certificate-title {
+  font-size: 28px;
+  font-style: italic;
+  font-weight: 500;
+  margin-bottom: 30px;
+}
+
+/* Main certificate text */
+.certificate-text {
+  font-size: 20px;
+  line-height: 1.6;
+  margin-bottom: 50px;
+}
+
+/* Signature and badge section */
+.sign-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 50px;
+}
+
+.director-sign p {
+  margin: 0;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.director-sign span {
+  display: block;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.verified-badge {
+  font-size: 18px;
+  color: green;
+  font-weight: bold;
+}
+
+/* Button group below the certificate */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+/* Generic button styling */
+.btn {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+/* Individual button colors */
+.btn.download { background-color: #007bff; color: white; }
+.btn.copy { background-color: #6c757d; color: white; }
+.btn.share { background-color: #28a745; color: white; }
+
+/* Button hover effect */
+.btn:hover {
+  opacity: 0.85;
+}

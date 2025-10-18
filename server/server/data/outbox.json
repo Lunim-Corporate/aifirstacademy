@@ -1,0 +1,38 @@
+[
+  {
+    "id": "mail_dc31f3ab-2ecb-4a7d-a323-f0e8020fe577",
+    "to": "adarshchoudhary1818@gmail.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 825670\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">825670</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-10-18T10:47:52.010Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_52d4d49a-8a61-494e-9f05-8877905d5e63",
+    "to": "adarshchoudhary1818@gmail.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 366338\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">366338</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-10-18T10:57:26.460Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_2c421859-a0f0-4cd9-a0e2-b243b2712b48",
+    "to": "adarshchoudhary1818@gmail.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 519843\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">519843</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-10-18T11:13:18.330Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_b5290409-ce55-431b-aa7e-78cc46e7041e",
+    "to": "adarshchoudhary1818@gmail.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 982308\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">982308</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-10-18T12:13:16.915Z",
+    "sentVia": "Resend"
+  }
+]

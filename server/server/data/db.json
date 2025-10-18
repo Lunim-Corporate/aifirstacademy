@@ -1,0 +1,720 @@
+{
+  "users": [
+    {
+      "id": "u_admin",
+      "email": "admin@aifirst.academy",
+      "name": "Admin",
+      "role": "admin",
+      "salt": "ca74cce2fae4b122",
+      "passwordHash": "ddea90d29436993436b708bc9aeb77f91daf5679ce4645da5b3718a7de9ab9a9",
+      "createdAt": "2025-10-18T12:12:36.265Z",
+      "isVerified": true
+    }
+  ],
+  "prompts": [],
+  "promptComments": [],
+  "promptLikes": [],
+  "promptSaves": [],
+  "certificates": [],
+  "tracks": [],
+  "libraryAcademy": [
+    {
+      "id": "lr_prompt_1",
+      "type": "prompt",
+      "title": "Bug Analysis Prompt",
+      "tags": [
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:12:36.265Z",
+      "content": "I have a bug in my {{language}} code..."
+    },
+    {
+      "id": "lr_tmpl_1",
+      "type": "template",
+      "title": "Code Review Template",
+      "tags": [
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:12:36.265Z",
+      "content": "Please review the following {{language}} code for..."
+    },
+    {
+      "id": "lr_video_1",
+      "type": "video",
+      "title": "AI-First Academy Demo",
+      "tags": [
+        "demo"
+      ],
+      "createdAt": "2025-10-18T12:12:36.265Z",
+      "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "duration": "3:32"
+    },
+    {
+      "id": "lr_tmpl_bug_triage",
+      "type": "template",
+      "title": "Bug Triage and Root-Cause Analysis",
+      "tags": [
+        "engineering",
+        "debugging"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "You are a senior software engineer helping triage a bug. Context:\n- Repo/App: {{repo_or_app}}\n- Feature/Area: {{area}}\n- Error logs: {{logs}}\n- Steps to reproduce: {{steps}}\n- Expected vs actual: {{expected_vs_actual}}\n- Recent changes: {{recent_changes}}\n\nTasks:\n1) Hypothesize likely root causes (ranked).\n2) Suggest targeted diagnostics to confirm/deny each hypothesis.\n3) Propose minimal diffs or patches.\n4) Flag any product risks and customer impact.\nReturn a concise action plan with owners and ETA."
+    },
+    {
+      "id": "lr_tmpl_code_review",
+      "type": "template",
+      "title": "Code Review Checklist (LLM-Assisted)",
+      "tags": [
+        "engineering",
+        "quality"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "You are reviewing the following diff:\n{{diff}}\n\nChecklist:\n- Correctness: identify logical errors or edge cases.\n- Security: injections, secrets, unsafe eval, authz.\n- Performance: N+1, heavy loops, unnecessary re-renders.\n- Readability: naming, cohesion, dead code.\n- Tests: coverage gaps and suggested tests.\n- Docs: update required docs or comments.\nProvide SUMMARY, BLOCKERS, NITS, and TESTS TO ADD."
+    },
+    {
+      "id": "lr_tmpl_refactor_plan",
+      "type": "template",
+      "title": "Refactor Plan from Code Snippet",
+      "tags": [
+        "engineering",
+        "maintainability"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Given the code:\n{{code}}\n\nIdentify smells (duplication, long function, god object, tight coupling). Propose a refactor plan with steps, before/after snippet examples, risks, and test strategy."
+    },
+    {
+      "id": "lr_tmpl_unit_tests",
+      "type": "template",
+      "title": "Unit Test Generator (Jest/Vitest)",
+      "tags": [
+        "engineering",
+        "testing"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Generate table-driven unit tests for the function:\n{{function_code}}\n\nInclude:\n- Edge cases\n- Error handling\n- Property-based ideas where suitable\n- Mocks for IO\nReturn runnable tests in {{framework}} with clear descriptions."
+    },
+    {
+      "id": "lr_tmpl_pr_description",
+      "type": "template",
+      "title": "Pull Request Description Writer",
+      "tags": [
+        "engineering",
+        "collaboration"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Create a PR description using Conventional Commits.\nInputs:\n- Scope: {{scope}}\n- Summary: {{summary}}\n- Details: {{details}}\n- Screenshots/links: {{links}}\n- Risk/Impact: {{risk}}\n- Rollback plan: {{rollback}}\nOutput: well-structured PR body with checklist."
+    },
+    {
+      "id": "lr_tmpl_commit_message",
+      "type": "template",
+      "title": "Conventional Commit Message Generator",
+      "tags": [
+        "engineering",
+        "workflow"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Given changes:\n{{diff_or_summary}}\nProduce a concise Conventional Commit message: type(scope): summary. Include a longer body if needed and BREAKING CHANGE when applicable."
+    },
+    {
+      "id": "lr_tmpl_openapi",
+      "type": "template",
+      "title": "OpenAPI Contract Draft from Requirements",
+      "tags": [
+        "engineering",
+        "api"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "From requirements:\n{{requirements}}\nDraft an OpenAPI 3.1 YAML with endpoints, request/response schemas, auth, examples, and error models. Validate consistency and completeness."
+    },
+    {
+      "id": "lr_tmpl_sql",
+      "type": "template",
+      "title": "SQL Query from Natural Language",
+      "tags": [
+        "data",
+        "sql"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Schema:\n{{schema}}\nQuestion:\n{{question}}\nReturn optimized SQL for {{dialect}}. Explain indexes used and potential pitfalls. Provide a safe variant with limits and a production-safe version."
+    },
+    {
+      "id": "lr_tmpl_pandas",
+      "type": "template",
+      "title": "Data Analysis (pandas) Plan + Code",
+      "tags": [
+        "data",
+        "analysis"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Dataset notes:\n{{dataset_notes}}\nGoals:\n{{goals}}\nReturn: EDA plan, risks/biases, and Python code using pandas to compute KPIs, plots, and confidence intervals where relevant."
+    },
+    {
+      "id": "lr_tmpl_rag_answering",
+      "type": "template",
+      "title": "RAG Question Answering Prompt",
+      "tags": [
+        "rag",
+        "retrieval",
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "You answer strictly using the provided context. If unsure, say you don't know.\nContext chunks (with sources):\n{{context}}\nUser question: {{question}}\nInstructions: cite sources, avoid fabrication, highlight uncertainties, and suggest missing docs to retrieve."
+    },
+    {
+      "id": "lr_tmpl_system_prompt",
+      "type": "template",
+      "title": "System Prompt: AI-First App Assistant",
+      "tags": [
+        "system",
+        "prompting"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Role: Senior assistant for AI-First Academy users.\nGuidelines: be concise, safe, and cite internal links. Avoid hallucinations. Ask clarifying questions sparingly.\nTone: professional, supportive, and direct.\nForbidden: leaking secrets, inventing data, unsafe code."
+    },
+    {
+      "id": "lr_tmpl_red_team",
+      "type": "template",
+      "title": "Prompt Injection Red-Teaming Checklist",
+      "tags": [
+        "security",
+        "red-team"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Evaluate model vulnerability to: system prompt leaks, tool jailbreaks, data exfiltration, role confusion, and hidden instructions in files/links. Provide payloads, expected safe behaviors, and detection heuristics."
+    },
+    {
+      "id": "lr_tmpl_prd",
+      "type": "template",
+      "title": "Product Requirements Document (PRD)",
+      "tags": [
+        "product",
+        "planning"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Write a PRD for {{feature}} including: Problem, Goals/Non-goals, Personas, User stories, UX flows, Acceptance criteria, Metrics, Risks, Rollout, and Open questions."
+    },
+    {
+      "id": "lr_tmpl_ux_copy",
+      "type": "template",
+      "title": "UX Microcopy Generator",
+      "tags": [
+        "ux",
+        "content"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Generate clear, inclusive microcopy for UI. Inputs: screen description {{screen}}, actions {{actions}}, tone {{tone}}. Provide variants, rationale, and i18n notes."
+    },
+    {
+      "id": "lr_tmpl_marketing_email",
+      "type": "template",
+      "title": "Marketing Email Sequence (Lifecycle)",
+      "tags": [
+        "marketing",
+        "growth"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Create a 5-email sequence for {{audience}} with subject lines, preview text, body, CTA, and A/B test ideas. Ensure CAN-SPAM compliance notes."
+    },
+    {
+      "id": "lr_tmpl_meeting_notes",
+      "type": "template",
+      "title": "Meeting Summary + Action Items",
+      "tags": [
+        "operations",
+        "product"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Transcript:\n{{transcript}}\nSummarize decisions, owners, deadlines, risks, and follow-ups. Provide a clean summary and task list (owner, due date, status)."
+    },
+    {
+      "id": "lr_tmpl_interview_questions",
+      "type": "template",
+      "title": "Technical Interview Question Set",
+      "tags": [
+        "hiring",
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Role: {{role}}\nGenerate structured interview questions across fundamentals, practical skills, systems, and culture. Include rubrics and red flags."
+    },
+    {
+      "id": "lr_tmpl_eval_rubric",
+      "type": "template",
+      "title": "LLM Output Evaluation Rubric",
+      "tags": [
+        "evaluation",
+        "quality"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Define a rubric for task {{task}} with dimensions: correctness, completeness, harmfulness, formatting, latency, cost. Provide scoring guidelines (1-5) and examples of low/mid/high quality."
+    },
+    {
+      "id": "lr_tmpl_style_guide",
+      "type": "template",
+      "title": "Prompt Style Guide Template",
+      "tags": [
+        "prompting",
+        "governance"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Define prompt style rules for {{team}}: structure, variables, ground truth usage, citations, refusal policy, and safety disclaimers. Include do/don't examples."
+    },
+    {
+      "id": "lr_tmpl_postmortem",
+      "type": "template",
+      "title": "Incident Postmortem (AAR)",
+      "tags": [
+        "operations",
+        "reliability"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Incident: {{incident}}\nTimeline, impact, root cause, contributing factors, detection, response, what went well/poorly, corrective actions, owners, deadlines, verification plan."
+    },
+    {
+      "id": "lr_tmpl_eval_dataset",
+      "type": "template",
+      "title": "Eval Dataset Creation Prompt",
+      "tags": [
+        "evaluation",
+        "data"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Generate {{n}} evaluation items for task {{task}} with inputs, expected outputs, and rationales. Ensure coverage of edge cases and adversarial variants."
+    },
+    {
+      "id": "lr_tmpl_release_notes",
+      "type": "template",
+      "title": "Release Notes Generator",
+      "tags": [
+        "product",
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Inputs: merged PRs, highlights, deprecations, migrations, known issues. Output: semantic version bump suggestion and crisp release notes with categories."
+    },
+    {
+      "id": "lr_tmpl_standup",
+      "type": "template",
+      "title": "Daily Standup Summarizer",
+      "tags": [
+        "operations",
+        "product"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Given updates from team members:\n{{updates}}\nProduce a concise summary per person, blockers, dependencies, and risks, plus a team-wide snapshot."
+    },
+    {
+      "id": "lr_tmpl_onboarding",
+      "type": "template",
+      "title": "Engineer Onboarding Checklist",
+      "tags": [
+        "operations",
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Create a 30/60/90 day onboarding plan for role {{role}}. Include environment setup, key docs, mentorship plan, and first impactful tasks."
+    },
+    {
+      "id": "lr_tmpl_eval_prompt_injection",
+      "type": "template",
+      "title": "Prompt Injection Detection Patterns",
+      "tags": [
+        "security",
+        "safety"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Given user input:\n{{input}}\nDetect signs of instruction override, data exfiltration, or tool abuse. Return risk rating, matched patterns, and recommended safe response template."
+    },
+    {
+      "id": "lr_tmpl_api_spec_from_db",
+      "type": "template",
+      "title": "API Spec Derivation from Database Schema",
+      "tags": [
+        "api",
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Given DB schema:\n{{schema}}\nDraft endpoints, CRUD operations, pagination, querying, and constraints. Propose authorization model and rate limits."
+    },
+    {
+      "id": "lr_tmpl_pr_template_repo",
+      "type": "template",
+      "title": "Repository PR Template Generator",
+      "tags": [
+        "engineering",
+        "workflow"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Given repo context {{repo_context}}, generate a PR template (PULL_REQUEST_TEMPLATE.md) with sections for context, changes, screenshots, tests, rollout, and checklist."
+    },
+    {
+      "id": "lr_tmpl_contract_test",
+      "type": "template",
+      "title": "API Contract Test Scenarios",
+      "tags": [
+        "testing",
+        "api"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "From OpenAPI spec:\n{{openapi}}\nGenerate contract tests covering success, validation errors, auth failures, idempotency, and rate limits. Provide runnable examples in {{language}}."
+    },
+    {
+      "id": "lr_tmpl_product_brief",
+      "type": "template",
+      "title": "Product Brief Generator",
+      "tags": [
+        "product",
+        "strategy"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "For initiative {{initiative}}, produce a product brief: context, opportunity, goals, competitive landscape, hypotheses, KPIs, and risks."
+    },
+    {
+      "id": "lr_tmpl_eval_judges",
+      "type": "template",
+      "title": "Pairwise Judge Prompt for Evals",
+      "tags": [
+        "evaluation",
+        "prompting"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Compare two model outputs for task {{task}} using rubric {{rubric}}. Return winner, confidence, and rationale while avoiding position bias."
+    },
+    {
+      "id": "lr_tmpl_guardrails",
+      "type": "template",
+      "title": "Guardrails Specification",
+      "tags": [
+        "safety",
+        "governance"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "content": "Define guardrails for {{use_case}}: disallowed content, refusal phrasing, PII handling, tool usage constraints, and logging requirements."
+    },
+    {
+      "id": "lr_guide_prompting_foundations",
+      "type": "guide",
+      "title": "Prompting Foundations: Goals, Roles, Constraints",
+      "tags": [
+        "prompting",
+        "fundamentals"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Core mental model for effective prompting.",
+      "content": "Overview\n- Define the task goal and desired output format.\n- Assign a clear role to the model (e.g., 'Senior JS Engineer').\n- Provide constraints: tone, length, safety limits, citations.\n\nChecklist\n1) Task: {{task}}\n2) Role: {{role}}\n3) Inputs/context: {{context}}\n4) Constraints: {{constraints}}\n5) Output format: {{format}}\n6) Validation steps: {{validation}}\n\nExamples\n- Summarization with bullet rules\n- Email with tone and CTA\n- Code review with checklists"
+    },
+    {
+      "id": "lr_guide_structuring_prompts",
+      "type": "guide",
+      "title": "Structuring Prompts for Reliability",
+      "tags": [
+        "prompting",
+        "structure"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Scaffolds that reduce ambiguity.",
+      "content": "Patterns\n- Instruction then context, then examples, then task.\n- Use headings and numbered steps.\n- Declare refusal policy and don't-invent rules.\n\nTemplate\nSYSTEM: You are {{role}}. Follow policy: {{policy}}.\nUSER: Context -> {{context}}\nEXAMPLES: {{few_shots}}\nTASK: {{task}}\nOUTPUT FORMAT: {{format}}\nQUALITY CHECK: {{checks}}"
+    },
+    {
+      "id": "lr_guide_few_shot",
+      "type": "guide",
+      "title": "Few-shot and Counter-examples",
+      "tags": [
+        "prompting",
+        "examples"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Use positive/negative shots to shape behavior.",
+      "content": "Guidelines\n- 2–5 representative examples.\n- Add counter-examples for common mistakes.\n- Keep examples short but precise.\n\nExample Set\n- Good extraction -> valid JSON\n- Bad extraction -> missing fields -> show correction"
+    },
+    {
+      "id": "lr_guide_cot_reasoning",
+      "type": "guide",
+      "title": "Reasoning: CoT, Self-Consistency, and Debate",
+      "tags": [
+        "reasoning"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "When and how to enable reasoning.",
+      "content": "Approaches\n- Chain-of-Thought: ask for stepwise reasoning (hidden in production).\n- Self-Consistency: sample multiple paths, pick majority.\n- Self-Debate: generate pros/cons before final.\n\nSandbox Tips\n- Toggle temperature to diversify reasoning.\n- Compare outputs, aggregate best."
+    },
+    {
+      "id": "lr_guide_structured_output",
+      "type": "guide",
+      "title": "Structured Outputs: JSON and Schemas",
+      "tags": [
+        "engineering",
+        "json"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Enforce shape with schemas.",
+      "content": "Principles\n- Always define schema and required fields.\n- Include examples.\n- Validate and re-ask on failure.\n\nSchema\n{ name: string, tags: string[], score: number }\nValidation\n- If invalid, return errors and request regeneration."
+    },
+    {
+      "id": "lr_guide_tool_use",
+      "type": "guide",
+      "title": "Tool Use and API Calls",
+      "tags": [
+        "tools",
+        "api"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Design tool interfaces for LLMs.",
+      "content": "Design\n- Small, pure functions.\n- Clear names and param types.\n- Idempotent when possible.\n\nPrompting\n- Describe tool purpose\n- Input/Output contracts\n- Safety constraints (PII, rate limits)"
+    },
+    {
+      "id": "lr_guide_rag_end_to_end",
+      "type": "guide",
+      "title": "RAG: Retrieval-Augmented Generation End-to-End",
+      "tags": [
+        "rag",
+        "retrieval"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "From ingestion to answering.",
+      "content": "Pipeline\n1) Chunking strategy and metadata\n2) Embeddings and vector DB\n3) Retrieval filters and k\n4) Context assembly with source attributions\n5) Prompting to cite sources only\n\nPitfalls\n- Overlong context, stale data, leakage of internal notes."
+    },
+    {
+      "id": "lr_guide_eval_basics",
+      "type": "guide",
+      "title": "LLM Evaluation: Rubrics and Automation",
+      "tags": [
+        "evaluation",
+        "quality"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Measure correctness and helpfulness.",
+      "content": "Rubric\n- Define axes: correctness, completeness, harmfulness, formatting.\nAutomation\n- Pairwise judges, win-rate, majority vote.\n- Track latency and cost.\n\nIn-App\n- Use Sandbox scores as a proxy; refine with offline evals."
+    },
+    {
+      "id": "lr_guide_security_safety",
+      "type": "guide",
+      "title": "Security and Safety in Prompting",
+      "tags": [
+        "security",
+        "safety"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Defend against prompt injection.",
+      "content": "Threats\n- Instruction override, data exfiltration, tool abuse.\nControls\n- System policy, content filters, allowlists/denylists.\n- Never execute untrusted output.\n\nChecklist\n- Sanitize inputs, escape outputs, log tool calls."
+    },
+    {
+      "id": "lr_guide_governance",
+      "type": "guide",
+      "title": "Prompt Governance and Style Guides",
+      "tags": [
+        "governance"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Standardize prompts across teams.",
+      "content": "Components\n- Style guide (tone, structure)\n- Variables registry and secret handling\n- Review and approval steps\n- Versioning and changelog\n\nArtifacts\n- PRD for prompts\n- Eval dashboards"
+    },
+    {
+      "id": "lr_guide_prod_patterns",
+      "type": "guide",
+      "title": "Production Patterns for AI Apps",
+      "tags": [
+        "engineering",
+        "production"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Retries, fallbacks, and observability.",
+      "content": "Patterns\n- Timeouts, retries with jitter\n- Fallback models and cached answers\n- Guarded tool execution\n- Structured logging and tracing\n\nKPIs\n- Quality, latency, cost, failure rate"
+    },
+    {
+      "id": "lr_guide_sandbox_workflows",
+      "type": "guide",
+      "title": "Using the Sandbox Effectively",
+      "tags": [
+        "sandbox",
+        "workflows"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Experiment-to-production workflow.",
+      "content": "Flow\n1) Draft prompt from template\n2) Add few-shots\n3) Tune temperature and tokens\n4) Record scores and notes\n5) Export to app components\n\nTips\n- Save best runs, compare diffs."
+    },
+    {
+      "id": "lr_guide_library_usage",
+      "type": "guide",
+      "title": "Leveraging the Library: Templates and Guides",
+      "tags": [
+        "library",
+        "product"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Find, preview, adapt, and share.",
+      "content": "How-To\n- Filter by type and tags\n- Preview templates and copy parts\n- Read guides in-app\n- Save your own variants\n- Keep titles and tags consistent for discoverability"
+    },
+    {
+      "id": "lr_guide_community_best_practices",
+      "type": "guide",
+      "title": "Community: Sharing and Feedback",
+      "tags": [
+        "community"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Contribute high-quality prompts.",
+      "content": "Guidelines\n- Provide context and variables\n- Include eval score screenshots\n- Credit sources where applicable\n- Be constructive in reviews\n\nModeration\n- Report harmful content, follow CoC"
+    },
+    {
+      "id": "lr_guide_certificates_path",
+      "type": "guide",
+      "title": "Certificates and Learning Path Strategy",
+      "tags": [
+        "learning",
+        "planning"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Plan modules toward certification.",
+      "content": "Plan\n- Choose a track and set weekly goals\n- Track progress from Dashboard\n- Use recommendations to fill gaps\n\nExam Tips\n- Practice with timed prompts\n- Review mistakes with rubrics"
+    },
+    {
+      "id": "lr_guide_engineering_prompts",
+      "type": "guide",
+      "title": "Engineering Prompts: Debugging, Reviews, Refactors",
+      "tags": [
+        "engineering"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Concrete engineering prompt patterns.",
+      "content": "Debugging\n- Provide logs, repro steps, diffs\nReviews\n- Checklist-based critique\nRefactors\n- Explain risks and add tests\n\nAnti-Patterns\n- Vague asks, missing context"
+    },
+    {
+      "id": "lr_guide_product_content",
+      "type": "guide",
+      "title": "Product and Content Prompts: PRDs, Briefs, UX Copy",
+      "tags": [
+        "product",
+        "ux"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Non-code prompting at a high bar.",
+      "content": "PRDs\n- Goals, non-goals, metrics\nBriefs\n- Hypotheses, KPIs, risks\nUX Copy\n- Tone, inclusivity, i18n notes"
+    },
+    {
+      "id": "lr_guide_marketing_prompts",
+      "type": "guide",
+      "title": "Marketing and Growth Prompts",
+      "tags": [
+        "marketing"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Lifecycle emails, landing pages, SEO.",
+      "content": "Lifecycle\n- Segmentation, subject tests\nLanding\n- Above-the-fold clarity\nSEO\n- FAQ and schema ideas"
+    },
+    {
+      "id": "lr_guide_ops_prompts",
+      "type": "guide",
+      "title": "Operations: Meetings, Postmortems, Onboarding",
+      "tags": [
+        "operations"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Run teams with AI support.",
+      "content": "Meetings\n- Summaries and action items\nPostmortems\n- 5 whys, corrective actions\nOnboarding\n- 30/60/90 plans"
+    },
+    {
+      "id": "lr_guide_eval_playbook",
+      "type": "guide",
+      "title": "Evaluation Playbook: From Sandbox to CI",
+      "tags": [
+        "evaluation"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Operationalize evals.",
+      "content": "Steps\n1) Define tasks and metrics\n2) Create seed datasets\n3) Pairwise judge prompts\n4) Automate in CI\n5) Monitor regression board"
+    },
+    {
+      "id": "lr_guide_safety_playbook",
+      "type": "guide",
+      "title": "Safety Playbook: Guardrails and Refusals",
+      "tags": [
+        "safety"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Bake safety into prompts.",
+      "content": "Guardrails\n- Disallowed content list\n- Refusal phrasing\n- PII handling\n\nTesting\n- Red-team scenarios and expected safe outputs"
+    },
+    {
+      "id": "lr_guide_checklists",
+      "type": "guide",
+      "title": "Prompting Checklists and Anti-Patterns",
+      "tags": [
+        "prompting",
+        "quality"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Quick reference.",
+      "content": "Do\n- Define role, context, constraints\n- Provide examples\n- Specify output formats\nDon't\n- Be vague\n- Omit edge cases\n- Forget validation"
+    },
+    {
+      "id": "lr_guide_troubleshooting",
+      "type": "guide",
+      "title": "Troubleshooting: Hallucinations, Drift, and Latency",
+      "tags": [
+        "engineering",
+        "operations"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "Diagnose and fix common failures.",
+      "content": "Symptoms\n- Fabrications, inconsistencies, slow responses\nFixes\n- Add sources, tighten constraints\n- Reduce temperature\n- Cache frequent outputs\n- Add timeouts and retries"
+    },
+    {
+      "id": "lr_guide_comprehensive_handbook",
+      "type": "guide",
+      "title": "The AI-First Prompting Handbook",
+      "tags": [
+        "handbook"
+      ],
+      "createdAt": "2025-10-18T12:14:50.970Z",
+      "description": "End-to-end guide tying all sections together.",
+      "content": "Contents\n1) Foundations\n2) Structure\n3) Examples\n4) Reasoning\n5) Structured outputs\n6) Tool use\n7) RAG\n8) Evaluation\n9) Safety\n10) Production\n11) Workflows in app\n12) Checklists\nEach section includes patterns, examples, and pitfalls."
+    }
+  ],
+  "libraryByUser": [],
+  "discussions": [
+    {
+      "id": "d_getting_started",
+      "title": "Best practices for prompt engineering in production environments",
+      "authorId": "u_admin",
+      "category": "Engineering",
+      "tags": [
+        "Production",
+        "Best Practices",
+        "Engineering"
+      ],
+      "views": 0,
+      "replies": 0,
+      "isPinned": true,
+      "createdAt": "2025-10-18T12:12:36.265Z",
+      "lastActivityAt": "2025-10-18T12:12:36.265Z"
+    }
+  ],
+  "discussionReplies": [],
+  "challenges": [
+    {
+      "id": "ch_weekly_1",
+      "title": "Weekly Prompt Challenge",
+      "description": "Create the best debugging prompt for JavaScript",
+      "startAt": "2025-10-18T12:12:36.265Z",
+      "endAt": "2025-10-25T12:12:36.265Z",
+      "criteria": {
+        "likesWeight": 0.4,
+        "savesWeight": 0.3,
+        "runsWeight": 0.2,
+        "viewsWeight": 0.1
+      }
+    }
+  ],
+  "challengeEntries": [],
+  "challengeEntryLikes": [],
+  "challengeEntrySaves": [],
+  "otps": [],
+  "notifications": [],
+  "userLearning": [],
+  "userProfiles": [],
+  "notificationSettings": [],
+  "securitySettings": [],
+  "billingSettings": [],
+  "userPreferences": []
+}

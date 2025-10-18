@@ -273,37 +273,46 @@ export default function Certificates() {
     setIsPreviewModalOpen(true);
   };
   
-  const handleDownload = () => {
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Certificate - ${selectedCertificate?.title}</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <style>
-              @page { size: A4 landscape; margin: 0; }
-              @media print { 
-                body { background: white !important; }
-                .print-hide { display: none !important; }
-              }
-            </style>
-          </head>
-          <body class="bg-white p-8">
-            <div id="certificate-preview">
-              ${document.getElementById('certificate-preview-modal')?.innerHTML || ''}
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 1000);
-    }
+const handleDownload = () => {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow || !selectedCertificate) return;
+
+  // Get the certificate HTML safely
+  const certificateHTML = document.getElementById('certificate-preview-modal')?.querySelector('div')?.outerHTML || '';
+
+  // Write content to the new window
+  printWindow.document.open();
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Certificate - ${selectedCertificate.title}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+          @page { size: A4 landscape; margin: 0; }
+          body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        </style>
+      </head>
+      <body>
+        <div id="certificate-download" class="w-full flex justify-center p-8">
+          ${certificateHTML}
+        </div>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+  // Wait for the content to fully load
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+    // Optionally close after printing
+    // printWindow.close();
   };
+};
+
+
+
+
   
   const handleShare = (platform: string) => {
     const certificateUrl = `${window.location.origin}/verify/${selectedCertificate?.credentialId}`;
@@ -575,37 +584,34 @@ export default function Certificates() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="p-6 pt-0">
-                <div id="certificate-preview-modal" className="mb-6">
-                  <CertificatePreview 
-                    certificate={selectedCertificate} 
-                    user={user} 
-                    onDownload={handleDownload}
-                    onShare={handleShare}
-                  />
-                </div>
-                
+              <div id="certificate-preview-modal" className="mb-6 w-full flex flex-col items-center space-y-6">
+              {/* Certificate */}
+              <div className="w-full max-w-5xl max-h-[70vh] overflow-auto">
+                <CertificatePreview 
+                  certificate={selectedCertificate} 
+                  user={user} 
+                  onDownload={handleDownload}
+                  onShare={handleShare}
+                />
+              </div>
+
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between border-t pt-4">
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    {copiedText && (
-                      <span className="text-green-600 font-medium">{copiedText}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Button variant="outline" onClick={() => handleShare('copy')}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Link
-                    </Button>
-                    <Button variant="outline" onClick={() => handleShare('linkedin')}>
-                      <Linkedin className="h-4 w-4 mr-2" />
-                      Share on LinkedIn
-                    </Button>
-                    <Button onClick={handleDownload}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Download PDF
-                    </Button>
-                  </div>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-3">
+                  {copiedText && (
+                    <span className="text-green-600 font-medium">{copiedText}</span>
+                  )}
+                  <Button variant="outline" onClick={() => handleShare('copy')}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Link
+                  </Button>
+                  <Button variant="outline" onClick={() => handleShare('linkedin')}>
+                    <Linkedin className="h-4 w-4 mr-2" />
+                    Share on LinkedIn
+                  </Button>
+                  <Button onClick={handleDownload}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
                 </div>
               </div>
             </DialogContent>

@@ -12,6 +12,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "app": "set DEV_FRONTEND=true&& set PORT=3000&& npm run server --prefix server",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "vite build --config vite.config.server.ts",

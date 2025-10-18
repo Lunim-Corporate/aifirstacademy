@@ -43,6 +43,10 @@ import type {
   NewsletterResponse,
 } from "@shared/api";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+
+
+
 const headers = { "Content-Type": "application/json" };
 
 // Helper function to clear all auth state
@@ -100,7 +104,7 @@ export async function apiLogin(email: string, password: string): Promise<AuthRes
 }
 
 export async function apiLoginStart(email: string, password: string): Promise<OTPStartResponse> {
-  return fetchJsonOnce<OTPStartResponse>(`/api/auth/login/start`, { method: "POST", headers, body: JSON.stringify({ email, password }) });
+  return fetchJsonOnce<OTPStartResponse>(`${API_BASE_URL}/api/auth/login/start`, { method: "POST", headers, body: JSON.stringify({ email, password }) });
 }
 
 export async function apiSignup(name: string, email: string, password: string): Promise<AuthResponse> {
@@ -114,7 +118,7 @@ export async function apiSignup(name: string, email: string, password: string): 
 }
 
 export async function apiSignupStart(name: string, email: string, password: string): Promise<OTPStartResponse> {
-  return fetchJsonOnce<OTPStartResponse>(`/api/auth/signup/start`, { method: "POST", headers, body: JSON.stringify({ name, email, password }) });
+  return fetchJsonOnce<OTPStartResponse>(`${API_BASE_URL}/api/auth/signup/start`, { method: "POST", headers, body: JSON.stringify({ name, email, password }) });
 }
 
 export async function apiOtpVerify(body: OTPVerifyRequest): Promise<AuthResponse> {
