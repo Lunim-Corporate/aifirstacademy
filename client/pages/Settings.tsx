@@ -223,7 +223,24 @@ useEffect(() => {
       }
       
       if (prefRes.status === 'fulfilled') {
-        setPreferences(prev => ({ ...prev, ...prefRes.value.preferences }));
+        const prefs = prefRes.value.preferences;
+        setPreferences(prev => ({ ...prev, ...prefs }));
+        
+        // Apply theme if loaded
+        if (prefs.theme) {
+          if (prefs.theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else if (prefs.theme === 'light') {
+            document.documentElement.classList.remove('dark');
+          } else if (prefs.theme === 'auto') {
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (systemDark) {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          }
+        }
       }
       
     } catch (error: any) {
@@ -797,6 +814,29 @@ useEffect(() => {
                         />
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Email Frequency</Label>
+                        <Select 
+                          value={notifications.email.frequency} 
+                          onValueChange={(value) => {
+                            setNotifications(prev => ({
+                              ...prev,
+                              email: { ...prev.email, frequency: value as "immediate" | "daily" | "weekly" | "never" }
+                            }));
+                          }} 
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="immediate">Immediately</SelectItem>
+                            <SelectItem value="daily">Daily digest</SelectItem>
+                            <SelectItem value="weekly">Weekly digest</SelectItem>
+                            <SelectItem value="never">Never</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       <Separator />
 
                       <div className="space-y-4">
@@ -1003,13 +1043,72 @@ useEffect(() => {
                         </div>
                         <Button 
                           variant="outline"
-                          onClick={() => {
+                          onClick={async () => {
+                            if (security.twoFactorEnabled) {
+                              const confirmed = confirm('Are you sure you want to disable two-factor authentication? This will make your account less secure.');
+                              if (!confirmed) return;
+                            }
                             setSecurity(prev => ({ ...prev, twoFactorEnabled: !prev.twoFactorEnabled }));
-                            saveSecurity();
+                            await saveSecurity();
+                            showAlert('success', `Two-factor authentication ${security.twoFactorEnabled ? 'disabled' : 'enabled'} successfully!`);
                           }}
                         >
                           <Key className="h-4 w-4 mr-2" />
                           {security.twoFactorEnabled ? "Disable 2FA" : "Enable 2FA"}
+                        </Button>
+                      </div>
+
+                      <Separator />
+
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Session Management</h4>
+                        
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">Login Notifications</div>
+                            <div className="text-sm text-muted-foreground">Get notified when someone logs into your account</div>
+                          </div>
+                          <Switch 
+                            checked={security.loginNotifications} 
+                            onCheckedChange={(checked) => setSecurity(prev => ({ ...prev, loginNotifications: checked }))}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Session Timeout</Label>
+                          <Select 
+                            value={security.sessionTimeout.toString()} 
+                            onValueChange={(value) => setSecurity(prev => ({ ...prev, sessionTimeout: parseInt(value) }))}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 day</SelectItem>
+                              <SelectItem value="7">7 days</SelectItem>
+                              <SelectItem value="30">30 days</SelectItem>
+                              <SelectItem value="90">90 days</SelectItem>
+                              <SelectItem value="365">1 year</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <Button 
+                          disabled={saving.security} 
+                          onClick={saveSecurity}
+                          className="w-full sm:w-auto save-success transition-all duration-200 hover:scale-105"
+                        >
+                          {saving.security ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Check className="mr-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              Save Settings
+                            </>
+                          )}
                         </Button>
                       </div>
 
@@ -1183,17 +1282,38 @@ useEffect(() => {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">Dark Mode</div>
-                          <div className="text-sm text-muted-foreground">Switch to dark theme</div>
-                        </div>
-                        <Switch 
-                          checked={preferences.theme === "dark"} 
-                          onCheckedChange={(checked) => {
-                            setPreferences(prev => ({ ...prev, theme: checked ? "dark" : "light" }));
-                          }} 
-                        />
+                      <div className="space-y-2">
+                        <Label>Theme</Label>
+                        <Select 
+                          value={preferences.theme} 
+                          onValueChange={(value) => {
+                            const themeValue = value as "light" | "dark" | "auto";
+                            setPreferences(prev => ({ ...prev, theme: themeValue }));
+                            // Apply theme immediately
+                            if (themeValue === 'dark') {
+                              document.documentElement.classList.add('dark');
+                            } else if (themeValue === 'light') {
+                              document.documentElement.classList.remove('dark');
+                            } else {
+                              // Auto theme - respect system preference
+                              const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                              if (systemDark) {
+                                document.documentElement.classList.add('dark');
+                              } else {
+                                document.documentElement.classList.remove('dark');
+                              }
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="light">Light</SelectItem>
+                            <SelectItem value="dark">Dark</SelectItem>
+                            <SelectItem value="auto">System</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div className="space-y-2">
@@ -1279,10 +1399,13 @@ useEffect(() => {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-medium">Personalization</div>
-                            <div className="text-sm text-muted-foreground">Personalized content recommendations</div>
+                            <div className="font-medium">Experimental Features</div>
+                            <div className="text-sm text-muted-foreground">Enable beta features and improvements</div>
                           </div>
-                          <Switch defaultChecked />
+                          <Switch 
+                            checked={preferences.experimentalFeatures} 
+                            onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, experimentalFeatures: checked }))}
+                          />
                         </div>
                       </div>
 
