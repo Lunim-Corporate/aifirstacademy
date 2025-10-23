@@ -564,8 +564,8 @@ export default function Certificates() {
 
           {/* Certificate Preview Dialog */}
           <Dialog open={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen}>
-            <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-              <DialogHeader className="p-6 pb-0">
+            <DialogContent className="max-w-6xl max-h-[90vh] p-0 flex flex-col">
+              <DialogHeader className="p-6 pb-0 flex-shrink-0">
                 <DialogTitle className="flex items-center space-x-2">
                   <Award className="h-5 w-5 text-brand-600" />
                   <span>Certificate Preview</span>
@@ -575,7 +575,7 @@ export default function Certificates() {
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="p-6 pt-0">
+              <div className="flex-1 overflow-y-auto p-6 pt-0">
                 <div id="certificate-preview-modal" className="mb-6">
                   <CertificatePreview 
                     certificate={selectedCertificate} 
@@ -586,10 +586,11 @@ export default function Certificates() {
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between border-t pt-4">
+                <div className="flex-shrink-0 p-6 pt-0">
+                <div className="flex items-center justify-center border-t pt-4">
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     {copiedText && (
-                      <span className="text-green-600 font-medium">{copiedText}</span>
+                      <span className="text-green-600 font-medium mr-4">{copiedText}</span>
                     )}
                   </div>
                   <div className="flex items-center space-x-3">
@@ -605,6 +606,7 @@ export default function Certificates() {
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
                     </Button>
+                  </div>
                   </div>
                 </div>
               </div>

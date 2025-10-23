@@ -161,9 +161,9 @@ export const issueCertificate: RequestHandler = (req, res) => {
     });
   }
   
-  // Check if certificate already exists
+  // Check if certificate already exists (and is not revoked)
   const existingCert = (db.certificates || []).find((c: any) => 
-    c.userId === uid && c.trackId === trackId
+    c.userId === uid && c.trackId === trackId && c.status !== 'revoked'
   );
   
   if (existingCert) {
@@ -188,11 +188,13 @@ export const issueCertificate: RequestHandler = (req, res) => {
     completionDate: new Date().toISOString(),
     verificationHash,
     isVerified: true,
+    status: 'active', // active, revoked
     metadata: {
       completedLessons,
       totalLessons,
       completionPercentage,
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
+      version: 1
     }
   };
   
@@ -203,6 +205,150 @@ export const issueCertificate: RequestHandler = (req, res) => {
   res.status(201).json({
     certificate: cert,
     message: 'Certificate generated successfully'
+  });
+};
+
+// Revoke certificate
+export const revokeCertificate: RequestHandler = (req, res) => {
+  const uid = getUserId(req);
+  if (!uid) return res.status(401).json({ error: "Unauthorized" });
+  
+  const { certificateId } = req.params as { certificateId: string };
+  const { reason } = req.body as { reason?: string };
+  
+  const db = readDB() as any;
+  
+  // Find certificate
+  const certIndex = (db.certificates || []).findIndex((c: any) => 
+    c.id === certificateId || c.certificateId === certificateId
+  );
+  
+  if (certIndex === -1) {
+    return res.status(404).json({ error: 'Certificate not found' });
+  }
+  
+  const cert = db.certificates[certIndex];
+  
+  // Check ownership
+  if (cert.userId !== uid) {
+    return res.status(403).json({ error: 'Not authorized to revoke this certificate' });
+  }
+  
+  // Check if already revoked
+  if (cert.status === 'revoked') {
+    return res.status(400).json({ error: 'Certificate is already revoked' });
+  }
+  
+  // Revoke certificate
+  db.certificates[certIndex] = {
+    ...cert,
+    status: 'revoked',
+    isVerified: false,
+    revokedAt: new Date().toISOString(),
+    revocationReason: reason || 'Revoked by user',
+    metadata: {
+      ...cert.metadata,
+      revokedBy: uid
+    }
+  };
+  
+  writeDB(db);
+  
+  res.json({
+    message: 'Certificate revoked successfully',
+    certificate: db.certificates[certIndex]
+  });
+};
+
+// Reissue certificate
+export const reissueCertificate: RequestHandler = (req, res) => {
+  const uid = getUserId(req);
+  if (!uid) return res.status(401).json({ error: "Unauthorized" });
+  
+  const { certificateId } = req.params as { certificateId: string };
+  
+  const db = readDB() as any;
+  
+  // Find the revoked certificate
+  const oldCertIndex = (db.certificates || []).findIndex((c: any) => 
+    (c.id === certificateId || c.certificateId === certificateId) && 
+    c.userId === uid
+  );
+  
+  if (oldCertIndex === -1) {
+    return res.status(404).json({ error: 'Certificate not found' });
+  }
+  
+  const oldCert = db.certificates[oldCertIndex];
+  
+  // Check ownership
+  if (oldCert.userId !== uid) {
+    return res.status(403).json({ error: 'Not authorized to reissue this certificate' });
+  }
+  
+  // Check if it's revoked
+  if (oldCert.status !== 'revoked') {
+    return res.status(400).json({ error: 'Can only reissue revoked certificates' });
+  }
+  
+  // Get track info
+  const track = (db.learningTracks || []).find((t: any) => t.id === oldCert.trackId);
+  if (!track) {
+    return res.status(404).json({ error: 'Track not found' });
+  }
+  
+  // Verify user still meets requirements
+  const userProgress = (db.userProgress || []).filter((p: any) => 
+    p.userId === uid && p.trackId === oldCert.trackId
+  );
+  
+  const totalLessons = track.modules?.reduce((total: number, module: any) => 
+    total + (module.lessons?.length || 0), 0) || 0;
+  const completedLessons = userProgress.filter((p: any) => p.status === 'completed').length;
+  const completionPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  
+  if (completionPercentage < 80) {
+    return res.status(400).json({ 
+      error: 'Not eligible for certificate reissuance',
+      reason: `Only ${completionPercentage}% completed. Minimum 80% required.`,
+      progress: { completedLessons, totalLessons, completionPercentage }
+    });
+  }
+  
+  // Generate new certificate
+  const id = createId("cert");
+  const newCertificateId = `AFA-${track.role?.toUpperCase() || 'GEN'}-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0')}`;
+  const verificationHash = generateVerificationHash(uid, oldCert.trackId, newCertificateId);
+  
+  const newCert = {
+    id,
+    certificateId: newCertificateId,
+    userId: uid,
+    trackId: oldCert.trackId,
+    trackTitle: oldCert.trackTitle,
+    userRole: oldCert.userRole,
+    completionDate: new Date().toISOString(),
+    verificationHash,
+    isVerified: true,
+    status: 'active',
+    metadata: {
+      completedLessons,
+      totalLessons,
+      completionPercentage,
+      generatedAt: new Date().toISOString(),
+      version: (oldCert.metadata?.version || 1) + 1,
+      reissuedFrom: oldCert.certificateId,
+      originalIssueDate: oldCert.completionDate
+    }
+  };
+  
+  db.certificates.push(newCert);
+  writeDB(db);
+  
+  res.status(201).json({
+    message: 'Certificate reissued successfully',
+    certificate: newCert,
+    previousCertificate: oldCert
   });
 };
 
@@ -235,6 +381,22 @@ export const verifyCertificate: RequestHandler = (req, res) => {
     });
   }
   
+  // Check if certificate is revoked
+  if (cert.status === 'revoked') {
+    return res.json({
+      valid: false,
+      certificate: cert,
+      verificationInfo: {
+        certificateId: cert.certificateId || cert.credentialId,
+        trackTitle: cert.trackTitle || cert.title,
+        completionDate: cert.completionDate || cert.issuedAt,
+        verificationStatus: 'REVOKED',
+        revokedAt: cert.revokedAt,
+        revocationReason: cert.revocationReason
+      }
+    });
+  }
+  
   // Verify hash if present
   let isValid = true;
   if (cert.verificationHash) {
@@ -253,7 +415,8 @@ export const verifyCertificate: RequestHandler = (req, res) => {
       certificateId: cert.certificateId || cert.credentialId,
       trackTitle: cert.trackTitle || cert.title,
       completionDate: cert.completionDate || cert.issuedAt,
-      verificationStatus: isValid ? 'VERIFIED' : 'INVALID'
+      verificationStatus: isValid ? 'VERIFIED' : 'INVALID',
+      version: cert.metadata?.version
     },
     verifyUrl: `${req.protocol}://${req.get("host")}/verify/${encodeURIComponent(cert.certificateId || cert.credentialId)}`
   });
@@ -274,6 +437,8 @@ export const getUserCertificates: RequestHandler = (req, res) => {
 router.get("/requirements/:trackId", getCertificateRequirements);
 router.post("/generate", issueCertificate);
 router.post("/issue", issueCertificate); // Legacy compatibility
+router.post("/revoke/:certificateId", revokeCertificate);
+router.post("/reissue/:certificateId", reissueCertificate);
 router.get("/user", getUserCertificates);
 router.get("/:id", getCertificate);
 router.get("/verify/:certificateId", verifyCertificate);
