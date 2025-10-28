@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { apiListNotifications, apiMarkAllNotificationsRead, apiMarkNotificationRead, apiMe, apiMeCookie, apiSearch, apiLogout } from "@/lib/api";
-import type { AuthUser, ListNotificationsResponse, SearchResponse } from "@shared/api";
+import { apiListNotifications, apiMarkAllNotificationsRead, apiMarkNotificationRead, apiSearch, apiLogout } from "@/lib/api";
+import type { ListNotificationsResponse, SearchResponse } from "@shared/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoggedInHeader() {
   const nav = useNavigate();
   const loc = useLocation();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const { user, loading: loadingUser, refresh } = useAuth();
 
   const [q, setQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -24,27 +24,6 @@ export default function LoggedInHeader() {
   const [notifOpen, setNotifOpen] = useState(false);
   const unread = notif?.unread || 0;
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoadingUser(true);
-        try {
-          const me = await apiMeCookie();
-          setUser(me.user);
-        } catch {
-          const token = localStorage.getItem("auth_token");
-          if (token) {
-            const me = await apiMe(token);
-            setUser(me.user);
-          }
-        }
-      } catch {
-        setUser(null);
-      } finally {
-        setLoadingUser(false);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -188,7 +167,7 @@ export default function LoggedInHeader() {
                 <Settings className="mr-2 h-4 w-4" /> Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={async()=>{ try { await apiLogout(); } catch {} try { localStorage.removeItem("auth_token"); } catch {} nav("/login"); }}>
+              <DropdownMenuItem onClick={async()=>{ try { await apiLogout(); } catch {} try { localStorage.removeItem("auth_token"); window.dispatchEvent(new Event('auth-changed')); } catch {} nav("/login"); }}>
                 <LogOut className="mr-2 h-4 w-4" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
