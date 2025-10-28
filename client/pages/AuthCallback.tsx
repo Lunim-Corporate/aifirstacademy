@@ -13,7 +13,7 @@ export default function AuthCallback() {
       const params = new URLSearchParams(loc.search);
       const qToken = params.get("token");
       if (qToken) {
-        try { localStorage.setItem("auth_token", qToken); } catch {}
+        try { localStorage.setItem("auth_token", qToken); window.dispatchEvent(new Event('auth-changed')); } catch {}
         nav("/dashboard", { replace: true });
         return;
       }
@@ -21,7 +21,7 @@ export default function AuthCallback() {
       const hash = new URLSearchParams((loc.hash || "").replace(/^#/, ""));
       const hToken = hash.get("token");
       if (hToken) {
-        try { localStorage.setItem("auth_token", hToken); } catch {}
+        try { localStorage.setItem("auth_token", hToken); window.dispatchEvent(new Event('auth-changed')); } catch {}
         nav("/dashboard", { replace: true });
         return;
       }
