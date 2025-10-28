@@ -25,21 +25,21 @@
       "short_name": "Dashboard",
       "description": "View your learning dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }]
     },
     {
       "name": "Learning",
       "short_name": "Learning",
       "description": "Continue your learning journey",
       "url": "/learning",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }]
     },
     {
       "name": "Sandbox",
       "short_name": "Sandbox",
       "description": "Practice in the AI sandbox",
       "url": "/sandbox",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }]
     }
   ],
   "edge_side_panel": {
