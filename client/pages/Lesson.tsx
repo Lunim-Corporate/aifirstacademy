@@ -334,7 +334,7 @@ export default function Lesson() {
     }
 
     // Enhanced text lessons with better formatting
-    if (current.type === "text" || current.type === "reading") {
+    if (current.type === "text") {
       return (
         <div className="space-y-6">
           {current.content ? (
@@ -388,7 +388,7 @@ export default function Lesson() {
     }
 
     // Enhanced sandbox lessons with better UX
-    if (current.type === "sandbox" || current.type === "interactive") {
+    if (current.type === "sandbox") {
       return (
         <div className="space-y-6">
           {current.content ? (
