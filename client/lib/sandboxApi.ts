@@ -1,7 +1,8 @@
 // API utilities for sandbox functionality
 import { APIResponse, APIError } from '../types/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+// When empty string, fetch() will use same-origin base; set VITE_API_URL in prod if calling a different host
 
 // Helper function to make authenticated API requests
 async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
