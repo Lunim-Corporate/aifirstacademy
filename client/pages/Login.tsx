@@ -77,6 +77,7 @@ export default function Login() {
       const name = email.split("@")[0];
       const { token } = await apiOAuthMock(provider, email, name);
       localStorage.setItem("auth_token", token);
+      window.dispatchEvent(new Event('auth-changed'));
       navigate("/dashboard");
     } catch (e: any) {
       alert(e?.message || "SSO sign-in failed");
