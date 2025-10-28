@@ -54,7 +54,21 @@ export interface AIResponse {
   responseTime: number;
   cost?: number;
   error?: string;
+
+  // Add these optional properties for sandbox runs
+  timings?: {
+    start: number;
+    end: number;
+  };
+  feedback?: {
+    score?: number;
+    clarity?: number;
+    constraints?: number;
+    specificity?: number;
+    notes?: string;
+  };
 }
+
 
 export interface PromptTemplate {
   id: string;

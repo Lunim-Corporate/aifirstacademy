@@ -103,6 +103,25 @@ interface PromptExecution {
   };
 }
 
+interface AIResponse {
+  id: string;
+  prompt: string;
+  content: string;
+  tokens?: { total: number };
+  cost?: number;
+  timings?: {
+    start: number;
+    end: number;
+  };
+  feedback?: {
+    score?: number;
+    clarity?: number;
+    constraints?: number;
+    specificity?: number;
+    notes?: string;
+  };
+}
+
 const sampleExecutions: PromptExecution[] = [
   {
     id: "exec-1",
@@ -184,57 +203,66 @@ export default function Sandbox() {
   }, []);
 
   const handleRunPrompt = async () => {
-    if (!userPrompt.trim()) {
-      alert("Please enter a prompt before running");
-      return;
-    }
+  if (!userPrompt.trim()) {
+    alert("Please enter a prompt before running");
+    return;
+  }
 
-    setIsLoading(true);
-    try {
-      if (compareMode && selectedModels.length > 1) {
-        // Multi-model comparison
-        const comparisonResult = await sandboxApi.comparePrompt({ 
-          prompt: userPrompt.trim(),
-          models: selectedModels 
-        });
-        
-        setComparisonResults(comparisonResult.responses);
-        setTotalCost(comparisonResult.comparison.totalCost);
-        
-        // Calculate prompt optimization score based on responses
-        const avgScore = comparisonResult.responses.reduce((sum, r) => sum + (r.score || 75), 0) / comparisonResult.responses.length;
-        setPromptOptimizationScore(Math.round(avgScore));
-        
-      } else {
-        // Single model execution (existing logic)
-        const res = await apiSandboxRun({ prompt: userPrompt, temperature, maxTokens, system: systemMessage });
-        const newExecution: PromptExecution = {
-          id: res.id,
-          timestamp: new Date(res.timings.end),
-          model: selectedModel,
-          prompt: res.prompt,
-          response: res.content,
-          tokens: res.tokens.total,
-          cost: res.cost,
-          score: res.feedback.score,
-          feedback: {
-            clarity: res.feedback.clarity,
-            context: res.feedback.specificity ?? 80,
-            constraints: res.feedback.constraints,
-            effectiveness: Math.round((res.feedback.clarity + res.feedback.constraints) / 2),
-            suggestions: [res.feedback.notes],
-          },
-        };
-        setCurrentExecution(newExecution);
-        setExecutions((prev) => [newExecution, ...prev]);
-        setTotalCost(res.cost || 0);
-      }
-    } catch (err: any) {
-      alert(err.message || "Run failed");
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+  try {
+    if (compareMode && selectedModels.length > 1) {
+      // Multi-model comparison
+      const comparisonResult = await sandboxApi.comparePrompt({ 
+        prompt: userPrompt.trim(),
+        models: selectedModels 
+      });
+      
+      setComparisonResults(comparisonResult.responses);
+      setTotalCost(comparisonResult.comparison?.totalCost || 0);
+      
+      // Calculate prompt optimization score
+      const avgScore = comparisonResult.responses.reduce((sum, r) => sum + (r.feedback?.score || 75), 0) / comparisonResult.responses.length;
+      setPromptOptimizationScore(Math.round(avgScore));
+      
+    } else {
+      // Single model execution
+      const res: AIResponse = await apiSandboxRun({ prompt: userPrompt, temperature, maxTokens, system: systemMessage });
+      console.log("Sandbox API response:", res);
+
+      const newExecution: PromptExecution = {
+        id: res.id || "unknown-id",
+        timestamp: res?.timings?.end ? new Date(res.timings.end) : new Date(),
+        model: selectedModel,
+        prompt: res.prompt || userPrompt,
+        response: res.content || "No response",
+        tokens: res.tokens?.total || 0,
+        cost: res.cost || 0,
+        score: res.feedback?.score || 0,
+        feedback: {
+          clarity: res.feedback?.clarity || 0,
+          context: res.feedback?.specificity ?? 80,
+          constraints: res.feedback?.constraints || 0,
+          effectiveness: Math.round(((res.feedback?.clarity || 0) + (res.feedback?.constraints || 0)) / 2),
+          // ALWAYS have mock suggestions if notes are missing
+          suggestions: res.feedback?.notes
+            ? [res.feedback.notes]
+            : ["Try making your prompt more specific", "Add examples to clarify context"],
+        },
+      };
+
+      setCurrentExecution(newExecution);
+      setExecutions((prev) => [newExecution, ...prev]);
+      setTotalCost(res.cost || 0);
     }
-  };
+  } catch (err: any) {
+    alert(err.message || "Run failed");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+
 
   const handleTemplateSelect = (template: typeof promptTemplates[0]) => {
     setSelectedTemplate(template);
@@ -698,12 +726,12 @@ export default function Sandbox() {
                                 </CardTitle>
                                 <div className="flex items-center space-x-2">
                                   {result.tokens && (
-                                    <Badge variant="outline" size="sm">
+                                    <Badge variant="outline" className="px-2 py-1 text-sm">
                                       {result.tokens} tokens
                                     </Badge>
                                   )}
                                   {result.cost && (
-                                    <Badge variant="outline" size="sm">
+                                    <Badge variant="outline" className="px-2 py-1 text-sm">
                                       ${result.cost.toFixed(4)}
                                     </Badge>
                                   )}
