@@ -202,7 +202,7 @@ export default function Sandbox() {
         setTotalCost(comparisonResult.comparison.totalCost);
         
         // Calculate prompt optimization score based on responses
-        const avgScore = comparisonResult.responses.reduce((sum, r) => sum + (r.score || 75), 0) / comparisonResult.responses.length;
+        const avgScore = (comparisonResult.responses as any[]).reduce((sum, r: any) => sum + (r.score ?? 75), 0) / comparisonResult.responses.length;
         setPromptOptimizationScore(Math.round(avgScore));
         
       } else {
@@ -698,12 +698,12 @@ export default function Sandbox() {
                                 </CardTitle>
                                 <div className="flex items-center space-x-2">
                                   {result.tokens && (
-                                    <Badge variant="outline" size="sm">
+                                    <Badge variant="outline">
                                       {result.tokens} tokens
                                     </Badge>
                                   )}
                                   {result.cost && (
-                                    <Badge variant="outline" size="sm">
+                                    <Badge variant="outline">
                                       ${result.cost.toFixed(4)}
                                     </Badge>
                                   )}
