@@ -98,6 +98,8 @@ export default function VerifyOTP() {
     try {
       const { token } = await apiOtpVerify({ pendingId, code: code.trim() });
       localStorage.setItem("auth_token", token);
+      // Broadcast auth change so UI updates immediately without refresh
+      window.dispatchEvent(new Event('auth-changed'));
       setSuccess(true);
       
       // Clear stored data
