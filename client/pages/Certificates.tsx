@@ -79,7 +79,7 @@ function CertificatePreview({
         <div className="space-y-8">
           <div>
             <div className="text-lg text-slate-600 mb-4">This certifies that</div>
-            <div className="text-5xl font-bold text-slate-800 mb-2">{user?.name || 'John Doe'}</div>
+            <div className="text-5xl font-bold text-slate-800 mb-2">{user?.name}</div>
             <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full" />
           </div>
           
@@ -170,8 +170,10 @@ const mockCertificates = [
 
 // This will be populated from the API
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function Certificates() {
-  const [user, setUser] = useState<any>({ name: 'John Doe' });
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -186,8 +188,11 @@ export default function Certificates() {
       try {
         // Get user info  
         try {
-          const userInfo = await apiMe();
-          setUser(userInfo.user);
+          // Prefer auth context; fallback to API if needed
+          if (!user) {
+            const userInfo = await apiMe();
+            // No local setUser; using context
+          }
         } catch (error) {
           console.warn('Could not load user info:', error);
           // Continue with default user for demo purposes
