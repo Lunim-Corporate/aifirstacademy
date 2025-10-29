@@ -4,18 +4,7 @@
   publish = "dist/spa"
 
 [functions]
-  external_node_modules = [
-    "express",
-    "@react-email/render", 
-    "cors",
-    "dotenv",
-    "nodemailer",
-    "resend",
-    "zod",
-    "serverless-http"
-  ]
   node_bundler = "esbuild"
-  
   
   [functions.timeout]
     default = 30 
