@@ -103,9 +103,15 @@ export function createServer() {
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(cookieParser()); // Add cookie parser for handling cookies
   
-  // Request logging middleware
+  // Enhanced request logging middleware
   app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log(`[SERVER] ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+    console.log(`[SERVER] Path: ${req.path}, BaseURL: ${req.baseUrl}, URL: ${req.url}`);
+    console.log(`[SERVER] Headers:`, {
+      host: req.get('host'),
+      origin: req.get('origin'),
+      'user-agent': req.get('user-agent')?.substring(0, 50)
+    });
     next();
   });
 
