@@ -312,55 +312,76 @@ export const otpVerify: RequestHandler = async (req, res) => {
       user = await updateUser(user.id, { is_verified: true });
     }
     
-    // Create session with device info
-    const session = await sessionManager.createSession(
-      user.id,
-      {
-        userAgent: req.get('User-Agent'),
-        deviceId: deviceInfo?.deviceId,
-        name: deviceInfo?.name,
-      },
-      req.ip || 'unknown'
-    );
+    // Try to create session with enhanced auth, fall back to legacy if tables don't exist
+    let accessToken: string;
+    let refreshToken: string | undefined;
+    let sessionData: any = null;
     
-    // Generate tokens with legacy compatibility
-    const accessToken = jwtManager.generateAccessToken({
-      userId: user.id,
-      sub: user.id, // Legacy compatibility
-      email: user.email,
-      role: user.role,
-      sessionId: session.id,
-      deviceId: session.device_id,
-    });
-    
-    const refreshToken = jwtManager.generateRefreshToken({
-      userId: user.id,
-      sessionId: session.id,
-      tokenVersion: 1,
-    });
+    try {
+      // Create session with device info
+      const session = await sessionManager.createSession(
+        user.id,
+        {
+          userAgent: req.get('User-Agent'),
+          deviceId: deviceInfo?.deviceId,
+          name: deviceInfo?.name,
+        },
+        req.ip || 'unknown'
+      );
+      
+      // Generate tokens with legacy compatibility
+      accessToken = jwtManager.generateAccessToken({
+        userId: user.id,
+        sub: user.id, // Legacy compatibility
+        email: user.email,
+        role: user.role,
+        sessionId: session.id,
+        deviceId: session.device_id,
+      });
+      
+      refreshToken = jwtManager.generateRefreshToken({
+        userId: user.id,
+        sessionId: session.id,
+        tokenVersion: 1,
+      });
+      
+      sessionData = {
+        id: session.id,
+        expiresAt: session.expires_at,
+        deviceId: session.device_id,
+      };
+      
+      // Extend session if remember device is enabled
+      if (rememberDevice) {
+        await sessionManager.extendSession(session.id, 30 * 24); // 30 days
+      }
+    } catch (sessionError) {
+      // Fallback to legacy JWT-only auth if session tables don't exist
+      console.warn('Session creation failed, falling back to legacy auth:', sessionError);
+      
+      // Use the legacy signToken from utils/jwt
+      const { signToken } = require('../utils/jwt');
+      accessToken = signToken({ 
+        sub: user.id, 
+        email: user.email, 
+        role: user.role 
+      });
+    }
     
     // Set cookie for backward compatibility with legacy auth
     setAuthCookie(res, accessToken, req);
     
-    // Extend session if remember device is enabled
-    if (rememberDevice) {
-      await sessionManager.extendSession(session.id, 30 * 24); // 30 days
-    }
-    
     res.json({
+      token: accessToken, // Legacy compatibility
       accessToken,
-      refreshToken,
+      ...(refreshToken && { refreshToken }),
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
       },
-      session: {
-        id: session.id,
-        expiresAt: session.expires_at,
-        deviceId: session.device_id,
-      }
+      ...(sessionData && { session: sessionData })
     });
   } catch (error) {
     console.error('OTP verify error:', error);
