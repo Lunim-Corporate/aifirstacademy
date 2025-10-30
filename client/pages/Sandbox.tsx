@@ -212,54 +212,96 @@ export default function Sandbox() {
   try {
     if (compareMode && selectedModels.length > 1) {
       // Multi-model comparison
-      const comparisonResult = await sandboxApi.comparePrompt({ 
+      const comparisonResult = await sandboxApi.comparePrompt({
         prompt: userPrompt.trim(),
-        models: selectedModels 
+        models: selectedModels,
       });
-      
+
       setComparisonResults(comparisonResult.responses);
       setTotalCost(comparisonResult.comparison?.totalCost || 0);
-      
+
       // Calculate prompt optimization score
-      const avgScore = comparisonResult.responses.reduce((sum, r) => sum + (r.feedback?.score || 75), 0) / comparisonResult.responses.length;
+      const avgScore =
+        comparisonResult.responses.reduce(
+          (sum, r) => sum + (r.feedback?.score || 75),
+          0
+        ) / comparisonResult.responses.length;
       setPromptOptimizationScore(Math.round(avgScore));
-      
     } else {
-      // Single model execution
-      const res: AIResponse = await apiSandboxRun({ prompt: userPrompt, temperature, maxTokens, system: systemMessage });
+      // ----------------- 1️⃣ Run the prompt normally -----------------
+      const res: AIResponse = await apiSandboxRun({
+        prompt: userPrompt,
+        temperature,
+        maxTokens,
+        system: systemMessage,
+      });
       console.log("Sandbox API response:", res);
 
+      // ----------------- 2️⃣ Evaluate the prompt quality -----------------
+      let evalData: any = {};
+      try {
+        const evalRes = await fetch("/api/sandbox/evaluate-prompt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: userPrompt }),
+        });
+
+        const text = await evalRes.text();
+        try {
+          evalData = JSON.parse(text);
+        } catch (err) {
+          console.error("Prompt evaluation not valid JSON:", text);
+          evalData = {};
+        }
+      } catch (err) {
+        console.error("Prompt evaluation failed:", err);
+      }
+
+      // ----------------- 3️⃣ Merge evaluation into execution -----------------
       const newExecution: PromptExecution = {
         id: res.id || "unknown-id",
-        timestamp: res?.timings?.end ? new Date(res.timings.end) : new Date(),
+        timestamp: res?.timings?.end
+          ? new Date(res.timings.end)
+          : new Date(),
         model: selectedModel,
         prompt: res.prompt || userPrompt,
         response: res.content || "No response",
         tokens: res.tokens?.total || 0,
         cost: res.cost || 0,
-        score: res.feedback?.score || 0,
+        score: evalData.score ?? res.feedback?.score ?? 0,
         feedback: {
-          clarity: res.feedback?.clarity || 0,
-          context: res.feedback?.specificity ?? 80,
-          constraints: res.feedback?.constraints || 0,
-          effectiveness: Math.round(((res.feedback?.clarity || 0) + (res.feedback?.constraints || 0)) / 2),
-          // ALWAYS have mock suggestions if notes are missing
-          suggestions: res.feedback?.notes
-            ? [res.feedback.notes]
-            : ["Try making your prompt more specific", "Add examples to clarify context"],
+          clarity: evalData.categories?.clarity ?? 0,
+          context: evalData.categories?.context ?? 0,
+          constraints: evalData.categories?.constraints ?? 0,
+          effectiveness:
+            evalData.categories?.effectiveness ??
+            Math.round(
+              ((evalData.categories?.clarity ?? 0) +
+                (evalData.categories?.context ?? 0)) /
+                2
+            ),
+          suggestions:
+            Array.isArray(evalData.suggestions) &&
+            evalData.suggestions.length > 0
+              ? evalData.suggestions
+              : ["No suggestions returned"],
         },
       };
 
+      // ----------------- 4️⃣ Update UI -----------------
       setCurrentExecution(newExecution);
       setExecutions((prev) => [newExecution, ...prev]);
       setTotalCost(res.cost || 0);
+      setPromptOptimizationScore(newExecution.score);
     }
   } catch (err: any) {
+    console.error(err);
     alert(err.message || "Run failed");
   } finally {
     setIsLoading(false);
   }
 };
+
 
 
 

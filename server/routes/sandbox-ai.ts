@@ -672,64 +672,60 @@ export const evaluatePrompt: RequestHandler = async (req, res) => {
 
     const start = Date.now();
 
-    const system = {
-      role: "system",
-      content:
-        "You are an objective evaluator for prompt engineering. Return only valid JSON with keys: score (0–100), categories (clarity/context/constraints/effectiveness each 0–25), suggestions (array of short bullet suggestions), and feedback (a short paragraph). Be concise and actionable.",
-    };
+    // Messages for OpenAI chat completion
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content:
+          "You are an expert evaluator of AI prompts. Respond ONLY in valid JSON with the following keys: " +
+          "score (0–100), categories (clarity/context/constraints/effectiveness, each 0–25), suggestions (array of short actionable tips), and feedback (short paragraph). Be concise, objective, and avoid any extra text.",
+      },
+      {
+        role: "user",
+        content: `Context: ${context}\n\nEvaluate the following user prompt:\n"""${prompt}"""\n\nReturn valid JSON only.`,
+      },
+    ];
 
-    const user = {
-      role: "user",
-      content: `Context: ${context}\n\nUser Prompt:\n${prompt}\n\nEvaluate according to clarity, context, constraints, and effectiveness. Return valid JSON only, no extra text.`,
-    };
-
-    // -----------------------------
-    // Call OpenAI and treat result as any to avoid type errors
-    // -----------------------------
-    const result = (await callOpenAI(
-      JSON.stringify({ messages: [system, user] }),
-      "gpt-4-turbo"
-    )) as any;
+    // Call OpenAI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages,
+      temperature: 0.3,
+      max_tokens: 300,
+    });
 
     const end = Date.now();
 
-    // -----------------------------
-    // Safe extraction of AI output
-    // -----------------------------
-    const text =
-      result?.choices?.[0]?.message?.content ||
-      result?.choices?.[0]?.text ||
-      result?.content || // fallback to your AIResponse content
-      "";
+    // Extract AI content
+    const content = completion.choices?.[0]?.message?.content?.trim() || "";
 
-    // -----------------------------
-    // Attempt to parse JSON from AI response
-    // -----------------------------
+    // Safely parse JSON
     let parsed;
     try {
-      const jsonText = (() => {
-        const match = text.match(/\{[\s\S]*\}$/);
-        return match ? match[0] : text;
-      })();
-      parsed = JSON.parse(jsonText);
-    } catch (e) {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+    } catch (err) {
+      console.error("JSON parse error:", err, content);
       return res.status(200).json({
         parseError: true,
-        raw: text,
+        raw: content,
         timings: { start, end, latencyMs: end - start },
       });
     }
 
-    // -----------------------------
-    // Return parsed evaluation with timings
-    // -----------------------------
+    // Ensure categories and suggestions exist
+    parsed.categories = parsed.categories || {};
+    parsed.suggestions = parsed.suggestions || [];
+
     return res.status(200).json({
       ...parsed,
       timings: { start, end, latencyMs: end - start },
     });
   } catch (err: any) {
     console.error("evaluatePrompt error:", err?.message ?? err);
-    return res.status(500).json({ error: "Evaluation failed", detail: err?.message ?? err });
+    return res
+      .status(500)
+      .json({ error: "Evaluation failed", detail: err?.message ?? err });
   }
 };
 
@@ -741,7 +737,7 @@ router.use('/compare', aiRateLimit);
 router.post('/test', testPrompt);
 router.post('/compare', aiRateLimit, comparePrompt); // apply stricter AI rate limiting
 router.post("/run", aiRateLimit, runHandler); // stricter AI limiter
-router.post("/evaluate", aiRateLimit, evaluatePrompt);
+router.post("/evaluate-prompt", evaluatePrompt);
 router.get('/history', getSandboxHistory);
 router.get('/templates', getPromptTemplates);
 router.get('/models', getAIModels);

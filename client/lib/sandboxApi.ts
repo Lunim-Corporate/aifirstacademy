@@ -55,7 +55,7 @@ export interface AIResponse {
   cost?: number;
   error?: string;
 
-  // Add these optional properties for sandbox runs
+  // Optional properties for sandbox runs
   timings?: {
     start: number;
     end: number;
@@ -67,6 +67,13 @@ export interface AIResponse {
     specificity?: number;
     notes?: string;
   };
+   categories?: {
+    clarity?: number;
+    context?: number;
+    constraints?: number;
+    effectiveness?: number;
+  };
+  suggestions?: string[];
 }
 
 
