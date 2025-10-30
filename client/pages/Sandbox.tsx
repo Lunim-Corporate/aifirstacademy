@@ -90,6 +90,7 @@ interface PromptExecution {
   timestamp: Date;
   model: string;
   prompt: string;
+  optimizedPrompt: string;
   response: string;
   tokens: number;
   cost: number;
@@ -122,7 +123,7 @@ interface AIResponse {
   };
 }
 
-const sampleExecutions: PromptExecution[] = [
+/* const sampleExecutions: PromptExecution[] = [
   {
     id: "exec-1",
     timestamp: new Date(Date.now() - 30 * 60 * 1000),
@@ -144,7 +145,7 @@ const sampleExecutions: PromptExecution[] = [
       ]
     }
   },
-];
+]; */
 
 export default function Sandbox() {
   const [bootLoading, setBootLoading] = useState(true);
@@ -156,10 +157,12 @@ export default function Sandbox() {
   const [maxTokens, setMaxTokens] = useState(1000);
   const [isLoading, setIsLoading] = useState(false);
   const [currentExecution, setCurrentExecution] = useState<PromptExecution | null>(null);
-  const [executions, setExecutions] = useState<PromptExecution[]>(sampleExecutions);
+  const [executions, setExecutions] = useState<PromptExecution[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<typeof promptTemplates[0] | null>(null);
   const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [remainingRuns, setRemainingRuns] = useState<number | string>(0);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   // Enhanced multi-model states
   const [availableModels, setAvailableModels] = useState<any[]>([]);
@@ -202,6 +205,20 @@ export default function Sandbox() {
     loadModels();
   }, []);
 
+  useEffect(() => {
+  const fetchRemainingRuns = async () => {
+    try {
+      const res = await fetch("/api/sandbox/remaining-runs"); // backend endpoint
+      const data = await res.json();
+      setRemainingRuns(data.remainingRuns); // now frontend matches backend
+    } catch (err) {
+      console.error("Failed to fetch remaining runs:", err);
+    }
+  };
+
+  fetchRemainingRuns();
+}, []);
+
   const handleRunPrompt = async () => {
   if (!userPrompt.trim()) {
     alert("Please enter a prompt before running");
@@ -209,9 +226,10 @@ export default function Sandbox() {
   }
 
   setIsLoading(true);
+
   try {
     if (compareMode && selectedModels.length > 1) {
-      // Multi-model comparison
+      // ----------------- 🧠 Multi-model comparison -----------------
       const comparisonResult = await sandboxApi.comparePrompt({
         prompt: userPrompt.trim(),
         models: selectedModels,
@@ -227,6 +245,7 @@ export default function Sandbox() {
           0
         ) / comparisonResult.responses.length;
       setPromptOptimizationScore(Math.round(avgScore));
+
     } else {
       // ----------------- 1️⃣ Run the prompt normally -----------------
       const res: AIResponse = await apiSandboxRun({
@@ -246,26 +265,37 @@ export default function Sandbox() {
           body: JSON.stringify({ prompt: userPrompt }),
         });
 
-        const text = await evalRes.text();
-        try {
-          evalData = JSON.parse(text);
-        } catch (err) {
-          console.error("Prompt evaluation not valid JSON:", text);
-          evalData = {};
+        // ✅ Parse response directly as JSON
+        evalData = await evalRes.json();
+        console.log("EvalData from backend:", evalData); // debug
+
+        // 🧩 STEP 5 — Check if user exceeded plan limit
+        if (evalData.upgradePrompt) {
+          alert(
+            "You have reached your monthly prompt limit! Please upgrade to Pro or Enterprise to continue."
+          );
+          setRemainingRuns(evalData.remainingRuns ?? 0);
+          setIsLoading(false);
+          return;
         }
+
+        // Update remaining runs from backend first
+        setRemainingRuns(evalData.remainingRuns ?? 0);
+
       } catch (err) {
         console.error("Prompt evaluation failed:", err);
+        // fallback: keep current remainingRuns
+        setRemainingRuns(remainingRuns ?? 0);
       }
 
       // ----------------- 3️⃣ Merge evaluation into execution -----------------
       const newExecution: PromptExecution = {
         id: res.id || "unknown-id",
-        timestamp: res?.timings?.end
-          ? new Date(res.timings.end)
-          : new Date(),
+        timestamp: res?.timings?.end ? new Date(res.timings.end) : new Date(),
         model: selectedModel,
-        prompt: res.prompt || userPrompt,
-        response: res.content || "No response",
+        prompt: userPrompt,
+        optimizedPrompt: evalData.optimizedPrompt || userPrompt,
+        response: evalData.optimizedPrompt || userPrompt,
         tokens: res.tokens?.total || 0,
         cost: res.cost || 0,
         score: evalData.score ?? res.feedback?.score ?? 0,
@@ -277,13 +307,15 @@ export default function Sandbox() {
             evalData.categories?.effectiveness ??
             Math.round(
               ((evalData.categories?.clarity ?? 0) +
-                (evalData.categories?.context ?? 0)) /
-                2
+                (evalData.categories?.context ?? 0)) / 2
             ),
           suggestions:
-            Array.isArray(evalData.suggestions) &&
-            evalData.suggestions.length > 0
-              ? evalData.suggestions
+            Array.isArray(evalData.suggestions) && evalData.suggestions.length > 0
+              ? Array.from(
+                  new Set(
+                    evalData.suggestions.map((s: string) => s.trim()).filter(Boolean)
+                  )
+                )
               : ["No suggestions returned"],
         },
       };
@@ -294,6 +326,7 @@ export default function Sandbox() {
       setTotalCost(res.cost || 0);
       setPromptOptimizationScore(newExecution.score);
     }
+
   } catch (err: any) {
     console.error(err);
     alert(err.message || "Run failed");
@@ -301,6 +334,7 @@ export default function Sandbox() {
     setIsLoading(false);
   }
 };
+
 
 
 
@@ -512,10 +546,10 @@ export default function Sandbox() {
                   />
                 </div>
 
-                <div className="flex items-end">
+                <div className="flex items-end flex-col w-full">
                   <Button 
                     onClick={handleRunPrompt}
-                    disabled={isLoading || !userPrompt.trim()}
+                    disabled={isLoading || !userPrompt.trim() || remainingRuns === 0}
                     className="w-full bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700"
                   >
                     {isLoading ? (
@@ -530,6 +564,12 @@ export default function Sandbox() {
                       </>
                     )}
                   </Button>
+                  {/* ----------------- Remaining Runs Display ----------------- */}
+                  <div className="mt-2 text-sm text-gray-500 w-full text-right">
+                    {typeof remainingRuns === "number"
+                      ? `🌟 Remaining runs this month: ${remainingRuns}`
+                      : `🌟 Remaining runs: ${remainingRuns}`}
+                  </div>
                 </div>
               </div>
 
@@ -907,6 +947,24 @@ export default function Sandbox() {
               </div>
             )}
           </div>
+
+          {showUpgradeModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="bg-white rounded-lg p-6 w-96">
+                <h2 className="text-lg font-bold mb-4">Upgrade Required</h2>
+                <p className="mb-6">
+                  You have reached your plan limit. Upgrade to Pro or Enterprise to continue using the Sandbox without limits.
+                </p>
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>Cancel</Button>
+                  <Button onClick={() => { /* redirect to billing page */ window.location.href="/billing"; }}>
+                    Upgrade Now
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </main>
       </div>
     </div>

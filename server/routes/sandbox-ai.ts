@@ -1,4 +1,4 @@
-import { RequestHandler, Router } from "express";
+import { RequestHandler, Router, Request } from "express";
 import { supabaseAdmin, withRetry } from "../supabase";
 import { verifyToken } from "../utils/jwt";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
@@ -6,6 +6,19 @@ import OpenAI from "openai";
 import { Anthropic } from "@anthropic-ai/sdk";
 
 const router = Router();
+
+// Extend Express Request type to include `user`
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id?: string;
+        plan?: "Free" | "Pro" | "Enterprise";
+        promptRunsThisMonth?: number;
+      };
+    }
+  }
+}
 
 // Types for AI models and responses
 interface AIResponse {
@@ -670,19 +683,51 @@ export const evaluatePrompt: RequestHandler = async (req, res) => {
       return res.status(400).json({ error: "Prompt text required" });
     }
 
+    // 🧩 Step 1: Get user info (replace with real DB later)
+    const user = req.user || { id: "demo_user", plan: "Free", promptRunsThisMonth: 0 };
+    const userPlan = user.plan || "Free";
+    const usage = user.promptRunsThisMonth || 0;
+
+    // Define plan limits
+    const PLAN_LIMITS: Record<string, number> = {
+      Free: 100,
+      Pro: 1000,
+      Enterprise: Infinity,
+    };
+    const limit = PLAN_LIMITS[userPlan];
+
+    // Calculate remaining runs
+    const remainingRuns = limit === Infinity ? "Unlimited" : Math.max(limit - usage, 0);
+    const upgradePrompt = limit !== Infinity && usage >= limit;
+
+    // If limit reached, return immediately
+    if (upgradePrompt) {
+      return res.status(403).json({
+        error: "You’ve reached your monthly prompt limit.",
+        upgradePrompt: true,
+        remainingRuns: 0,
+        plan: userPlan,
+      });
+    }
+
     const start = Date.now();
 
     // Messages for OpenAI chat completion
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       {
         role: "system",
-        content:
-          "You are an expert evaluator of AI prompts. Respond ONLY in valid JSON with the following keys: " +
-          "score (0–100), categories (clarity/context/constraints/effectiveness, each 0–25), suggestions (array of short actionable tips), and feedback (short paragraph). Be concise, objective, and avoid any extra text.",
+        content: `You are an expert prompt optimizer. 
+- Evaluate the user’s prompt and provide scores and feedback.
+- Generate an improved, fully usable version of the prompt, ready for AI use.
+- Respond ONLY in JSON with keys: 
+  score (0–100), categories (clarity/context/constraints/effectiveness, each 0–25), 
+  suggestions (array of short actionable tips), 
+  feedback (short paragraph), 
+  optimizedPrompt (the fully reworked prompt).`,
       },
       {
         role: "user",
-        content: `Context: ${context}\n\nEvaluate the following user prompt:\n"""${prompt}"""\n\nReturn valid JSON only.`,
+        content: `Context: ${context}\n\nOriginal Prompt:\n"""${prompt}"""\n\nReturn valid JSON only.`,
       },
     ];
 
@@ -700,7 +745,7 @@ export const evaluatePrompt: RequestHandler = async (req, res) => {
     const content = completion.choices?.[0]?.message?.content?.trim() || "";
 
     // Safely parse JSON
-    let parsed;
+    let parsed: any = {};
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       parsed = JSON.parse(jsonMatch ? jsonMatch[0] : content);
@@ -709,25 +754,40 @@ export const evaluatePrompt: RequestHandler = async (req, res) => {
       return res.status(200).json({
         parseError: true,
         raw: content,
+        remainingRuns,
+        upgradePrompt,
+        plan: userPlan,
         timings: { start, end, latencyMs: end - start },
       });
     }
 
-    // Ensure categories and suggestions exist
+    // Ensure all expected fields exist
     parsed.categories = parsed.categories || {};
     parsed.suggestions = parsed.suggestions || [];
+    parsed.optimizedPrompt = parsed.optimizedPrompt || "";
+    parsed.score = parsed.score ?? 0;
 
+    // 🧩 Step 2: Increment counter (replace with real DB save later)
+    user.promptRunsThisMonth = usage + 1;
+    const updatedRemainingRuns =
+      limit === Infinity ? "Unlimited" : Math.max(limit - user.promptRunsThisMonth, 0);
+    const updatedUpgradePrompt = limit !== Infinity && user.promptRunsThisMonth >= limit;
+
+    // 🧩 Step 3: Return full response
     return res.status(200).json({
       ...parsed,
+      remainingRuns: updatedRemainingRuns,
+      upgradePrompt: updatedUpgradePrompt,
+      plan: userPlan,
       timings: { start, end, latencyMs: end - start },
     });
   } catch (err: any) {
     console.error("evaluatePrompt error:", err?.message ?? err);
-    return res
-      .status(500)
-      .json({ error: "Evaluation failed", detail: err?.message ?? err });
+    return res.status(500).json({ error: "Evaluation failed", detail: err?.message ?? err });
   }
 };
+
+
 
 // Apply rate limiting to AI endpoints
 router.use('/test', aiRateLimit);
