@@ -19,6 +19,35 @@ function isPreviewHost() {
   return false; // Preview mode disabled
 }
 
+// Minimal markdown to HTML converter for lesson content (headings, lists, code, inline code, bold)
+function mdToHtml(src: string): string {
+  try {
+    const html = src
+      .split('\n')
+      .map(line => {
+        if (line.startsWith('### ')) return `<h3 class="text-xl font-semibold mt-6 mb-3">${line.slice(4)}</h3>`;
+        if (line.startsWith('## ')) return `<h2 class="text-2xl font-semibold mt-8 mb-4">${line.slice(3)}</h2>`;
+        if (line.startsWith('# ')) return `<h1 class="text-3xl font-bold mt-10 mb-6">${line.slice(2)}</h1>`;
+        if (line.trim().startsWith('- ')) return `<li class="mb-2">${line.trim().slice(2)}</li>`;
+        return line;
+      })
+      .join('\n')
+      // Code fences
+      .replace(/```([\w]*)?\n([\s\S]*?)```/g, '<pre class="bg-muted rounded-lg p-4 overflow-x-auto my-4"><code class="text-sm">$2</code></pre>')
+      // Inline code
+      .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
+      // Bold
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      // Paragraphs for plain lines that are not HTML blocks
+      .split('\n')
+      .map(l => (l.trim() && !l.startsWith('<') ? `<p class="mb-4">${l}</p>` : l))
+      .join('\n');
+    return html;
+  } catch {
+    return src.replace(/\n/g, '<br>');
+  }
+}
+
 function mockCourse(trackId: string, moduleId: string, lessonId: string): { track: Track; lesson: LessonContent } {
   const modules: TrackModule[] = Array.from({ length: 3 }).map((_, mi) => ({
     id: `m${mi + 1}`,
@@ -321,7 +350,7 @@ export default function Lesson() {
             <div className="space-y-4">
               <div className="border-l-4 border-brand-500 pl-4">
                 <h3 className="font-semibold mb-2">Lesson Overview</h3>
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: current.content.replace(/\n/g, '<br>') }} />
+                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
               </div>
             </div>
           )}
@@ -334,47 +363,12 @@ export default function Lesson() {
     }
 
     // Enhanced text lessons with better formatting
-    if (current.type === "text" || current.type === "reading") {
+    if (current.type === "text") {
       return (
         <div className="space-y-6">
           {current.content ? (
             <div className="prose prose-gray dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: 
-                current.content
-                  .split('\n')
-                  .map(line => {
-                    // Convert markdown-like headings
-                    if (line.startsWith('### ')) {
-                      return `<h3 class="text-xl font-semibold mt-8 mb-4">${line.slice(4)}</h3>`;
-                    }
-                    if (line.startsWith('## ')) {
-                      return `<h2 class="text-2xl font-semibold mt-10 mb-6">${line.slice(3)}</h2>`;
-                    }
-                    if (line.startsWith('# ')) {
-                      return `<h1 class="text-3xl font-bold mt-12 mb-8">${line.slice(2)}</h1>`;
-                    }
-                    // Convert code blocks
-                    if (line.startsWith('```')) {
-                      return line; // Let the full content parser handle code blocks
-                    }
-                    // Convert bullet points
-                    if (line.trim().startsWith('- ')) {
-                      return `<li class="mb-2">${line.trim().slice(2)}</li>`;
-                    }
-                    // Regular paragraphs
-                    if (line.trim() && !line.startsWith('<')) {
-                      return `<p class="mb-4">${line}</p>`;
-                    }
-                    return line;
-                  })
-                  .join('\n')
-                  // Handle code blocks properly
-                  .replace(/```([\w]*)?\n([\s\S]*?)```/g, '<pre class="bg-muted rounded-lg p-4 overflow-x-auto my-4"><code class="text-sm">$2</code></pre>')
-                  // Handle inline code
-                  .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
-                  // Handle bold text
-                  .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-              }} />
+              <div dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
             </div>
           ) : (
             <div className="text-center py-12">
@@ -388,7 +382,7 @@ export default function Lesson() {
     }
 
     // Enhanced sandbox lessons with better UX
-    if (current.type === "sandbox" || current.type === "interactive") {
+    if (current.type === "sandbox") {
       return (
         <div className="space-y-6">
           {current.content ? (
@@ -400,10 +394,12 @@ export default function Lesson() {
                   <div>
                     <h3 className="font-semibold text-brand-900 dark:text-brand-100 mb-2">Interactive Exercise</h3>
                     <div className="prose prose-sm prose-brand max-w-none" dangerouslySetInnerHTML={{
-                      __html: current.content
-                        .split('\n')
-                        .slice(0, current.content.indexOf('```') > 0 ? current.content.split('\n').findIndex(line => line.includes('```')) : 5)
-                        .join('<br>')
+                      __html: mdToHtml(
+                        current.content
+                          .split('\n')
+                          .slice(0, current.content.indexOf('```') > 0 ? current.content.split('\n').findIndex(line => line.includes('```')) : 5)
+                          .join('\n')
+                      )
                     }} />
                   </div>
                 </div>
@@ -478,7 +474,7 @@ export default function Lesson() {
                 return additionalContent && (
                   <div className="prose prose-sm max-w-none pt-4 border-t">
                     <div dangerouslySetInnerHTML={{
-                      __html: additionalContent.replace(/\n/g, '<br>')
+                      __html: mdToHtml(additionalContent)
                     }} />
                   </div>
                 );

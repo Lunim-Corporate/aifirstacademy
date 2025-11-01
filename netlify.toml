@@ -3,29 +3,37 @@
   functions = "netlify/functions"
   publish = "dist/spa"
 
+  [build.environment]
+    PNPM_FLAGS = "--no-frozen-lockfile"
+    NODE_ENV = "production"
+
 [functions]
-  external_node_modules = [
-    "express",
-    "@react-email/render", 
-    "cors",
-    "dotenv",
-    "nodemailer",
-    "resend",
-    "zod",
-    "serverless-http"
-  ]
   node_bundler = "esbuild"
-  
+  directory = "netlify/functions"
   
   [functions.timeout]
-    default = 30 
-  
+    default = 30
+
+# Health check endpoint (no redirect needed)
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/health-check"
+  status = 200
+
+# Test endpoint for debugging
+[[redirects]]
+  from = "/test-auth/*"
+  to = "/.netlify/functions/auth-test/:splat"
+  status = 200
+
+# Main API routes - redirect to serverless function
 [[redirects]]
   force = true
   from = "/api/*"
-  status = 200
   to = "/.netlify/functions/api/:splat"
+  status = 200
 
+# SPA fallback - must be last
 [[redirects]]
   from = "/*"
   to = "/index.html"

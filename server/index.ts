@@ -80,11 +80,20 @@ export function createServer() {
   });
   app.use(generalLimiter);
   
-  // CORS with more specific configuration
+  // CORS with dynamic allowlist (supports Netlify env URLs)
   app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? [process.env.FRONTEND_URL || 'https://aifirstacademy.com'] 
-      : true, // Allow all origins in development
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const allowlist = [
+        process.env.FRONTEND_URL,
+        process.env.CORS_ORIGIN,
+        process.env.URL, // Netlify primary URL
+        process.env.DEPLOY_PRIME_URL, // Netlify preview URL
+        'http://localhost:3000'
+      ].filter(Boolean) as string[];
+      const ok = allowlist.some((u) => origin === u || origin.startsWith(`${u}/`));
+      return callback(null, ok);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
@@ -94,9 +103,15 @@ export function createServer() {
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(cookieParser()); // Add cookie parser for handling cookies
   
-  // Request logging middleware
+  // Enhanced request logging middleware
   app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log(`[SERVER] ${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+    console.log(`[SERVER] Path: ${req.path}, BaseURL: ${req.baseUrl}, URL: ${req.url}`);
+    console.log(`[SERVER] Headers:`, {
+      host: req.get('host'),
+      origin: req.get('origin'),
+      'user-agent': req.get('user-agent')?.substring(0, 50)
+    });
     next();
   });
 

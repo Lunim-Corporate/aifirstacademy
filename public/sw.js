@@ -2,9 +2,7 @@ const CACHE_NAME = 'ai-academy-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/favicon.ico',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/favicon.ico'
 ];
 
 const API_CACHE = 'api-cache-v1';
@@ -179,8 +177,8 @@ self.addEventListener('push', event => {
   if (event.data) {
     const options = {
       body: event.data.text(),
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-96x96.png',
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),
@@ -190,12 +188,12 @@ self.addEventListener('push', event => {
         {
           action: 'explore',
           title: 'Open App',
-          icon: '/icons/icon-96x96.png'
+          icon: '/favicon.ico'
         },
         {
           action: 'close',
           title: 'Close',
-          icon: '/icons/icon-96x96.png'
+          icon: '/favicon.ico'
         }
       ]
     };

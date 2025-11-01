@@ -108,6 +108,7 @@ export default function Signup() {
       const name = `${formData.firstName || email.split("@")[0]} ${formData.lastName || ""}`.trim();
       const { token } = await apiOAuthMock(provider, email, name);
       localStorage.setItem("auth_token", token);
+      window.dispatchEvent(new Event('auth-changed'));
       if (step < 3) setStep(3);
       else navigate("/dashboard");
     } catch (e: any) {

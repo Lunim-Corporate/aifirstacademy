@@ -117,7 +117,7 @@ export const getUserAnalytics: RequestHandler = async (req: AuthenticatedRequest
     if (streakData && streakData.length > 0) {
       const today = new Date().toDateString();
       const completionDates = streakData.map(s => new Date(s.completed_at!).toDateString());
-      const uniqueDates = [...new Set(completionDates)].sort();
+      const uniqueDates: string[] = [...new Set<string>(completionDates)].sort();
       
       // Calculate current streak
       for (let i = uniqueDates.length - 1; i >= 0; i--) {

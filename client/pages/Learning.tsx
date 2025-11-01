@@ -174,7 +174,7 @@ export default function Learning() {
             total + track.modules.reduce((moduleTotal: number, module: any) => 
               moduleTotal + (module.lessons?.length || 0), 0), 0);
             
-          const completedLessonsCount = (progressResponse.progress || []).filter((p: any) => p.status === 'completed').length;
+          const completedLessonsCount = (userProgress || []).filter((p: any) => p.status === 'completed').length;
           const completionRateCalc = totalLessonsCount > 0 ? Math.round((completedLessonsCount / totalLessonsCount) * 100) : 0;
           
           setUserStats({

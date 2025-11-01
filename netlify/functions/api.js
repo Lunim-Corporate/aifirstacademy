@@ -1,82 +1,55 @@
-const serverless = require("serverless-http");
+import serverless from "serverless-http";
+import express from "express";
+import { createServer } from "../../server/index.ts";
 
-// Create the handler with proper error handling
-exports.handler = async (event, context) => {
-  try {
-    // Dynamically import the createServer function with proper error handling
-    let createServer;
-    try {
-      // Use dynamic import for ES modules from CommonJS
-      const serverModule = await import("../../server/index.js");
-      
-      // Handle both ES module and CommonJS exports
-      createServer = serverModule.createServer || serverModule.default?.createServer || serverModule.default;
-      
-      if (!createServer) {
-        console.error('Available exports:', Object.keys(serverModule));
-        throw new Error('createServer function not found in server module');
-      }
-      
-      console.log('Successfully imported createServer function');
-    } catch (importError) {
-      console.error('Failed to import server module:', importError);
-      console.error('Import error details:', {
-        message: importError.message,
-        stack: importError.stack,
-        code: importError.code
-      });
-      throw new Error(`Module import failed: ${importError.message}`);
-    }
-    
-    // Create the Express app
-    console.log('Creating Express app...');
-    const app = createServer();
-    
-    if (!app) {
-      throw new Error('Failed to create Express app - createServer returned null/undefined');
-    }
-    
-    console.log('Express app created successfully');
-    
-    // Create the serverless handler
-    const serverlessHandler = serverless(app, {
-      binary: false,
-      request(req, event, context) {
-        req.netlifyContext = context;
-        req.netlifyEvent = event;
-      },
-    });
-    
-    console.log('Executing serverless handler...');
-    return await serverlessHandler(event, context);
-  } catch (error) {
-    console.error('=== Netlify Function Error Debug Info ===');
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('Event path:', event?.path);
-    console.error('HTTP method:', event?.httpMethod);
-    console.error('Environment NODE_ENV:', process.env.NODE_ENV);
-    console.error('Function directory:', __dirname);
-    console.error('Process versions:', process.versions);
-    
-    return {
-      statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
-      },
-      body: JSON.stringify({
-        error: 'Internal server error',
-        message: error.message,
-        timestamp: new Date().toISOString(),
-        ...(process.env.NODE_ENV !== 'production' && { 
-          stack: error.stack,
-          eventPath: event?.path,
-          httpMethod: event?.httpMethod
-        })
-      })
-    };
+// Build the Express app once at init time so Netlify bundles it
+const app = createServer();
+
+// Wrap the app to normalize paths Netlify passes to the function
+const adapter = express();
+
+// Enhanced logging and path transformation middleware
+adapter.use((req, _res, next) => {
+  const originalUrl = req.url || "";
+  let url = originalUrl;
+  
+  console.log(`[NETLIFY FUNCTION] Incoming request:`, {
+    method: req.method,
+    originalUrl,
+    headers: req.headers,
+    path: req.path
+  });
+  
+  // Strip Netlify function mount prefix if present
+  // When redirects pass /api/auth/me -> /.netlify/functions/api/auth/me
+  url = url.replace(/^\/\.netlify\/functions\/api/, "");
+  
+  // The redirect uses :splat which passes the remaining path
+  // If url is empty or just "/", something's wrong
+  if (!url || url === "/") {
+    console.error(`[PATH ERROR] Empty URL after stripping function prefix. Original: ${originalUrl}`);
+    url = originalUrl; // Fallback to original
   }
-};
+  
+  // Ensure API prefix for our Express routes
+  // But check if it already has /api to prevent double prefixing
+  if (!url.startsWith("/api/") && !url.startsWith("/api")) {
+    url = "/api" + (url.startsWith("/") ? url : "/" + url);
+  }
+  
+  console.log(`[PATH TRANSFORM] ${req.method} ${originalUrl} -> ${url}`);
+  req.url = url;
+  next();
+});
+
+adapter.use(app);
+
+// Export serverless handler with enhanced error handling
+export const handler = serverless(adapter, {
+  binary: false,
+  request(req, event, context) {
+    console.log(`[SERVERLESS] Event path: ${event.path}, Raw path: ${event.rawPath}`);
+    req.netlifyContext = context;
+    req.netlifyEvent = event;
+  },
+});

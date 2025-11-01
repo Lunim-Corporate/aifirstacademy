@@ -58,6 +58,7 @@ import {
   apiDeleteAccount
 } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/AuthContext";
 
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -161,6 +162,9 @@ useEffect(() => {
   };
   
   // Load all settings data
+  const { user: authUser, loading: authLoading, refresh } = useAuth();
+
+  // Load all settings data
   const loadSettingsData = async () => {
     try {
       // Load user profile with fallback to cookie auth
@@ -196,6 +200,15 @@ useEffect(() => {
           firstName: parts[0] || "",
           lastName: parts.slice(1).join(" ") || "",
           email: user.email
+        }));
+      } else if (authUser) {
+        // Fallback to auth context if apiMe failed but auth is present
+        const parts = (authUser.name || "").split(" ");
+        setProfile(prev => ({
+          ...prev,
+          firstName: parts[0] || "",
+          lastName: parts.slice(1).join(" ") || "",
+          email: authUser.email
         }));
       }
       
@@ -251,11 +264,12 @@ useEffect(() => {
   
   useEffect(() => {
     const initSettings = async () => {
+      if (authLoading) return;
       await loadSettingsData();
       setBootLoading(false);
     };
     initSettings();
-  }, []);
+  }, [authLoading]);
   
   // Refetch data when page becomes visible
   useEffect(() => {
@@ -307,6 +321,8 @@ useEffect(() => {
         })
       ]);
       
+      // Refresh auth user so headers and other pages update immediately
+      await refresh().catch(()=>{});
       showAlert('success', '✨ Profile updated successfully!');
       
       // Add temporary success state to button

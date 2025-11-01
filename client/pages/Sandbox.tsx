@@ -225,120 +225,52 @@ export default function Sandbox() {
     return;
   }
 
-  setIsLoading(true);
-
-  try {
-    if (compareMode && selectedModels.length > 1) {
-      // ----------------- 🧠 Multi-model comparison -----------------
-      const comparisonResult = await sandboxApi.comparePrompt({
-        prompt: userPrompt.trim(),
-        models: selectedModels,
-      });
-
-      setComparisonResults(comparisonResult.responses);
-      setTotalCost(comparisonResult.comparison?.totalCost || 0);
-
-      // Calculate prompt optimization score
-      const avgScore =
-        comparisonResult.responses.reduce(
-          (sum, r) => sum + (r.feedback?.score || 75),
-          0
-        ) / comparisonResult.responses.length;
-      setPromptOptimizationScore(Math.round(avgScore));
-
-    } else {
-      // ----------------- 1️⃣ Run the prompt normally -----------------
-      const res: AIResponse = await apiSandboxRun({
-        prompt: userPrompt,
-        temperature,
-        maxTokens,
-        system: systemMessage,
-      });
-      console.log("Sandbox API response:", res);
-
-      // ----------------- 2️⃣ Evaluate the prompt quality -----------------
-      let evalData: any = {};
-      try {
-        const evalRes = await fetch("/api/sandbox/evaluate-prompt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: userPrompt }),
+    setIsLoading(true);
+    try {
+      if (compareMode && selectedModels.length > 1) {
+        // Multi-model comparison
+        const comparisonResult = await sandboxApi.comparePrompt({ 
+          prompt: userPrompt.trim(),
+          models: selectedModels 
         });
-
-        // ✅ Parse response directly as JSON
-        evalData = await evalRes.json();
-        console.log("EvalData from backend:", evalData); // debug
-
-        // 🧩 STEP 5 — Check if user exceeded plan limit
-        if (evalData.upgradePrompt) {
-          alert(
-            "You have reached your monthly prompt limit! Please upgrade to Pro or Enterprise to continue."
-          );
-          setRemainingRuns(evalData.remainingRuns ?? 0);
-          setIsLoading(false);
-          return;
-        }
-
-        // Update remaining runs from backend first
-        setRemainingRuns(evalData.remainingRuns ?? 0);
-
-      } catch (err) {
-        console.error("Prompt evaluation failed:", err);
-        // fallback: keep current remainingRuns
-        setRemainingRuns(remainingRuns ?? 0);
+        
+        setComparisonResults(comparisonResult.responses);
+        setTotalCost(comparisonResult.comparison.totalCost);
+        
+        // Calculate prompt optimization score based on responses
+        const avgScore = comparisonResult.responses.reduce((sum, r) => sum + (r.score || 75), 0) / comparisonResult.responses.length;
+        setPromptOptimizationScore(Math.round(avgScore));
+        
+      } else {
+        // Single model execution (existing logic)
+        const res = await apiSandboxRun({ prompt: userPrompt, temperature, maxTokens, system: systemMessage });
+        const newExecution: PromptExecution = {
+          id: res.id,
+          timestamp: new Date(res.timings.end),
+          model: selectedModel,
+          prompt: res.prompt,
+          response: res.content,
+          tokens: res.tokens.total,
+          cost: res.cost,
+          score: res.feedback.score,
+          feedback: {
+            clarity: res.feedback.clarity,
+            context: res.feedback.specificity ?? 80,
+            constraints: res.feedback.constraints,
+            effectiveness: Math.round((res.feedback.clarity + res.feedback.constraints) / 2),
+            suggestions: [res.feedback.notes],
+          },
+        };
+        setCurrentExecution(newExecution);
+        setExecutions((prev) => [newExecution, ...prev]);
+        setTotalCost(res.cost || 0);
       }
-
-      // ----------------- 3️⃣ Merge evaluation into execution -----------------
-      const newExecution: PromptExecution = {
-        id: res.id || "unknown-id",
-        timestamp: res?.timings?.end ? new Date(res.timings.end) : new Date(),
-        model: selectedModel,
-        prompt: userPrompt,
-        optimizedPrompt: evalData.optimizedPrompt || userPrompt,
-        response: evalData.optimizedPrompt || userPrompt,
-        tokens: res.tokens?.total || 0,
-        cost: res.cost || 0,
-        score: evalData.score ?? res.feedback?.score ?? 0,
-        feedback: {
-          clarity: evalData.categories?.clarity ?? 0,
-          context: evalData.categories?.context ?? 0,
-          constraints: evalData.categories?.constraints ?? 0,
-          effectiveness:
-            evalData.categories?.effectiveness ??
-            Math.round(
-              ((evalData.categories?.clarity ?? 0) +
-                (evalData.categories?.context ?? 0)) / 2
-            ),
-          suggestions:
-            Array.isArray(evalData.suggestions) && evalData.suggestions.length > 0
-              ? Array.from(
-                  new Set(
-                    evalData.suggestions.map((s: string) => s.trim()).filter(Boolean)
-                  )
-                )
-              : ["No suggestions returned"],
-        },
-      };
-
-      // ----------------- 4️⃣ Update UI -----------------
-      setCurrentExecution(newExecution);
-      setExecutions((prev) => [newExecution, ...prev]);
-      setTotalCost(res.cost || 0);
-      setPromptOptimizationScore(newExecution.score);
+    } catch (err: any) {
+      alert(err.message || "Run failed");
+    } finally {
+      setIsLoading(false);
     }
-
-  } catch (err: any) {
-    console.error(err);
-    alert(err.message || "Run failed");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
-
-
-
+  };
 
   const handleTemplateSelect = (template: typeof promptTemplates[0]) => {
     setSelectedTemplate(template);
@@ -808,12 +740,12 @@ export default function Sandbox() {
                                 </CardTitle>
                                 <div className="flex items-center space-x-2">
                                   {result.tokens && (
-                                    <Badge variant="outline" className="px-2 py-1 text-sm">
+                                    <Badge variant="outline" size="sm">
                                       {result.tokens} tokens
                                     </Badge>
                                   )}
                                   {result.cost && (
-                                    <Badge variant="outline" className="px-2 py-1 text-sm">
+                                    <Badge variant="outline" size="sm">
                                       ${result.cost.toFixed(4)}
                                     </Badge>
                                   )}
