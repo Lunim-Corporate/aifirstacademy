@@ -82,6 +82,8 @@ const promptTemplates = [
   },
 ];
 
+  const categories = ["All", "Text Processing", "Social Media", "Marketing", "Education"];
+
 const modelOptions = [
   { id: "gpt-4", name: "GPT-4", cost: "$0.03/1K tokens", speed: "Moderate" },
   { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", cost: "$0.002/1K tokens", speed: "Fast" },
@@ -165,11 +167,10 @@ export default function Sandbox() {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof promptTemplates[0] | null>(null);
   const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [remainingRuns, setRemainingRuns] = useState<number | string>(0);
+  const [remainingRuns, setRemainingRuns] = useState<number | string>(100);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("newest");
   // Enhanced multi-model states
@@ -179,32 +180,6 @@ export default function Sandbox() {
   const [comparisonResults, setComparisonResults] = useState<any[]>([]);
   const [totalCost, setTotalCost] = useState(0);
   const [promptOptimizationScore, setPromptOptimizationScore] = useState(0);
-
-const filteredTemplates = useMemo(() => {
-  let list = promptTemplates;
-
-  // Filter by category
-  if (categoryFilter !== "all") {
-    list = list.filter((t) => t.category === categoryFilter);
-  }
-
-  // Filter by search query
-  if (query.trim()) {
-    const q = query.toLowerCase();
-    list = list.filter((t) => t.title.toLowerCase().includes(q));
-  }
-
-  // Sort
-  list = list.sort((a, b) =>
-    sort === "newest"
-      ? b.id.localeCompare(a.id)  // using id as createdAt placeholder
-      : a.title.localeCompare(b.title)
-  );
-
-  return list;
-}, [promptTemplates, categoryFilter, query, sort]);
-
-
 
   // Load prompt from community if available
   useEffect(() => {
@@ -253,7 +228,30 @@ const filteredTemplates = useMemo(() => {
   fetchRemainingRuns();
 }, []);
 
-const categories = ["General", "Marketing", "Tech", "Education"];
+const filteredTemplates = useMemo(() => {
+  let list = promptTemplates;
+
+  // Filter by category
+  if (categoryFilter !== "all") {
+    list = list.filter((t) => t.category === categoryFilter);
+  }
+
+  // Filter by search query
+  if (query.trim()) {
+    const q = query.toLowerCase();
+    list = list.filter((t) => t.title.toLowerCase().includes(q));
+  }
+
+  // Sort
+  list = list.sort((a, b) =>
+    sort === "newest"
+      ? b.id.localeCompare(a.id)  // using id as createdAt placeholder
+      : a.title.localeCompare(b.title)
+  );
+
+  return list;
+}, [promptTemplates, categoryFilter, query, sort]);
+
 
   const handleRunPrompt = async () => {
   if (!userPrompt.trim()) {
@@ -261,54 +259,107 @@ const categories = ["General", "Marketing", "Tech", "Education"];
     return;
   }
 
-    setIsLoading(true);
-    try {
-      if (compareMode && selectedModels.length > 1) {
-        // Multi-model comparison
-        const comparisonResult = await sandboxApi.comparePrompt({ 
-          prompt: userPrompt.trim(),
-          models: selectedModels 
+  setIsLoading(true);
+
+  try {
+    if (compareMode && selectedModels.length > 1) {
+      // ----------------- 🧠 Multi-model comparison -----------------
+      const comparisonResult = await sandboxApi.comparePrompt({
+        prompt: userPrompt.trim(),
+        models: selectedModels,
+      });
+
+      setComparisonResults(comparisonResult.responses);
+      setTotalCost(comparisonResult.comparison?.totalCost || 0);
+
+      // Calculate prompt optimization score
+      const avgScore =
+        comparisonResult.responses.reduce(
+          (sum, r) => sum + (r.feedback?.score || 75),
+          0
+        ) / comparisonResult.responses.length;
+      setPromptOptimizationScore(Math.round(avgScore));
+
+    } else {
+      // ----------------- 1️⃣ Run the prompt normally -----------------
+      const res: AIResponse = await apiSandboxRun({
+        prompt: userPrompt,
+        temperature,
+        maxTokens,
+        system: systemMessage,
+      });
+      console.log("Sandbox API response:", res);
+
+      // ----------------- 2️⃣ Evaluate the prompt quality -----------------
+      let evalData: any = {};
+      try {
+        const evalRes = await fetch("/api/sandbox/evaluate-prompt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: userPrompt }),
         });
-        
-        setComparisonResults(comparisonResult.responses);
-        setTotalCost(comparisonResult.comparison.totalCost);
-        
-        // Calculate prompt optimization score based on responses
-        const avgScore = comparisonResult.responses.reduce((sum, r) => sum + (r.score || 75), 0) / comparisonResult.responses.length;
-        setPromptOptimizationScore(Math.round(avgScore));
-        
-      } else {
-        // Single model execution (existing logic)
-        const res = await apiSandboxRun({ prompt: userPrompt, temperature, maxTokens, system: systemMessage });
-        const newExecution: PromptExecution = {
-          id: res.id,
-          timestamp: new Date(res.timings.end),
-          model: selectedModel,
-          prompt: res.prompt,
-          response: res.content,
-          tokens: res.tokens.total,
-          cost: res.cost,
-          score: res.feedback.score,
-          feedback: {
-            clarity: res.feedback.clarity,
-            context: res.feedback.specificity ?? 80,
-            constraints: res.feedback.constraints,
-            effectiveness: Math.round((res.feedback.clarity + res.feedback.constraints) / 2),
-            suggestions: [res.feedback.notes],
-          },
-        };
-        setCurrentExecution(newExecution);
-        setExecutions((prev) => [newExecution, ...prev]);
-        setTotalCost(res.cost || 0);
+
+        // ✅ Parse response directly as JSON
+        evalData = await evalRes.json();
+        console.log("EvalData from backend:", evalData); // debug
+
+        // 🧩 STEP 5 — Check if user exceeded plan limit
+        if (evalData.upgradePrompt) {
+          alert(
+            "You have reached your monthly prompt limit! Please upgrade to Pro or Enterprise to continue."
+          );
+          setRemainingRuns(evalData.remainingRuns ?? 0);
+          setIsLoading(false);
+          return;
+        }
+
+        // Update remaining runs from backend first
+        setRemainingRuns(evalData.remainingRuns ?? 0);
+
+      } catch (err) {
+        console.error("Prompt evaluation failed:", err);
+        // fallback: keep current remainingRuns
+        setRemainingRuns(remainingRuns ?? 0);
       }
-    } catch (err: any) {
-      alert(err.message || "Run failed");
-    } finally {
-      setIsLoading(false);
+
+      // ----------------- 3️⃣ Merge evaluation into execution -----------------
+      const newExecution: PromptExecution = {
+        id: res.id || "unknown-id",
+        timestamp: res?.timings?.end ? new Date(res.timings.end) : new Date(),
+        model: selectedModel,
+        prompt: userPrompt,
+        optimizedPrompt: evalData.optimizedPrompt || userPrompt,
+        response: evalData.optimizedPrompt || userPrompt,
+        tokens: res.tokens?.total || 0,
+        cost: res.cost || 0,
+        score: evalData.score ?? res.feedback?.score ?? 0,
+        feedback: {
+          clarity: evalData.categories?.clarity ?? 0,
+          context: evalData.categories?.context ?? 0,
+          constraints: evalData.categories?.constraints ?? 0,
+          effectiveness:
+            evalData.categories?.effectiveness ??
+            Math.round(
+              ((evalData.categories?.clarity ?? 0) +
+                (evalData.categories?.context ?? 0)) / 2
+            ),
+          suggestions:
+            Array.isArray(evalData.suggestions) && evalData.suggestions.length > 0
+              ? Array.from(
+                  new Set(
+                    evalData.suggestions.map((s: string) => s.trim()).filter(Boolean)
+                  )
+                )
+              : ["No suggestions returned"],
+        },
+      };
+
+      // ----------------- 4️⃣ Update UI -----------------
+      setCurrentExecution(newExecution);
+      setExecutions((prev) => [newExecution, ...prev]);
+      setTotalCost(res.cost || 0);
+      setPromptOptimizationScore(newExecution.score);
     }
-<<<<<<< HEAD
-  };
-=======
 
   } catch (err: any) {
     console.error(err);
@@ -317,7 +368,6 @@ const categories = ["General", "Marketing", "Tech", "Education"];
     setIsLoading(false);
   }
 };
->>>>>>> 44a1b36 (Added share to community feature, spacing fixes, and template reflection update)
 
   const handleTemplateSelect = (template: typeof promptTemplates[0]) => {
     setSelectedTemplate(template);
@@ -440,25 +490,21 @@ const categories = ["General", "Marketing", "Tech", "Education"];
           {/* Templates */}
           <div className="p-4 border-t border-border/40">
             <h3 className="font-semibold mb-3">Quick Templates</h3>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="mb-4 p-2 border rounded"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
             <div className="space-y-2">
               {filteredTemplates.map((template) => (
-                <Card key={template.id} className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleTemplateSelect(template)}>
+                <Card
+                  key={template.id}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleTemplateSelect(template)}
+                >
                   <CardContent className="p-3">
                     <h4 className="font-medium text-sm">{template.title}</h4>
                     <p className="text-xs text-muted-foreground">{template.description}</p>
                   </CardContent>
                 </Card>
               ))}
+
+
             </div>
           </div>
         </aside>
@@ -551,9 +597,7 @@ const categories = ["General", "Marketing", "Tech", "Education"];
                   </Button>
                   {/* ----------------- Remaining Runs Display ----------------- */}
                   <div className="mt-2 text-sm text-gray-500 w-full text-right">
-                    {typeof remainingRuns === "number"
-                      ? `🌟 Remaining runs this month: ${remainingRuns}`
-                      : `🌟 Remaining runs: ${remainingRuns}`}
+                    🌟 Remaining runs this month: {remainingRuns !== undefined ? remainingRuns : 100}
                   </div>
                 </div>
               </div>
@@ -804,12 +848,12 @@ const categories = ["General", "Marketing", "Tech", "Education"];
                                 </CardTitle>
                                 <div className="flex items-center space-x-2">
                                   {result.tokens && (
-                                    <Badge variant="outline" size="sm">
+                                    <Badge variant="outline" className="px-2 py-1 text-sm">
                                       {result.tokens} tokens
                                     </Badge>
                                   )}
                                   {result.cost && (
-                                    <Badge variant="outline" size="sm">
+                                    <Badge variant="outline" className="px-2 py-1 text-sm">
                                       ${result.cost.toFixed(4)}
                                     </Badge>
                                   )}
@@ -966,3 +1010,4 @@ const categories = ["General", "Marketing", "Tech", "Education"];
     </div>
   );
 }
+

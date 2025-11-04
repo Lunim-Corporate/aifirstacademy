@@ -46,6 +46,8 @@ type LibraryProps = {
   }) => void;
 };
 
+  const categories = ["All", "Text Processing", "Social Media", "Marketing", "Education"];
+
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
   { icon: BookOpen, label: "Learning Path", href: "/learning" },
@@ -59,7 +61,8 @@ const sidebarItems = [
 import type { LibraryResource as Resource, ResourceType, GuideResource, VideoResource } from "@shared/api";
 import { apiLibraryCreate, apiLibraryDelete, apiLibraryList, apiListSavedPrompts, apiShareTemplate } from "@/lib/api";
 
-type SourcedResource = Resource & { __source: "academy" | "user" };
+type SourcedResource = Resource & { __source: "academy" | "user"; category?: string; tags?: string[] };
+
 
 export default function Library({ onAddTemplate }: LibraryProps) {
   const [items, setItems] = useState<SourcedResource[]>([]);
@@ -77,9 +80,12 @@ export default function Library({ onAddTemplate }: LibraryProps) {
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [newCategory, setNewCategory] = useState("");
+ // const [newCategory, setNewCategory] = useState("");
   const [newVariables, setNewVariables] = useState<string>("");
   const navigate = useNavigate();
+   const [newDescription, setNewDescription] = useState(""); 
+   const [newPrompt, setNewPrompt] = useState(""); 
+   const [newCategory, setNewCategory] = useState(categories[0])
 
 
 
