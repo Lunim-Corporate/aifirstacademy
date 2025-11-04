@@ -36,6 +36,7 @@ import {
   History,
   Bookmark
 } from "lucide-react";
+import React, {useMemo } from "react";
 import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import { useState, useEffect } from "react";
@@ -61,6 +62,7 @@ const promptTemplates = [
     description: "Review code for best practices and improvements",
     prompt: "Please review the following {{language}} code for:\n1. Best practices\n2. Performance optimizations\n3. Security concerns\n4. Readability improvements\n\nCode:\n{{code}}\n\nProvide specific suggestions with examples.",
     variables: ["language", "code"],
+    category: "Coding", 
   },
   {
     id: "bug-fix",
@@ -68,6 +70,7 @@ const promptTemplates = [
     description: "Analyze and suggest fixes for bugs",
     prompt: "I have a bug in my {{language}} code. Here's the error message:\n{{error}}\n\nHere's the relevant code:\n{{code}}\n\nPlease:\n1. Explain what's causing the bug\n2. Provide a fix with explanation\n3. Suggest how to prevent similar issues",
     variables: ["language", "error", "code"],
+    category: "Debugging",
   },
   {
     id: "test-generation",
@@ -75,6 +78,7 @@ const promptTemplates = [
     description: "Generate unit tests for your code",
     prompt: "Generate comprehensive unit tests for the following {{language}} function:\n\n{{code}}\n\nInclude:\n- Happy path tests\n- Edge cases\n- Error conditions\n- Use {{testing_framework}} framework",
     variables: ["language", "code", "testing_framework"],
+     category: "Testing",
   },
 ];
 
@@ -163,7 +167,11 @@ export default function Sandbox() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [remainingRuns, setRemainingRuns] = useState<number | string>(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("newest");
   // Enhanced multi-model states
   const [availableModels, setAvailableModels] = useState<any[]>([]);
   const [compareMode, setCompareMode] = useState(false);
@@ -171,6 +179,32 @@ export default function Sandbox() {
   const [comparisonResults, setComparisonResults] = useState<any[]>([]);
   const [totalCost, setTotalCost] = useState(0);
   const [promptOptimizationScore, setPromptOptimizationScore] = useState(0);
+
+const filteredTemplates = useMemo(() => {
+  let list = promptTemplates;
+
+  // Filter by category
+  if (categoryFilter !== "all") {
+    list = list.filter((t) => t.category === categoryFilter);
+  }
+
+  // Filter by search query
+  if (query.trim()) {
+    const q = query.toLowerCase();
+    list = list.filter((t) => t.title.toLowerCase().includes(q));
+  }
+
+  // Sort
+  list = list.sort((a, b) =>
+    sort === "newest"
+      ? b.id.localeCompare(a.id)  // using id as createdAt placeholder
+      : a.title.localeCompare(b.title)
+  );
+
+  return list;
+}, [promptTemplates, categoryFilter, query, sort]);
+
+
 
   // Load prompt from community if available
   useEffect(() => {
@@ -218,6 +252,8 @@ export default function Sandbox() {
 
   fetchRemainingRuns();
 }, []);
+
+const categories = ["General", "Marketing", "Tech", "Education"];
 
   const handleRunPrompt = async () => {
   if (!userPrompt.trim()) {
@@ -270,7 +306,18 @@ export default function Sandbox() {
     } finally {
       setIsLoading(false);
     }
+<<<<<<< HEAD
   };
+=======
+
+  } catch (err: any) {
+    console.error(err);
+    alert(err.message || "Run failed");
+  } finally {
+    setIsLoading(false);
+  }
+};
+>>>>>>> 44a1b36 (Added share to community feature, spacing fixes, and template reflection update)
 
   const handleTemplateSelect = (template: typeof promptTemplates[0]) => {
     setSelectedTemplate(template);
@@ -393,13 +440,19 @@ export default function Sandbox() {
           {/* Templates */}
           <div className="p-4 border-t border-border/40">
             <h3 className="font-semibold mb-3">Quick Templates</h3>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="mb-4 p-2 border rounded"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
             <div className="space-y-2">
-              {promptTemplates.map((template) => (
-                <Card 
-                  key={template.id} 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleTemplateSelect(template)}
-                >
+              {filteredTemplates.map((template) => (
+                <Card key={template.id} className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleTemplateSelect(template)}>
                   <CardContent className="p-3">
                     <h4 className="font-medium text-sm">{template.title}</h4>
                     <p className="text-xs text-muted-foreground">{template.description}</p>
@@ -608,7 +661,18 @@ export default function Sandbox() {
                 </CollapsibleContent>
               </Collapsible>
             </div>
-
+              {selectedTemplate?.variables.map((variable) => (
+                <div key={variable} className="mb-2">
+                  <Label>{variable}</Label>
+                  <Input
+                    value={templateVariables[variable]}
+                    onChange={(e) =>
+                      setTemplateVariables((prev) => ({ ...prev, [variable]: e.target.value }))
+                    }
+                    placeholder={`Enter ${variable}`}
+                  />
+                </div>
+              ))}
             {/* Template Variables */}
             {selectedTemplate && (
               <div className="border-b border-border/40 p-4 bg-muted/20">
