@@ -234,6 +234,21 @@ export const deleteResource: RequestHandler = (req, res) => {
   res.json({ success: true });
 };
 
+router.post("/community/share-template", async (req, res) => {
+  try {
+    const template = req.body.template;
+    if (!template) return res.status(400).json({ error: "Template data is required" });
+
+    // TODO: Save template to community collection / database
+    // Example: const saved = await CommunityTemplate.create(template);
+
+    res.json({ success: true, template });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to share template" });
+  }
+});
+
 router.get("/resources", listResources);
 router.post("/resources", createResource);
 router.delete("/resources/:id", deleteResource);

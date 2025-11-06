@@ -21,6 +21,7 @@ import adminRouter from "./routes/admin";
 import analyticsRouter from "./routes/analytics";
 import { checkSupabaseConnection } from "./supabase";
 import { cleanupExpiredSessions } from "./middleware/auth-enhanced";
+import communityRoutes from "./routes/community";
 
 // Export the server creation function
 export function createServer() {
@@ -204,6 +205,7 @@ export function createServer() {
   app.use("/api/sandbox", sandboxRouter);
   app.use("/api/community", communityRouter);
   app.use("/api/learning", learningRouter);
+  app.use("/api/community", communityRoutes);
   app.use("/api/library", libraryRouter);
   app.use("/api/search", searchRouter);
   app.use("/api/notifications", notificationsRouter);

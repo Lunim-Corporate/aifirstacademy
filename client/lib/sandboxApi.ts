@@ -39,6 +39,7 @@ export interface AIModelInfo {
   id: string;
   name: string;
   provider: string;
+  optimizedPrompt?: string; 
   description: string;
   capabilities: string[];
   maxTokens: number;
@@ -52,7 +53,9 @@ export interface AIResponse {
   model: string;
   content: string;
   tokens?: number;
+   optimizedPrompt?: string;
   responseTime: number;
+  score?: number; 
   cost?: number;
   error?: string;
 

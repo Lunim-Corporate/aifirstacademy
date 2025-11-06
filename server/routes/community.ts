@@ -464,6 +464,21 @@ export const viewEntry: RequestHandler = (req, res) => {
   });
 };
 
+router.post("/share-template", async (req, res) => {
+  try {
+    const template = req.body.template;
+    if (!template) return res.status(400).json({ error: "Template data is required" });
+
+    // TODO: Save template to community collection / database
+    // Example: const saved = await CommunityTemplate.create(template);
+
+    res.json({ success: true, template });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to share template" });
+  }
+});
+
 router.get("/prompts", listPrompts);
 router.get("/prompts/saved", listSavedPrompts);
 router.post("/prompts", createPrompt);

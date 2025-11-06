@@ -34,6 +34,20 @@ import { copyText } from "@/lib/utils";
 import type { CommunityPrompt } from "@shared/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
+
+type LibraryProps = {
+  onAddTemplate?: (template: {
+    id: string;
+    title: string;
+    description: string;
+    prompt: string;
+    variables: string[];
+    category: string;
+  }) => void;
+};
+
+  const categories = ["All", "Text Processing", "Social Media", "Marketing", "Education"];
+
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
   { icon: BookOpen, label: "Learning Path", href: "/learning" },
@@ -45,11 +59,12 @@ const sidebarItems = [
 ];
 
 import type { LibraryResource as Resource, ResourceType, GuideResource, VideoResource } from "@shared/api";
-import { apiLibraryCreate, apiLibraryDelete, apiLibraryList, apiListSavedPrompts } from "@/lib/api";
+import { apiLibraryCreate, apiLibraryDelete, apiLibraryList, apiListSavedPrompts, apiShareTemplate } from "@/lib/api";
 
-type SourcedResource = Resource & { __source: "academy" | "user" };
+type SourcedResource = Resource & { __source: "academy" | "user"; category?: string; tags?: string[] };
 
-export default function Library() {
+
+export default function Library({ onAddTemplate }: LibraryProps) {
   const [items, setItems] = useState<SourcedResource[]>([]);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ResourceType | "all">("all");
@@ -64,7 +79,15 @@ export default function Library() {
   const [savedPrompts, setSavedPrompts] = useState<CommunityPrompt[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+ // const [newCategory, setNewCategory] = useState("");
+  const [newVariables, setNewVariables] = useState<string>("");
   const navigate = useNavigate();
+   const [newDescription, setNewDescription] = useState(""); 
+   const [newPrompt, setNewPrompt] = useState(""); 
+   const [newCategory, setNewCategory] = useState(categories[0])
+
+
 
   useEffect(() => {
     (async () => {
@@ -101,6 +124,11 @@ export default function Library() {
 
   const filtered = useMemo(() => {
     let list = items.filter((i) => (typeFilter === "all" ? true : i.type === typeFilter));
+
+    // Filter by category
+  if (categoryFilter !== "all") {
+    list = list.filter((i: any) => i.category === categoryFilter);
+  }
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter((i) => i.title.toLowerCase().includes(q));
@@ -118,7 +146,7 @@ export default function Library() {
     }
     let resource: any;
     if (newType === "prompt" || newType === "template") {
-      resource = { type: newType, title: newTitle, tags: [], content: newContent };
+      resource = { type: newType, title: newTitle, tags: [], content: newContent, category: newCategory || "General", variables: newVariables.split(",").map(v => v.trim()).filter(Boolean),};
     } else if (newType === "guide") {
       resource = { type: "guide", title: newTitle, tags: [], content: newContent, description: "User guide" };
     } else {
@@ -130,6 +158,36 @@ export default function Library() {
       setAddOpen(false);
       setNewTitle("");
       setNewContent("");
+      setNewCategory("");
+      setNewVariables("");
+
+      if (newType === "template" && onAddTemplate) {
+  const template = created as {
+    id: string;
+    title: string;
+    description?: string;
+    content: string;
+    variables?: string[];
+    category?: string;
+  };
+
+  onAddTemplate({
+    id: template.id,
+    title: template.title,
+    description: template.description || "",
+    prompt: template.content,
+    variables: template.variables || [],
+    category: template.category || "General",
+  });
+   <Button
+      size="sm"
+      variant="outline"
+      onClick={() => shareTemplateToCommunity(template)}
+    >
+      Share
+    </Button>
+}
+
     } catch (e: any) {
       const msg = (e?.message || "Failed to add resource").toLowerCase();
       if (msg.includes("unauthorized") || msg.includes("401")) {
@@ -139,6 +197,22 @@ export default function Library() {
       }
     }
   };
+
+  const shareTemplateToCommunity = async (template: any) => {
+  const token = localStorage.getItem("auth_token");
+  if (!token) {
+    alert("Sign in to share templates.");
+    return;
+  }
+
+  try {
+    await apiShareTemplate(template); // call your backend API for sharing
+    alert("Template shared successfully!");
+  } catch (e: any) {
+    alert(e?.message || "Failed to share template");
+  }
+};
+
 
   const useInSandbox = (content: string) => {
     sessionStorage.setItem("sandboxPrompt", content);
@@ -218,6 +292,14 @@ export default function Library() {
                             <SelectItem value="video">Video URL</SelectItem>
                           </SelectContent>
                         </Select>
+                        <div>
+                          <Label>Category</Label>
+                          <Input
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="E.g., Coding, Debugging, Testing"
+                          />
+                        </div>
                       </div>
                       <div>
                         <Label>Title</Label>
@@ -232,6 +314,16 @@ export default function Library() {
                         <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={newType === "guide" ? "Write your guide..." : "Write content or template..."} className="min-h-[160px]" />
                       )}
                     </div>
+                    {(newType === "template" || newType === "prompt") && (
+                      <div>
+                        <Label>Variables (comma-separated)</Label>
+                        <Input
+                          value={newVariables}
+                          onChange={(e) => setNewVariables(e.target.value)}
+                          placeholder="E.g., code, language, testing_framework"
+                        />
+                      </div>
+                    )}
                     <div className="flex justify-end">
                       <Button onClick={addItem}>Save</Button>
                     </div>
@@ -255,6 +347,17 @@ export default function Library() {
                   <SelectItem value="video">Videos</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger><SelectValue placeholder="Filter category" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="Coding">Coding</SelectItem>
+                <SelectItem value="Debugging">Debugging</SelectItem>
+                <SelectItem value="Testing">Testing</SelectItem>
+                {/* Add more categories as you expand templates */}
+              </SelectContent>
+            </Select>
+
               <Select value={sort} onValueChange={setSort}>
                 <SelectTrigger><SelectValue placeholder="Sort" /></SelectTrigger>
                 <SelectContent>
@@ -340,7 +443,7 @@ export default function Library() {
                               </div>
                             )}
                             <div className="flex items-center justify-between">
-                              <div className="space-x-2">
+                              <div className="flex flex-wrap gap-2 justify-start">
                                 {i.type === "prompt" || i.type === "template" ? (
                                   <>
                                     <Button size="sm" onClick={() => setViewItem(i)}>View</Button>
@@ -360,6 +463,13 @@ export default function Library() {
                                       {copied[(i as any).id] ? (<Check className="h-4 w-4 text-emerald-600" />) : (<>Copy</>)}
                                     </Button>
                                     <Button size="sm" onClick={() => useInSandbox((i as any).content)}>Use in Sandbox</Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => shareTemplateToCommunity(i)}
+                                    >
+                                      Share
+                                    </Button>
                                   </>
                                 ) : i.type === "guide" ? (
                                   <>

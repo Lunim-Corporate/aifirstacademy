@@ -274,6 +274,24 @@ export async function apiLibraryCreate(resource: CreateLibraryResourceRequest["r
 export async function apiLibraryDelete(id: string): Promise<DeleteLibraryResourceResponse> {
   return fetchJsonOnce<DeleteLibraryResourceResponse>(`/api/library/resources/${id}`, { method: "DELETE", headers: { ...authHeaders() } });
 }
+export async function apiShareTemplate(template: {
+  id: string;
+  title: string;
+  description: string;
+  prompt: string;
+  variables: string[];
+  category: string;
+}): Promise<{ success: boolean }> {
+  const token = localStorage.getItem("auth_token");
+  return fetchJsonOnce<{ success: boolean }>(`/api/community/share-template`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ template }),
+  });
+}
 
 // Prompts
 export async function apiListPrompts(): Promise<ListPromptsResponse> {
