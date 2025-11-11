@@ -145,7 +145,8 @@ async function runTests() {
     
     // Test profile update
     await testEndpoint('PUT', '/api/settings/profile', {
-      personaRole: 'engineer',
+      // personaRole: 'engineer',
+      personaRole: 'marketer',
       displayName: 'Test User Updated',
       bio: 'This is a test bio'
     }, authHeaders);

@@ -20,7 +20,8 @@ import {
   TrendingUp,
   Calendar,
   Clock,
-  Zap
+  Zap,
+  Megaphone
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
@@ -60,9 +61,9 @@ const recentActivity = [
   },
   {
     type: "certificate",
-    title: "Earned Engineering Track Certificate",
+    title: "Earned Marketing Track Certificate",
     time: "1 day ago",
-    badge: "Engineering",
+    badge: "Marketing",
   },
   {
     type: "challenge",
@@ -106,7 +107,7 @@ export default function Dashboard() {
       // Load real learning data
       try {
         // Get user role
-        let userRole = 'engineer'; // Default fallback
+        let userRole = 'marketer'; // Default fallback for marketing track
         try {
           const profileInfo = await apiGetSettingsProfile();
           if (profileInfo?.profile?.personaRole) {
@@ -457,17 +458,17 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     Current Module
-                    <Badge variant="outline">{learningData?.currentModule?.track ?? data?.currentModule?.track ?? "Engineering Track"}</Badge>
+                    <Badge variant="outline">{learningData?.currentModule?.track ?? data?.currentModule?.track ?? "Marketing Track"}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-brand-100 rounded-lg flex items-center justify-center">
-                      <Code className="h-8 w-8 text-brand-600" />
+                      <Megaphone className="h-8 w-8 text-brand-600" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">{learningData?.currentModule?.title ?? data?.currentModule?.title ?? "Advanced Prompt Engineering"}</h3>
-                      <p className="text-sm text-muted-foreground">{learningData?.currentModule?.description ?? "Learn complex prompting patterns and techniques"}</p>
+                      <h3 className="font-semibold">{learningData?.currentModule?.title ?? data?.currentModule?.title ?? "High-Impact Campaign Strategy"}</h3>
+                      <p className="text-sm text-muted-foreground">{learningData?.currentModule?.description ?? "Craft targeted AI-assisted marketing campaigns"}</p>
                       <Progress value={learningData?.currentModule?.progress ?? data?.currentModule?.progress ?? 65} className="mt-2" />
                       <p className="text-xs text-muted-foreground mt-1">Lesson {learningData?.currentModule?.lessonIndex ?? data?.currentModule?.lessonIndex ?? 3} of {learningData?.currentModule?.lessonsTotal ?? data?.currentModule?.lessonsTotal ?? 6} • {learningData?.currentModule?.remainingMin ?? data?.currentModule?.remainingMin ?? 25} min remaining</p>
                     </div>
@@ -522,9 +523,9 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {(data?.recommendations ?? [
-                    { title: "Chain-of-Thought Prompting", track: "Engineering", duration: "15 min", difficulty: "Intermediate" },
-                    { title: "API Integration Patterns", track: "Engineering", duration: "20 min", difficulty: "Advanced" },
-                    { title: "Error Handling & Validation", track: "Engineering", duration: "12 min", difficulty: "Beginner" },
+                    { title: "Audience Persona Refinement", track: "Marketing", duration: "15 min", difficulty: "Intermediate" },
+                    { title: "Campaign Ideation Sprints", track: "Marketing", duration: "20 min", difficulty: "Advanced" },
+                    { title: "Conversion Copy Testing", track: "Marketing", duration: "12 min", difficulty: "Beginner" },
                   ]).map((lesson, index) => (
                     <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                       <div className="space-y-1">

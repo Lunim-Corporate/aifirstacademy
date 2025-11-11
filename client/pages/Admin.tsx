@@ -42,21 +42,21 @@ import { apiCreateChallenge, apiListChallengesAdmin, apiUpdateChallenge, apiDele
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 const cohorts = [
-  {
-    id: "cohort-1",
-    name: "Engineering Team Q1 2024",
-    company: "TechCorp Inc.",
-    startDate: "2024-01-15",
-    endDate: "2024-03-15",
-    status: "active",
-    track: "Engineering",
-    totalUsers: 25,
-    activeUsers: 23,
-    completionRate: 76,
-    avgProgress: 68,
-    instructor: "Sarah Chen",
-    description: "Comprehensive AI workflow training for engineering teams"
-  },
+  // {
+  //   id: "cohort-1",
+  //   name: "Engineering Team Q1 2024",
+  //   company: "TechCorp Inc.",
+  //   startDate: "2024-01-15",
+  //   endDate: "2024-03-15",
+  //   status: "active",
+  //   track: "Engineering",
+  //   totalUsers: 25,
+  //   activeUsers: 23,
+  //   completionRate: 76,
+  //   avgProgress: 68,
+  //   instructor: "Sarah Chen",
+  //   description: "Comprehensive AI workflow training for engineering teams"
+  // },
   {
     id: "cohort-2", 
     name: "Marketing Department Upskill",
@@ -72,50 +72,50 @@ const cohorts = [
     instructor: "Mike Rodriguez",
     description: "AI-powered marketing and content creation training"
   },
-  {
-    id: "cohort-3",
-    name: "Design Team AI Workshop",
-    company: "Creative Studio",
-    startDate: "2024-01-01",
-    endDate: "2024-02-28",
-    status: "completed",
-    track: "Design",
-    totalUsers: 12,
-    activeUsers: 12,
-    completionRate: 92,
-    avgProgress: 98,
-    instructor: "Alex Kim",
-    description: "AI integration for creative design workflows"
-  },
+  // {
+  //   id: "cohort-3",
+  //   name: "Design Team AI Workshop",
+  //   company: "Creative Studio",
+  //   startDate: "2024-01-01",
+  //   endDate: "2024-02-28",
+  //   status: "completed",
+  //   track: "Design",
+  //   totalUsers: 12,
+  //   activeUsers: 12,
+  //   completionRate: 92,
+  //   avgProgress: 98,
+  //   instructor: "Alex Kim",
+  //   description: "AI integration for creative design workflows"
+  // },
 ];
 
 const users = [
-  {
-    id: "user-1",
-    name: "John Smith",
-    email: "john.smith@techcorp.com",
-    role: "Engineer",
-    cohort: "Engineering Team Q1 2024",
-    progress: 85,
-    modulesCompleted: 4,
-    totalModules: 6,
-    lastActive: "2 hours ago",
-    status: "active",
-    joinDate: "2024-01-15"
-  },
-  {
-    id: "user-2",
-    name: "Emma Wilson",
-    email: "emma.wilson@techcorp.com", 
-    role: "Senior Engineer",
-    cohort: "Engineering Team Q1 2024",
-    progress: 92,
-    modulesCompleted: 5,
-    totalModules: 6,
-    lastActive: "1 day ago",
-    status: "active",
-    joinDate: "2024-01-15"
-  },
+  // {
+  //   id: "user-1",
+  //   name: "John Smith",
+  //   email: "john.smith@techcorp.com",
+  //   role: "Engineer",
+  //   cohort: "Engineering Team Q1 2024",
+  //   progress: 85,
+  //   modulesCompleted: 4,
+  //   totalModules: 6,
+  //   lastActive: "2 hours ago",
+  //   status: "active",
+  //   joinDate: "2024-01-15"
+  // },
+  // {
+  //   id: "user-2",
+  //   name: "Emma Wilson",
+  //   email: "emma.wilson@techcorp.com", 
+  //   role: "Senior Engineer",
+  //   cohort: "Engineering Team Q1 2024",
+  //   progress: 92,
+  //   modulesCompleted: 5,
+  //   totalModules: 6,
+  //   lastActive: "1 day ago",
+  //   status: "active",
+  //   joinDate: "2024-01-15"
+  // },
   {
     id: "user-3",
     name: "David Lee",
@@ -340,7 +340,7 @@ function calculateChurnRate() {
                 <div className="grid grid-cols-2 gap-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="cohort-name">Cohort Name</Label>
-                    <Input id="cohort-name" placeholder="e.g. Engineering Team Q2 2024" />
+                    <Input id="cohort-name" placeholder="e.g. Marketing Team Q2 2024" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="company">Company</Label>
@@ -353,10 +353,10 @@ function calculateChurnRate() {
                         <SelectValue placeholder="Select track" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="engineering">Engineering</SelectItem>
+                        {/* <SelectItem value="engineering">Engineering</SelectItem> */}
                         <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                        <SelectItem value="research">Research</SelectItem>
+                        {/* <SelectItem value="design">Design</SelectItem>
+                        <SelectItem value="research">Research</SelectItem> */}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1460,13 +1460,13 @@ function calculateChurnRate() {
                     <Label>Default Learning Track</Label>
                     <Select>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select default track" />
+                        <SelectValue placeholder="Marketing" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="engineering">Engineering</SelectItem>
+                        {/* <SelectItem value="engineering">Engineering</SelectItem> */}
                         <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                        <SelectItem value="research">Research</SelectItem>
+                        {/* <SelectItem value="design">Design</SelectItem>
+                        <SelectItem value="research">Research</SelectItem> */}
                       </SelectContent>
                     </Select>
                   </div>

@@ -448,7 +448,8 @@ export const updatePreferences: RequestHandler = async (req, res) => {
       analytics: typeof updates.analytics === 'boolean' ? updates.analytics : true,
       personalization: typeof updates.personalization === 'boolean' ? updates.personalization : true,
       experimentalFeatures: typeof updates.experimentalFeatures === 'boolean' ? updates.experimentalFeatures : false,
-      defaultTrack: updates.defaultTrack || "engineering",
+      // defaultTrack: updates.defaultTrack || "engineering",
+      defaultTrack: updates.defaultTrack || "marketing",
       updatedAt: new Date().toISOString()
     };
     
