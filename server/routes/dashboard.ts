@@ -29,7 +29,7 @@ router.get("/", (req, res) => {
 
   // Get user profile to determine role
   const userProfile = (db.userProfiles || []).find((p: any) => p.userId === user.id);
-  const userRole = userProfile?.personaRole || 'engineer';
+  const userRole = userProfile?.personaRole || 'marketer';
   
   // Get user's learning progress
   const userProgress = (db.userLearning || []).filter((p: any) => p.userId === user.id);
@@ -138,8 +138,8 @@ router.get("/", (req, res) => {
   const activity = [
     { type: "completed" as const, title: "Completed Module: Advanced Prompting Patterns", time: "2 hours ago", points: 120 },
     { type: "shared" as const, title: "Shared prompt in Community Gallery", time: "5 hours ago", upvotes: 12 },
-    { type: "certificate" as const, title: "Earned Engineering Track Certificate", time: "1 day ago", badge: "Engineering" },
-    { type: "challenge" as const, title: "Won Weekly Challenge: Code Refactoring", time: "2 days ago", rank: "#1" },
+    { type: "certificate" as const, title: "Earned Marketing Track Certificate", time: "1 day ago", badge: "Marketing" },
+    { type: "challenge" as const, title: "Won Weekly Challenge: Campaign Refinement", time: "2 days ago", rank: "#1" },
   ];
 
   const events = [

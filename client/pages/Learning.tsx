@@ -94,23 +94,23 @@ export default function Learning() {
   const [allTracks, setAllTracks] = useState<any[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
   const [userProgress, setUserProgress] = useState<any[]>([]);
-  const [userRole, setUserRole] = useState('engineer');
+  const [userRole, setUserRole] = useState('marketer');
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [userStats, setUserStats] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   
   const roleOptions = [
-    { value: 'engineer', label: 'Engineer', icon: Code, description: 'Software development and technical skills' },
-    { value: 'manager', label: 'Manager', icon: Users, description: 'Leadership and strategic AI implementation' },
-    { value: 'designer', label: 'Designer', icon: Target, description: 'AI-powered design and creativity' },
+    // { value: 'engineer', label: 'Engineer', icon: Code, description: 'Software development and technical skills' },
+    // { value: 'manager', label: 'Manager', icon: Users, description: 'Leadership and strategic AI implementation' },
+    // { value: 'designer', label: 'Designer', icon: Target, description: 'AI-powered design and creativity' },
     { value: 'marketer', label: 'Marketer', icon: Trophy, description: 'AI-driven marketing and growth strategies' },
-    { value: 'researcher', label: 'Researcher', icon: BookOpen, description: 'Advanced AI research and methodologies' },
+    // { value: 'researcher', label: 'Researcher', icon: BookOpen, description: 'Advanced AI research and methodologies' },
   ];
   
   useEffect(() => {
     const loadData = async () => {
-      let currentUserRole = 'engineer'; // Default fallback
+      let currentUserRole = 'marketer'; // Default fallback aligns with marketing track
       
       try {
         // Get user info and profile to determine role

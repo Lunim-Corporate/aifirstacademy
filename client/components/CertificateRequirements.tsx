@@ -259,11 +259,11 @@ export default function CertificateRequirements({
 
   const getRoleDisplayName = (role: string) => {
     const roleMap = {
-      'engineer': 'AI Engineer',
-      'manager': 'AI Manager', 
-      'designer': 'AI Designer',
+      // 'engineer': 'AI Engineer',
+      // 'manager': 'AI Manager', 
+      // 'designer': 'AI Designer',
       'marketer': 'AI Marketer',
-      'researcher': 'AI Researcher'
+      // 'researcher': 'AI Researcher'
     };
     return roleMap[role] || 'AI Professional';
   };

@@ -89,7 +89,8 @@ export default function Settings() {
   // Profile State
   const [profile, setProfile] = useState({
     firstName: "", lastName: "", email: "", phone: "", company: "", bio: "",
-    personaRole: "engineer", displayName: "", location: "", website: "", jobTitle: "",
+    // personaRole: "engineer",
+    personaRole: "marketer", displayName: "", location: "", website: "", jobTitle: "",
     skills: [] as string[], interests: [] as string[], avatar: ""
   });
   
@@ -142,7 +143,8 @@ useEffect(() => {
     theme: "light" as "light" | "dark" | "auto", language: "en", timezone: "UTC",
     dateFormat: "MM/DD/YYYY", timeFormat: "12h" as "12h" | "24h", autoSave: true,
     analytics: true, personalization: true, experimentalFeatures: false,
-    defaultTrack: "engineering"
+    // defaultTrack: "engineering"
+    defaultTrack: "marketing"
   });
   
   // Show alert helper
@@ -710,11 +712,11 @@ useEffect(() => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="engineer">Engineer</SelectItem>
+                            {/* <SelectItem value="engineer">Engineer</SelectItem>
                             <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="designer">Designer</SelectItem>
+                            <SelectItem value="designer">Designer</SelectItem> */}
                             <SelectItem value="marketer">Marketer</SelectItem>
-                            <SelectItem value="researcher">Researcher</SelectItem>
+                            {/* <SelectItem value="researcher">Researcher</SelectItem> */}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1364,17 +1366,17 @@ useEffect(() => {
                       <div className="space-y-2">
                         <Label>Default Learning Track</Label>
                         <Select 
-                          value={preferences.defaultTrack || "engineering"} 
+                          value={preferences.defaultTrack || "marketing"} 
                           onValueChange={(value) => setPreferences(prev => ({ ...prev, defaultTrack: value }))}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="engineering">Engineering</SelectItem>
+                            {/* <SelectItem value="engineering">Engineering</SelectItem> */}
                             <SelectItem value="marketing">Marketing</SelectItem>
-                            <SelectItem value="design">Design</SelectItem>
-                            <SelectItem value="research">Research</SelectItem>
+                            {/* <SelectItem value="design">Design</SelectItem>
+                            <SelectItem value="research">Research</SelectItem> */}
                           </SelectContent>
                         </Select>
                       </div>
