@@ -276,6 +276,35 @@ export default function Learning() {
     return false;
   };
   
+  // Enhanced progress calculations with proper status checking
+  // These must be called before any early returns to follow React hooks rules
+  const completedLessons = useMemo(() => {
+    if (!selectedTrack?.modules || userProgress.length === 0) return 0;
+    return selectedTrack.modules.reduce((total: number, module: any) => 
+      total + module.lessons.filter((lesson: any) => 
+        getLessonStatus(selectedTrack.id, module.id, lesson.id) === "completed"
+      ).length, 0
+    );
+  }, [selectedTrack, userProgress]);
+  
+  const totalLessons = useMemo(() => {
+    return selectedTrack?.modules?.reduce((total: number, module: any) => total + (module.lessons?.length || 0), 0) || 0;
+  }, [selectedTrack]);
+  
+  const progressPercentage = useMemo(() => {
+    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  }, [completedLessons, totalLessons]);
+  
+  // Calculate which lessons are available vs locked
+  const availableLessons = useMemo(() => {
+    if (!selectedTrack?.modules) return 0;
+    return selectedTrack.modules.reduce((total: number, module: any, moduleIndex: number) => {
+      return total + module.lessons.filter((_: any, lessonIndex: number) => 
+        !isLessonLocked(selectedTrack.id, module.id, _.id, lessonIndex, moduleIndex)
+      ).length;
+    }, 0);
+  }, [selectedTrack, userProgress]);
+  
   const startLesson = async (trackId: string, moduleId: string, lessonId: string, checkLocked = true) => {
     // Find lesson details for better error handling
     let lessonOrder = -1;
@@ -404,34 +433,6 @@ export default function Learning() {
       </div>
     );
   }
-
-  // Enhanced progress calculations with proper status checking
-  const completedLessons = useMemo(() => {
-    if (!selectedTrack?.modules || userProgress.length === 0) return 0;
-    return selectedTrack.modules.reduce((total: number, module: any) => 
-      total + module.lessons.filter((lesson: any) => 
-        getLessonStatus(selectedTrack.id, module.id, lesson.id) === "completed"
-      ).length, 0
-    );
-  }, [selectedTrack, userProgress]);
-  
-  const totalLessons = useMemo(() => {
-    return selectedTrack?.modules?.reduce((total: number, module: any) => total + (module.lessons?.length || 0), 0) || 0;
-  }, [selectedTrack]);
-  
-  const progressPercentage = useMemo(() => {
-    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-  }, [completedLessons, totalLessons]);
-  
-  // Calculate which lessons are available vs locked
-  const availableLessons = useMemo(() => {
-    if (!selectedTrack?.modules) return 0;
-    return selectedTrack.modules.reduce((total: number, module: any, moduleIndex: number) => {
-      return total + module.lessons.filter((_: any, lessonIndex: number) => 
-        !isLessonLocked(selectedTrack.id, module.id, _.id, lessonIndex, moduleIndex)
-      ).length;
-    }, 0);
-  }, [selectedTrack, userProgress]);
 
   if (loading) {
     return (
