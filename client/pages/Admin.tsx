@@ -165,7 +165,34 @@ export default function Admin() {
   const [deletingChallengeId, setDeletingChallengeId] = useState<string | null>(null);
   
   // Analytics states
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
+ const [analyticsData, setAnalyticsData] = useState({
+  activeUsers: 0,
+  newUsersToday: 0,
+  courseCompletions: 0,
+  churnRate: 0,
+  monthlyChurn: [],
+  totalUsers: 0,
+  overview:{ 
+    totalUsers: 0,
+     newUsers: 0,
+      activeUsers: 0,
+    overallCompletionRate:0,
+  totalLessonsCompleted:0,
+averageTimeSpent:0,
+ },
+  monthlyRevenue: [],
+  monthLabels: [],
+  popularCourses: [],
+  charts: { 
+    userGrowth: [],  // LineChart data
+    revenueGrowth: [], // optional, if needed
+    courseCompletions: [],
+    completionTrends:[],
+    roleDistribution:[],
+  },
+  tracks:[]
+});
+const [cohorts, setCohorts] = useState([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [analyticsPeriod, setAnalyticsPeriod] = useState('30d');
 
@@ -177,6 +204,13 @@ export default function Admin() {
     
     return matchesSearch && matchesFilter && matchesCohort;
   });
+
+  // Example: calculate overall completion rate
+const totalCoursesEnrolled = analytics.totalUsers * 1; // or a real number from your backend
+const completedCourses = Math.round((analytics.avgCompletionRate / 100) * totalCoursesEnrolled);
+
+const completionRate = Math.round((completedCourses / totalCoursesEnrolled) * 100);
+
 
   // Load challenges and analytics on mount
   useEffect(() => {
@@ -252,6 +286,26 @@ export default function Admin() {
     setChallengeEndDate("");
     setEditingChallenge(null);
   };
+
+  function calculateRevenueGrowth() {
+  const revenue = analyticsData.monthlyRevenue || [];
+  if (revenue.length < 2) return 0;
+  
+  const lastMonth = revenue[revenue.length - 1];
+  const prevMonth = revenue[revenue.length - 2];
+  
+  if (prevMonth === 0) return 100; // avoid division by zero
+  return Math.round(((lastMonth - prevMonth) / prevMonth) * 100);
+}
+
+function calculateChurnRate() {
+  const churn = analyticsData.monthlyChurn || [];
+  const totalUsers = analyticsData.totalUsers || 1; // avoid division by zero
+  const totalChurn = churn.reduce((a, b) => a + b, 0);
+  return Math.round((totalChurn / totalUsers) * 100);
+}
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -337,13 +391,15 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 max-w-3xl">
+          <TabsList className="flex flex-nowrap gap-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="cohorts">Cohorts</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="challenges">Challenges</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
+            
           </TabsList>
 
           {/* Overview Tab */}
@@ -659,6 +715,18 @@ export default function Admin() {
                   </CardContent>
                 </Card>
               ))}
+              <Card>
+  <CardHeader>
+    <CardTitle>Overall Completion Rate</CardTitle>
+    <CardDescription>Percentage of courses completed by all users</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="text-sm text-muted-foreground">Completion Rate</div>
+    <div className="text-2xl font-bold">{completionRate}%</div>
+    <Progress value={completionRate} className="mt-2" />
+  </CardContent>
+</Card>
+
             </div>
           </TabsContent>
 
@@ -1192,6 +1260,191 @@ export default function Admin() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+
+            <div>
+              <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
+              <p className="text-muted-foreground">Real-time insights into platform performance and user engagement</p>
+            </div>
+
+            {/* Real-time Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+              <Card>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground mt-2">Active Users</div>
+                  <div className="text-2xl font-bold">{analyticsData.activeUsers || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground mt-2">New Sign-ups</div>
+                  <div className="text-2xl font-bold">{analyticsData.newUsersToday || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground mt-2">Course Completion</div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{analyticsData.courseCompletions || 0}%</span>
+                  </div>
+                  <Progress value={analyticsData.courseCompletions || 0} className="h-2 mt-1" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground mt-2">Churn Rate</div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{analyticsData.churnRate || 0}%</span>
+                  </div>
+                  <Progress value={analyticsData.churnRate || 0} className="h-2 mt-1" />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Revenue Chart */}
+            {/* Revenue Tracking Card */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Revenue Tracking</CardTitle>
+              <CardDescription>
+                Monthly revenue trends with total revenue and growth
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between mb-4">
+                <div>
+                  <div className="text-sm text-muted-foreground">Total Revenue</div>
+                  <div className="text-2xl font-bold">
+                    ${analyticsData.monthlyRevenue?.reduce((a, b) => a + b, 0) || 0}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">Month-over-Month Growth</div>
+                  <div className={`text-2xl font-bold ${calculateRevenueGrowth() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {calculateRevenueGrowth() >= 0 ? '+' : ''}
+                    {calculateRevenueGrowth()}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <div className="flex gap-2 items-end h-40">
+                  {analyticsData.monthlyRevenue?.map((rev, idx) => (
+                    <div
+                      key={idx}
+                      className="w-6 bg-blue-600 rounded-t"
+                      style={{ height: `${rev / 50}px` }}
+                      title={`$${rev}`}
+                    ></div>
+                  )) || <p className="text-sm text-muted-foreground">No data</p>}
+                </div>
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  {analyticsData.monthLabels?.map((label, idx) => (
+                    <span key={idx}>{label}</span>
+                  )) || <span>-</span>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {/* Course Completion Rate Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Course Completion Rate</CardTitle>
+              <CardDescription>Shows the overall percentage of courses completed by users</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{completionRate}%</div>
+                <div className="text-sm text-muted-foreground">of enrolled users completed courses</div>
+                <Progress value={completionRate} className="mt-2" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Popular Content Insights Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Popular Content Insights</CardTitle>
+              <CardDescription>
+                Displays courses with highest user engagement
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={analyticsData.popularCourses}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="engagement" fill="#4f46e5" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+            {/* Popular Content */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Popular Courses</CardTitle>
+                <CardDescription>Top performing content by engagement</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {analyticsData.popularCourses?.map((course, idx) => (
+                    <li key={idx} className="flex justify-between items-center">
+                      <span>{course.name}</span>
+                      <div className="w-1/2 bg-gray-200 h-2 rounded">
+                        <div className="bg-green-500 h-2 rounded" style={{ width: `${course.engagement}%` }}></div>
+                      </div>
+                      <span className="ml-2 font-medium">{course.engagement}%</span>
+                    </li>
+                  )) || <li className="text-muted-foreground">No data yet</li>}
+                </ul>
+              </CardContent>
+            </Card>
+
+          {/* Churn Analysis Card */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Churn Analysis</CardTitle>
+              <CardDescription>
+                Monthly user churn – shows how many users stopped engaging
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <div className="flex gap-2 items-end h-40">
+                  {analyticsData.monthlyChurn?.map((churn, idx) => (
+                    <div
+                      key={idx}
+                      className="w-6 bg-red-600 rounded-t"
+                      style={{ height: `${churn * 2}px` }}
+                      title={`${churn} users`}
+                    ></div>
+                  )) || <p className="text-sm text-muted-foreground">No data</p>}
+                </div>
+                <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                  {analyticsData.monthLabels?.map((label, idx) => (
+                    <span key={idx}>{label}</span>
+                  )) || <span>-</span>}
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-between text-sm">
+                <span>Total Churn: {analyticsData.monthlyChurn?.reduce((a, b) => a + b, 0) || 0}</span>
+                <span>
+                  Churn Rate: {calculateChurnRate()}%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
           </TabsContent>
 
           {/* Settings Tab */}
