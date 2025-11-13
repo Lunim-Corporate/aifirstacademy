@@ -1,0 +1,128 @@
+[
+  {
+    "id": "mail_483dc93c000d81d45928",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 762943\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">762943</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-08T22:51:48.690Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_11fefc0000667ae610c9",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 873859\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">873859</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-08T22:52:44.419Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_c797e207cefeded054ec",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 026093\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">026093</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-09T04:46:52.085Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_c6699a50139c9fe6fb42",
+    "to": "admin@aifirst.academy",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 034756\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">034756</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-09T04:52:19.444Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_969ec01127da3b87afdd",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 661653\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">661653</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-09T05:19:58.425Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_088e1ba49366907d911a",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 223161\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">223161</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-09T11:06:47.637Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_d43256f2316c14125550",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 213456\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">213456</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-09T21:49:51.907Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_3ca4f9865cbd8d42bacf",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 827409\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">827409</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-09T21:56:14.036Z",
+    "sentVia": "Console"
+  },
+  {
+    "id": "mail_4d524f86-3591-45ff-9d71-33f8cb541b46",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 124422\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">124422</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-11T06:07:31.936Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_7a4aee6e-e545-45bd-b71a-24707e0300b2",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 601167\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">601167</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-11T06:15:44.972Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_317e1a12-3210-47b5-a930-fcf755dca604",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 550631\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">550631</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-11T06:28:29.959Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_5443974b-7500-4c3d-a311-133496d54130",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 703686\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">703686</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-11T06:41:42.670Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_aeddcc15-a484-4845-bef5-6624ac51aa00",
+    "to": "test@example.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 363136\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">363136</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-11T06:56:10.437Z",
+    "sentVia": "Resend"
+  },
+  {
+    "id": "mail_edf3f513-d030-449a-8a67-75675dc11eb5",
+    "to": "freedomseven6@gmail.com",
+    "subject": "Verify your sign-in",
+    "text": "Verify your sign-in\n\nYour code: 939388\n\nThe code expires in 10 minutes.",
+    "html": "\n    <div style=\"font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:520px;margin:24px auto;padding:24px;border:1px solid #eee;border-radius:12px\">\n      <h2 style=\"margin:0 0 8px 0\">Verify your sign-in</h2>\n      <p style=\"color:#64748b;margin:0 0 16px 0\">Use the one-time code below. It expires in 10 minutes.</p>\n      <div style=\"font-size:32px;letter-spacing:6px;font-weight:700;background:#f1f5f9;border-radius:8px;padding:12px 16px;text-align:center\">939388</div>\n      <p style=\"color:#64748b;margin-top:16px\">If you didn't request this, you can ignore this email.</p>\n    </div>",
+    "createdAt": "2025-09-13T18:48:54.481Z",
+    "sentVia": "Resend"
+  }
+]
