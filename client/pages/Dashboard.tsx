@@ -27,6 +27,7 @@ import LoggedInHeader from "@/components/LoggedInHeader";
 import { useEffect, useState } from "react";
 import { apiMe, apiMeCookie, apiDashboard, apiLearningTracks, apiGetProgress, apiGetSettingsProfile } from "@/lib/api";
 import type { DashboardResponse } from "@shared/api";
+import { useAuth } from "@/context/AuthContext";
 
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard", active: true },
@@ -88,19 +89,45 @@ const upcomingEvents = [
 ];
 
 export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
   const [displayName, setDisplayName] = useState<string>("there");
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [learningData, setLearningData] = useState<any>(null);
   
+  // Redirect to login if not authenticated
   useEffect(() => {
+    if (!authLoading && !user) {
+      // Check for token as fallback
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        window.location.replace("/login");
+      }
+    }
+  }, [user, authLoading]);
+  
+  useEffect(() => {
+    // Don't proceed if not authenticated
+    if (authLoading || !user) {
+      return;
+    }
+    
     (async () => {
       try {
         const me = await apiMeCookie();
         setDisplayName(me.user.name?.split(" ")[0] || me.user.email.split("@")[0]);
       } catch {
         const token = localStorage.getItem("auth_token");
-        if (token) try { const me = await apiMe(token); setDisplayName(me.user.name?.split(" ")[0] || me.user.email.split("@")[0]); } catch {}
+        if (token) try { const me = await apiMe(token); setDisplayName(me.user.name?.split(" ")[0] || me.user.email.split("@")[0]); } catch {
+          // If auth fails, redirect to login
+          window.location.replace("/login");
+          return;
+        }
+        else {
+          // No token, redirect to login
+          window.location.replace("/login");
+          return;
+        }
       }
       
       // Load real learning data

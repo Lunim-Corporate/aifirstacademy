@@ -167,7 +167,17 @@ export default function LoggedInHeader() {
                 <Settings className="mr-2 h-4 w-4" /> Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={async()=>{ try { await apiLogout(); } catch {} try { localStorage.removeItem("auth_token"); window.dispatchEvent(new Event('auth-changed')); } catch {} nav("/login"); }}>
+              <DropdownMenuItem onClick={async()=>{ 
+                try { 
+                  await apiLogout(); 
+                } catch {} 
+                try { 
+                  localStorage.removeItem("auth_token"); 
+                  window.dispatchEvent(new Event('auth-changed')); 
+                } catch {} 
+                // Use window.location.replace to completely prevent back navigation
+                window.location.replace("/login");
+              }}>
                 <LogOut className="mr-2 h-4 w-4" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

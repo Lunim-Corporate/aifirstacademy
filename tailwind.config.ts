@@ -69,9 +69,9 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // AI-First Academy brand colors
+        // Lunim Studio brand colors
         brand: {
-          DEFAULT: "#0f0f1a",
+          DEFAULT: "#141420", // Deep Space Black
           foreground: "#ffffff",
           50: "#1a1a2e",
           100: "#1f1f3b",
@@ -110,10 +110,11 @@ export default {
         glass: "16px",
       },
       fontFamily: {
-        sans: ["Sora", "system-ui", "sans-serif"],
+        sans: ["Noto Sans Display", "system-ui", "sans-serif"],
+        heading: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "Fira Code", "monospace"],
-        primary: ["'Noto Sans Display Variable'", "sans-serif"],
-        secondary: ["'Sora'", "sans-serif"],
+        primary: ["'Noto Sans Display'", "sans-serif"],
+        secondary: ["'Inter'", "sans-serif"],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

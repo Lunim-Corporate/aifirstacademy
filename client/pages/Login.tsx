@@ -19,6 +19,28 @@ export default function Login() {
 
   useEffect(() => {
     apiOAuthProviders().then(({ providers }) => setProviders(providers)).catch(() => setProviders([]));
+    
+    // Prevent back navigation after logout - if user tries to go back, redirect to login
+    const handlePopState = (e: PopStateEvent) => {
+      // Check if user is logged out (no token)
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        // Replace current history entry with login to prevent further back navigation
+        window.history.replaceState(null, "", "/login");
+      }
+    };
+    
+    window.addEventListener("popstate", handlePopState);
+    
+    // Also replace history entry on mount if no token (prevents back to protected pages)
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+      window.history.replaceState(null, "", "/login");
+    }
+    
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

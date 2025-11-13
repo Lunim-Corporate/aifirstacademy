@@ -33,6 +33,7 @@ import { useEffect, useMemo, useState } from "react";
 import { copyText } from "@/lib/utils";
 import type { CommunityPrompt } from "@shared/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/AuthContext";
 
 
 type LibraryProps = {
@@ -65,6 +66,7 @@ type SourcedResource = Resource & { __source: "academy" | "user"; category?: str
 
 
 export default function Library({ onAddTemplate }: LibraryProps) {
+  const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<SourcedResource[]>([]);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ResourceType | "all">("all");
@@ -84,7 +86,17 @@ export default function Library({ onAddTemplate }: LibraryProps) {
   const [newVariables, setNewVariables] = useState<string>("");
   const navigate = useNavigate();
    const [newDescription, setNewDescription] = useState(""); 
-   const [newPrompt, setNewPrompt] = useState(""); 
+   const [newPrompt, setNewPrompt] = useState("");
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        window.location.replace("/login");
+      }
+    }
+  }, [user, authLoading]); 
    const [newCategory, setNewCategory] = useState(categories[0])
 
 

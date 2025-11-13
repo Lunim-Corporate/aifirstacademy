@@ -1,5 +1,6 @@
 /** @import must precede all other statements */
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Display:wght@300;400;500;600&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
@@ -8,8 +9,8 @@
 
 @layer base {
   :root {
-    /* Background & Surface - Lunim-like dark aesthetic by default */
-    --background: 240 10% 6%;
+    /* Background & Surface - Lunim Deep Space Black */
+    --background: 240 10% 8%; /* Deep Space Black: #141420 */
     --foreground: 0 0% 98%;
 
     /* Cards & Overlays */
@@ -86,8 +87,8 @@
   }
 
   .dark {
-    /* Dark Mode Overrides - keep close to base */
-    --background: 240 10% 5%;
+    /* Dark Mode Overrides - Lunim Deep Space Black */
+    --background: 240 12% 8%; /* Deep Space Black: #141420 */
     --foreground: 0 0% 98%;
     --card: 240 8% 9%;
     --card-foreground: 0 0% 98%;
@@ -130,11 +131,23 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Sora', system-ui, sans-serif;
+    font-family: 'Noto Sans Display', system-ui, sans-serif;
+    font-size: 14pt;
+    line-height: 1.5;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  h1 { font-size: 22pt; }
+  h2 { font-size: 18pt; }
+  h3 { font-size: 16pt; }
 
   html { font-size: 16px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
   button, [role="button"], input, select, textarea { min-height: 44px; }
