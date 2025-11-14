@@ -45,6 +45,7 @@ import CertificateRequirements from "@/components/CertificateRequirements";
 import { useEffect, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiLearningTracks, apiGetProgress, apiSetLessonProgress, apiMe, apiMeCookie, apiGetSettingsProfile } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -88,6 +89,7 @@ const getStatusColor = (status: string) => {
 };
 
 export default function Learning() {
+  const { user, loading: authLoading } = useAuth();
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [tracks, setTracks] = useState<any[]>([]);
@@ -98,6 +100,16 @@ export default function Learning() {
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [userStats, setUserStats] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        window.location.replace("/login");
+      }
+    }
+  }, [user, authLoading]);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   
   const roleOptions = [
@@ -109,6 +121,11 @@ export default function Learning() {
   ];
   
   useEffect(() => {
+    // Don't proceed if not authenticated
+    if (authLoading || !user) {
+      return;
+    }
+    
     const loadData = async () => {
       let currentUserRole = 'marketer'; // Default fallback aligns with marketing track
       

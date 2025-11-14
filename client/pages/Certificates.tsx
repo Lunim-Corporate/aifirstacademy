@@ -33,6 +33,7 @@ import LoggedInHeader from "@/components/LoggedInHeader";
 import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiVerifyCertificate, apiListCertificates, apiGenerateCertificate, apiShareCertificate, apiMe, apiLearningTracks, apiGetProgress } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -170,10 +171,8 @@ const mockCertificates = [
 
 // This will be populated from the API
 
-import { useAuth } from "@/context/AuthContext";
-
 export default function Certificates() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -182,6 +181,16 @@ export default function Certificates() {
   const [availableCertifications, setAvailableCertifications] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [earnedCertificates, setEarnedCertificates] = useState<any[]>([]);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        window.location.replace("/login");
+      }
+    }
+  }, [user, authLoading]);
   
   useEffect(() => {
     const loadData = async () => {

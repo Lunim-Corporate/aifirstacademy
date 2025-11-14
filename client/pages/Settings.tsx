@@ -71,8 +71,20 @@ const sidebarItems = [
 ];
 
 export default function Settings() {
+  // const { user, loading: authLoading } = useAuth();
+  const { user: authUser, loading: authLoading, refresh } = useAuth();
   // UI State
   const [bootLoading, setBootLoading] = useState(true);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !authUser) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        window.location.replace("/login");
+      }
+    }
+  }, [authUser, authLoading]);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -164,7 +176,6 @@ useEffect(() => {
   };
   
   // Load all settings data
-  const { user: authUser, loading: authLoading, refresh } = useAuth();
 
   // Load all settings data
   const loadSettingsData = async () => {
@@ -579,12 +590,12 @@ useEffect(() => {
             )}
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                <TabsTrigger value="security">Security</TabsTrigger>
-                <TabsTrigger value="billing">Billing</TabsTrigger>
-                <TabsTrigger value="preferences">Preferences</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-5 max-w-2xl h-auto py-1">
+                <TabsTrigger className="py-2" value="profile">Profile</TabsTrigger>
+                <TabsTrigger className="py-2" value="notifications">Notifications</TabsTrigger>
+                <TabsTrigger className="py-2" value="security">Security</TabsTrigger>
+                <TabsTrigger className="py-2" value="billing">Billing</TabsTrigger>
+                <TabsTrigger className="py-2" value="preferences">Preferences</TabsTrigger>
               </TabsList>
 
               {/* Profile Tab */}

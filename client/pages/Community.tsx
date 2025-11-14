@@ -37,6 +37,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { copyText } from "@/lib/utils";
 import type { CommunityPrompt, Discussion, Challenge, ChallengeWithEntries } from "@shared/api";
+import { useAuth } from "@/context/AuthContext";
 import {
   apiCreateDiscussion,
   apiCreateDiscussionReply,
@@ -131,6 +132,7 @@ const sidebarItems = [
 ];
 
 export default function Community() {
+  const { user, loading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [sortBy, setSortBy] = useState("popular");
@@ -143,6 +145,16 @@ export default function Community() {
 
   const [loading, setLoading] = useState({ prompts: true, discussions: true, challenges: true });
   const [error, setError] = useState<string | null>(null);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        window.location.replace("/login");
+      }
+    }
+  }, [user, authLoading]);
 
   const [commentOpenFor, setCommentOpenFor] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
@@ -473,10 +485,10 @@ export default function Community() {
                   </Dialog>
                 )}
               </div>
-              <TabsList className="grid w-full grid-cols-3 max-w-md">
-                <TabsTrigger value="gallery">Prompt Gallery</TabsTrigger>
-                <TabsTrigger value="discussions">Discussions</TabsTrigger>
-                <TabsTrigger value="challenges">Challenges</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 max-w-md mb-2 h-auto py-1">
+                <TabsTrigger className="py-2" value="gallery">Prompt Gallery</TabsTrigger>
+                <TabsTrigger className="py-2"value="discussions">Discussions</TabsTrigger>
+                <TabsTrigger className="py-2"value="challenges">Challenges</TabsTrigger>
               </TabsList>
             </div>
 

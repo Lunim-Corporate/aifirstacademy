@@ -44,6 +44,7 @@ import { apiSandboxRun } from "@/lib/api";
 import { sandboxApi } from "@/lib/sandboxApi";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/context/AuthContext";
 
 const sidebarItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -154,7 +155,19 @@ interface AIResponse {
 ]; */
 
 export default function Sandbox() {
+  const { user, loading: authLoading } = useAuth();
   const [bootLoading, setBootLoading] = useState(true);
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        window.location.replace("/login");
+      }
+    }
+  }, [user, authLoading]);
+  
   useEffect(() => { const t = setTimeout(() => setBootLoading(false), 700); return () => clearTimeout(t); }, []);
   const [systemMessage, setSystemMessage] = useState("You are a helpful AI assistant specialized in software development. Provide clear, practical advice with code examples when relevant.");
   const [userPrompt, setUserPrompt] = useState("");
