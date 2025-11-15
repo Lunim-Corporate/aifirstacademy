@@ -14,6 +14,7 @@ import {
 } from "../storage-supabase";
 import { signToken, verifyToken } from "../utils/jwt";
 import { sendMail } from "../utils/mailer";
+import { validatePassword, getPasswordErrorMessage } from "../utils/password-validation";
 
 const router = Router();
 
@@ -70,6 +71,16 @@ export const signup: RequestHandler = async (req, res) => {
     const { email, password, name } = req.body as { email?: string; password?: string; name?: string };
     if (!email || !password || !name) return res.status(400).json({ error: "Missing required fields" });
     
+    // Validate password strength (CRITICAL: Backend enforcement)
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      const errorMessage = getPasswordErrorMessage(passwordValidation);
+      return res.status(400).json({ 
+        error: errorMessage || 'Password does not meet security requirements',
+        code: 'WEAK_PASSWORD'
+      });
+    }
+    
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({ error: "Email already registered" });
@@ -102,6 +113,16 @@ export const login: RequestHandler = async (req, res) => {
   try {
     const { email, password } = req.body as { email?: string; password?: string };
     if (!email || !password) return res.status(400).json({ error: "Missing credentials" });
+    
+    // Validate password strength (CRITICAL: Backend enforcement)
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      const errorMessage = getPasswordErrorMessage(passwordValidation);
+      return res.status(400).json({ 
+        error: errorMessage || 'Password does not meet security requirements',
+        code: 'WEAK_PASSWORD'
+      });
+    }
     
     const user = await getUserByEmail(email);
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
@@ -209,6 +230,16 @@ export const signupStart: RequestHandler = async (req, res) => {
     const { email, password, name } = req.body as { email?: string; password?: string; name?: string };
     if (!email || !password || !name) return res.status(400).json({ error: "Missing required fields" });
     
+    // Validate password strength (CRITICAL: Backend enforcement)
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      const errorMessage = getPasswordErrorMessage(passwordValidation);
+      return res.status(400).json({ 
+        error: errorMessage || 'Password does not meet security requirements',
+        code: 'WEAK_PASSWORD'
+      });
+    }
+    
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({ error: "Email already registered" });
@@ -233,6 +264,16 @@ export const loginStart: RequestHandler = async (req, res) => {
   try {
     const { email, password } = req.body as { email?: string; password?: string };
     if (!email || !password) return res.status(400).json({ error: "Missing credentials" });
+    
+    // Validate password strength (CRITICAL: Backend enforcement)
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      const errorMessage = getPasswordErrorMessage(passwordValidation);
+      return res.status(400).json({ 
+        error: errorMessage || 'Password does not meet security requirements',
+        code: 'WEAK_PASSWORD'
+      });
+    }
     
     const user = await getUserByEmail(email);
     if (!user) return res.status(401).json({ error: "Invalid credentials" });

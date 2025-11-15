@@ -113,123 +113,119 @@ export default function Dashboard() {
     }
     
     (async () => {
-      try {
-        const me = await apiMeCookie();
-        setDisplayName(me.user.name?.split(" ")[0] || me.user.email.split("@")[0]);
-      } catch {
-        const token = localStorage.getItem("auth_token");
-        if (token) try { const me = await apiMe(token); setDisplayName(me.user.name?.split(" ")[0] || me.user.email.split("@")[0]); } catch {
-          // If auth fails, redirect to login
-          window.location.replace("/login");
-          return;
-        }
-        else {
-          // No token, redirect to login
-          window.location.replace("/login");
-          return;
-        }
+      setLoading(true);
+      
+      // Use user from AuthContext instead of making another API call
+      if (user) {
+        setDisplayName(user.name?.split(" ")[0] || user.email.split("@")[0]);
       }
       
-      // Load real learning data
+      // Load all data in parallel instead of sequentially for better performance
       try {
-        // Get user role
-        let userRole = 'engineer'; // Default fallback
-        try {
-          const profileInfo = await apiGetSettingsProfile();
-          if (profileInfo?.profile?.personaRole) {
-            userRole = profileInfo.profile.personaRole;
+        // Get user role first (use from user object if available, otherwise fetch)
+        // Note: persona_role may not be in AuthUser type, so we'll fetch it from profile
+        let userRole = 'engineer';
+        if (!userRole || userRole === 'engineer') {
+          try {
+            const profileInfo = await apiGetSettingsProfile();
+            if (profileInfo?.profile?.personaRole) {
+              userRole = profileInfo.profile.personaRole;
+            }
+          } catch {
+            // Keep default role
           }
-        } catch {
-          // Keep default role
         }
         
-        // Load learning tracks and progress
-        const [tracksResponse, progressResponse] = await Promise.all([
-          apiLearningTracks().catch(() => ({ tracks: [] })),
-          apiGetProgress().catch(() => ({ progress: [] }))
+        // Load all data in parallel
+        const [dashboardData, tracksData, progressData] = await Promise.allSettled([
+          apiDashboard(),
+          apiLearningTracks(),
+          apiGetProgress()
         ]);
         
-        const allTracks = tracksResponse.tracks || [];
-        const userTracks = allTracks.filter((track: any) => track.role === userRole);
-        const userProgress = progressResponse.progress || [];
-        
-        // Calculate real progress statistics
-        const totalLessons = userTracks.reduce((total: number, track: any) => 
-          total + track.modules.reduce((moduleTotal: number, module: any) => 
-            moduleTotal + (module.lessons?.length || 0), 0), 0);
-        
-        const completedLessons = userProgress.filter((p: any) => p.status === 'completed').length;
-        const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-        
-        // Find current module and next lesson
-        let currentModule = null;
-        let nextLesson = null;
-        
-        for (const track of userTracks) {
-          for (const [moduleIndex, module] of track.modules.entries()) {
-            const moduleProgress = userProgress.filter((p: any) => 
-              p.track_id === track.id && p.module_id === module.id
-            );
-            
-            const moduleCompleted = module.lessons.every((lesson: any) => 
-              moduleProgress.some((p: any) => p.lesson_id === lesson.id && p.status === 'completed')
-            );
-            
-            if (!moduleCompleted) {
-              // Find next lesson in this module
-              for (const [lessonIndex, lesson] of module.lessons.entries()) {
-                const lessonProgress = moduleProgress.find((p: any) => p.lesson_id === lesson.id);
-                if (!lessonProgress || lessonProgress.status !== 'completed') {
-                  currentModule = {
-                    track: track.title,
-                    title: module.title,
-                    description: module.description,
-                    progress: Math.round((moduleProgress.filter(p => p.status === 'completed').length / module.lessons.length) * 100),
-                    lessonIndex: lessonIndex + 1,
-                    lessonsTotal: module.lessons.length,
-                    remainingMin: module.lessons.slice(lessonIndex).reduce((sum: number, l: any) => sum + (l.durationMin || 0), 0)
-                  };
-                  
-                  nextLesson = {
-                    trackId: track.id,
-                    moduleId: module.id,
-                    lessonId: lesson.id
-                  };
-                  break;
-                }
-              }
-              break;
-            }
-          }
-          if (currentModule) break;
+        // Process dashboard data
+        if (dashboardData.status === 'fulfilled') {
+          setData(dashboardData.value);
         }
         
-        // Set learning data
-        setLearningData({
-          overallProgress,
-          completedLessons,
-          totalLessons,
-          currentModule,
-          nextLesson,
-          userTracks,
-          userProgress
-        });
-        
+        // Process tracks and progress data
+        if (tracksData.status === 'fulfilled' || progressData.status === 'fulfilled') {
+          const tracks = tracksData.status === 'fulfilled' ? tracksData.value.tracks || [] : [];
+          const userProgress = progressData.status === 'fulfilled' ? progressData.value.progress || [] : [];
+          
+          // Filter tracks by user role
+          const userTracks = tracks.filter((track: any) => track.role === userRole);
+          const finalTracks = userTracks.length > 0 ? userTracks : tracks;
+          
+          // Calculate progress statistics
+          const totalLessons = finalTracks.reduce((total: number, track: any) => 
+            total + (track.modules || []).reduce((moduleTotal: number, module: any) => 
+              moduleTotal + (module.lessons?.length || 0), 0), 0);
+          
+          const completedLessons = userProgress.filter((p: any) => p.status === 'completed').length;
+          const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+          
+          // Find current module and next lesson
+          let currentModule = null;
+          let nextLesson = null;
+          
+          for (const track of finalTracks) {
+            for (const module of track.modules || []) {
+              const moduleProgress = userProgress.filter((p: any) => 
+                p.track_id === track.id && p.module_id === module.id
+              );
+              
+              const moduleCompleted = (module.lessons || []).every((lesson: any) => 
+                moduleProgress.some((p: any) => p.lesson_id === lesson.id && p.status === 'completed')
+              );
+              
+              if (!moduleCompleted) {
+                // Find next lesson in this module
+                for (const [lessonIndex, lesson] of (module.lessons || []).entries()) {
+                  const lessonProgress = moduleProgress.find((p: any) => p.lesson_id === lesson.id);
+                  if (!lessonProgress || lessonProgress.status !== 'completed') {
+                    currentModule = {
+                      track: track.title,
+                      title: module.title,
+                      description: module.description,
+                      progress: Math.round((moduleProgress.filter(p => p.status === 'completed').length / (module.lessons?.length || 1)) * 100),
+                      lessonIndex: lessonIndex + 1,
+                      lessonsTotal: module.lessons?.length || 0,
+                      remainingMin: (module.lessons || []).slice(lessonIndex).reduce((sum: number, l: any) => sum + (l.durationMin || 0), 0)
+                    };
+                    
+                    nextLesson = {
+                      trackId: track.id,
+                      moduleId: module.id,
+                      lessonId: lesson.id
+                    };
+                    break;
+                  }
+                }
+                break;
+              }
+            }
+            if (currentModule) break;
+          }
+          
+          // Set learning data
+          setLearningData({
+            overallProgress,
+            completedLessons,
+            totalLessons,
+            currentModule,
+            nextLesson,
+            userTracks: finalTracks,
+            userProgress
+          });
+        }
       } catch (error) {
-        console.warn('Could not load learning data:', error);
-      }
-      
-      // Load dashboard data (keep existing fallbacks)
-      try {
-        const d = await apiDashboard();
-        setData(d);
-      } catch {
-        setData(null);
+        console.error('Failed to load dashboard data:', error);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [user, authLoading]); // Depend on user and authLoading
 
   if (loading) {
     return (
