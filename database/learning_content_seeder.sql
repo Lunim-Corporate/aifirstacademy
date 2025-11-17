@@ -6,6 +6,7 @@
 
 BEGIN;
 
+/*
 -- ========================================
 -- ENGINEERING PROMPTING TRACK
 -- ========================================
@@ -73,6 +74,7 @@ INSERT INTO track_lessons (id, module_id, title, duration_minutes, type, level, 
   (uuid_generate_v4(), (SELECT id FROM track_modules WHERE title = 'AI-Powered Development Workflows'), 'Code Refactoring Mastery', 40, 'sandbox', 'advanced', 'Systematic approach to AI-guided refactoring, technical debt management, and code quality improvement.', null, 2),
   (uuid_generate_v4(), (SELECT id FROM track_modules WHERE title = 'AI-Powered Development Workflows'), 'Performance Optimization', 50, 'interactive', 'advanced', 'AI-powered performance analysis, bottleneck identification, and optimization strategy development.', null, 3),
   (uuid_generate_v4(), (SELECT id FROM track_modules WHERE title = 'AI-Powered Development Workflows'), 'Security-First Development', 45, 'video', 'advanced', 'Security vulnerability assessment prompts, secure coding practices, and AI-assisted penetration testing.', 'https://player.vimeo.com/video/sample7', 4);
+*/
 
 -- ========================================
 -- MARKETING PROMPTING TRACK

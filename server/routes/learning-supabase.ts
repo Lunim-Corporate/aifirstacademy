@@ -547,7 +547,7 @@ export const getRoleRecommendations: RequestHandler = async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch user profile' });
     }
 
-    const userRole = user?.persona_role || 'engineer';
+    const userRole = user?.persona_role || 'marketer';
 
     // Get user's progress
     const { data: userProgress, error: progressError } = await withRetry(async () =>

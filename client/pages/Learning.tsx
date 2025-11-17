@@ -96,7 +96,7 @@ export default function Learning() {
   const [allTracks, setAllTracks] = useState<any[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
   const [userProgress, setUserProgress] = useState<any[]>([]);
-  const [userRole, setUserRole] = useState('engineer');
+  const [userRole, setUserRole] = useState('marketer');
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [userStats, setUserStats] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -113,11 +113,11 @@ export default function Learning() {
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   
   const roleOptions = [
-    { value: 'engineer', label: 'Engineer', icon: Code, description: 'Software development and technical skills' },
-    { value: 'manager', label: 'Manager', icon: Users, description: 'Leadership and strategic AI implementation' },
-    { value: 'designer', label: 'Designer', icon: Target, description: 'AI-powered design and creativity' },
+    // { value: 'engineer', label: 'Engineer', icon: Code, description: 'Software development and technical skills' },
+    // { value: 'manager', label: 'Manager', icon: Users, description: 'Leadership and strategic AI implementation' },
+    // { value: 'designer', label: 'Designer', icon: Target, description: 'AI-powered design and creativity' },
     { value: 'marketer', label: 'Marketer', icon: Trophy, description: 'AI-driven marketing and growth strategies' },
-    { value: 'researcher', label: 'Researcher', icon: BookOpen, description: 'Advanced AI research and methodologies' },
+    // { value: 'researcher', label: 'Researcher', icon: BookOpen, description: 'Advanced AI research and methodologies' },
   ];
   
   useEffect(() => {
@@ -127,16 +127,13 @@ export default function Learning() {
     }
     
     const loadData = async () => {
-      setLoading(true);
-      
-      // Use default role - will be fetched from profile if needed
-      let currentUserRole = 'engineer';
+      let currentUserRole = 'marketer'; // Default fallback aligns with marketing track
       
       try {
         // Load user profile and tracks/progress in parallel
         const [profileResult, tracksResult, progressResult] = await Promise.allSettled([
           // Get user profile to determine role (only if not already set)
-          currentUserRole === 'engineer' ? apiGetSettingsProfile() : Promise.resolve(null),
+          currentUserRole === 'marketer' ? apiGetSettingsProfile() : Promise.resolve(null),
           // Load all tracks
           apiLearningTracks(),
           // Load user progress

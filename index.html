@@ -48,6 +48,18 @@
     <!-- Performance hints -->
     <link rel="prefetch" href="/dashboard">
     <link rel="prefetch" href="/learning">
+    <!-- Apply saved theme early to avoid flash -->
+    <script>
+      (function(){
+        try {
+          var key = 'theme-preference';
+          var t = localStorage.getItem(key) || 'auto';
+          var dark = t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <body>

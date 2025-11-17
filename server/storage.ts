@@ -397,9 +397,12 @@ function ensureDataDir() {
 function initDB(): DB {
   const now = new Date().toISOString();
   const academyResources: LibraryResource[] = [
-    { id: "lr_prompt_1", type: "prompt", title: "Bug Analysis Prompt", tags: ["engineering"], createdAt: now, content: "I have a bug in my {{language}} code..." },
-    { id: "lr_tmpl_1", type: "template", title: "Code Review Template", tags: ["engineering"], createdAt: now, content: "Please review the following {{language}} code for..." },
-    { id: "lr_guide_1", type: "guide", title: "Prompt Engineering 101", tags: ["guide"], createdAt: now, url: "https://platform.openai.com/docs/guides/prompt-engineering", description: "Foundational techniques and patterns" },
+    // { id: "lr_prompt_1", type: "prompt", title: "Bug Analysis Prompt", tags: ["engineering"], createdAt: now, content: "I have a bug in my {{language}} code..." },
+    // { id: "lr_tmpl_1", type: "template", title: "Code Review Template", tags: ["engineering"], createdAt: now, content: "Please review the following {{language}} code for..." },
+    // { id: "lr_guide_1", type: "guide", title: "Prompt Engineering 101", tags: ["guide"], createdAt: now, url: "https://platform.openai.com/docs/guides/prompt-engineering", description: "Foundational techniques and patterns" },
+    { id: "lr_prompt_marketing_1", type: "prompt", title: "Campaign Brief Generator", tags: ["marketing"], createdAt: now, content: "Create a detailed campaign brief for {{product}} targeting {{audience}} with the following goals {{goals}}." },
+    { id: "lr_tmpl_marketing_1", type: "template", title: "Persona Development Template", tags: ["marketing"], createdAt: now, content: "Persona Name: {{name}}\nDemographics: {{demographics}}\nPain Points: {{pain_points}}\nMotivations: {{motivations}}\nKey Messages: {{messages}}" },
+    { id: "lr_guide_marketing_1", type: "guide", title: "AI-First Marketing Playbook", tags: ["marketing","guide"], createdAt: now, url: "https://example.com/ai-marketing-playbook", description: "Best practices for AI-assisted marketing workflows" },
     { id: "lr_video_1", type: "video", title: "AI-First Academy Demo", tags: ["demo"], createdAt: now, url: "https://www.youtube.com/embed/dQw4w9WgXcQ", duration: "3:32" },
   ];
   const challenges: Challenge[] = [
@@ -423,7 +426,7 @@ function initDB(): DB {
         passwordHash: "",
         createdAt: now,
         isVerified: true,
-      },
+      }
     ],
     prompts: [],
     promptComments: [],
@@ -431,6 +434,7 @@ function initDB(): DB {
     promptSaves: [],
     certificates: [],
     tracks: [
+      /*
       // Engineering Track
       {
         id: "eng_track",
@@ -572,6 +576,8 @@ function initDB(): DB {
           }
         ]
       },
+      */
+      /*
       // Management Track
       {
         id: "mgr_track",
@@ -641,6 +647,8 @@ function initDB(): DB {
           }
         ]
       },
+      */
+      /*
       // Designer Track
       {
         id: "design_track",
@@ -718,6 +726,7 @@ function initDB(): DB {
           }
         ]
       },
+      */
       // Marketing Track
       {
         id: "marketing_track",
@@ -803,7 +812,8 @@ function initDB(): DB {
             ]
           }
         ]
-      },
+      }
+      /*
       // Researcher Track
       {
         id: "researcher_track",
@@ -848,16 +858,29 @@ function initDB(): DB {
           }
         ]
       }
+      */
     ],
     libraryAcademy: academyResources,
     libraryByUser: [],
     discussions: [
+      // {
+      //   id: "d_getting_started",
+      //   title: "Best practices for prompt engineering in production environments",
+      //   authorId: "u_admin",
+      //   category: "Engineering",
+      //   tags: ["Production", "Best Practices", "Engineering"],
+      //   views: 0,
+      //   replies: 0,
+      //   isPinned: true,
+      //   createdAt: now,
+      //   lastActivityAt: now,
+      // },
       {
-        id: "d_getting_started",
-        title: "Best practices for prompt engineering in production environments",
+        id: "d_marketing_ai",
+        title: "AI prompts that boosted our campaign conversions",
         authorId: "u_admin",
-        category: "Engineering",
-        tags: ["Production", "Best Practices", "Engineering"],
+        category: "Marketing",
+        tags: ["Marketing", "Prompts", "Best Practices"],
         views: 0,
         replies: 0,
         isPinned: true,
@@ -963,6 +986,7 @@ export function readDB(): DB {
     const existingById = new Set((db.libraryAcademy || []).map((r: any) => r.id));
     const existingByTitle = new Set((db.libraryAcademy || []).map((r: any) => r.title?.toLowerCase?.() || ""));
 
+    /*
     const seeds: LibraryResource[] = [
       // Templates (at least 20)
       { id: "lr_tmpl_bug_triage", type: "template", title: "Bug Triage and Root-Cause Analysis", tags: ["engineering", "debugging"], createdAt: now, content: "You are a senior software engineer helping triage a bug. Context:\n- Repo/App: {{repo_or_app}}\n- Feature/Area: {{area}}\n- Error logs: {{logs}}\n- Steps to reproduce: {{steps}}\n- Expected vs actual: {{expected_vs_actual}}\n- Recent changes: {{recent_changes}}\n\nTasks:\n1) Hypothesize likely root causes (ranked).\n2) Suggest targeted diagnostics to confirm/deny each hypothesis.\n3) Propose minimal diffs or patches.\n4) Flag any product risks and customer impact.\nReturn a concise action plan with owners and ETA." },
@@ -1022,6 +1046,14 @@ export function readDB(): DB {
       { id: "lr_guide_checklists", type: "guide", title: "Prompting Checklists and Anti-Patterns", tags: ["prompting", "quality"], createdAt: now, description: "Quick reference.", content: "Do\n- Define role, context, constraints\n- Provide examples\n- Specify output formats\nDon't\n- Be vague\n- Omit edge cases\n- Forget validation" },
       { id: "lr_guide_troubleshooting", type: "guide", title: "Troubleshooting: Hallucinations, Drift, and Latency", tags: ["engineering", "operations"], createdAt: now, description: "Diagnose and fix common failures.", content: "Symptoms\n- Fabrications, inconsistencies, slow responses\nFixes\n- Add sources, tighten constraints\n- Reduce temperature\n- Cache frequent outputs\n- Add timeouts and retries" },
       { id: "lr_guide_comprehensive_handbook", type: "guide", title: "The AI-First Prompting Handbook", tags: ["handbook"], createdAt: now, description: "End-to-end guide tying all sections together.", content: "Contents\n1) Foundations\n2) Structure\n3) Examples\n4) Reasoning\n5) Structured outputs\n6) Tool use\n7) RAG\n8) Evaluation\n9) Safety\n10) Production\n11) Workflows in app\n12) Checklists\nEach section includes patterns, examples, and pitfalls." },
+    ];
+    */
+    const seeds: LibraryResource[] = [
+      { id: "lr_tmpl_campaign_brief", type: "template", title: "Campaign Brief Blueprint", tags: ["marketing"], createdAt: now, content: "Brand: {{brand}}\nAudience: {{audience}}\nObjective: {{objective}}\nCore Message: {{message}}\nChannels: {{channels}}\nBudget: {{budget}}\nTimeline: {{timeline}}\nKPIs: {{kpis}}\nCreative Guardrails: {{guardrails}}" },
+      { id: "lr_tmpl_social_calendar", type: "template", title: "Social Content Calendar Prompt", tags: ["marketing","content"], createdAt: now, content: "Plan a {{weeks}}-week calendar for {{brand}} targeting {{audience}}. Include platform, post concept, hook, CTA, and asset notes for each entry." },
+      { id: "lr_tmpl_persona_matrix", type: "template", title: "Persona Messaging Matrix", tags: ["marketing","strategy"], createdAt: now, content: "Persona: {{persona}}\nNeed State: {{need}}\nPrimary Objection: {{objection}}\nMessage Pillar: {{pillar}}\nProof Point: {{proof}}\nCTA: {{cta}}\nChannel: {{channel}}" },
+      { id: "lr_guide_marketing_prompts", type: "guide", title: "Marketing and Growth Prompts", tags: ["marketing"], createdAt: now, description: "Lifecycle emails, landing pages, SEO.", content: "Lifecycle\n- Segmentation, subject tests\nLanding\n- Above-the-fold clarity\nSEO\n- FAQ and schema ideas" },
+      { id: "lr_guide_campaign_analytics", type: "guide", title: "AI for Campaign Analytics", tags: ["marketing","analytics"], createdAt: now, description: "Analyze and optimize live campaigns with AI.", content: "1) Collect structured campaign data.\n2) Prompt for insights: winners, under-performers, anomalies.\n3) Request next actions and experiments.\n\nPrompt Template:\n\"Given the campaign data {{campaign_data}}, identify:\n- 3 top-performing segments with reasons\n- Under-performing assets and hypotheses\n- Suggested optimizations (copy, targeting, budget)\"" }
     ];
 
       const toAdd = seeds.filter((r) => !existingById.has(r.id) && !existingByTitle.has((r as any).title?.toLowerCase?.() || ""));

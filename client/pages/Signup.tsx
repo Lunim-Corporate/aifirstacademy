@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, Eye, EyeOff, Code, Megaphone, Palette, Search, Users, CheckCircle } from "lucide-react";
+import { BrainCircuit, Eye, EyeOff, /* Code, */ Megaphone /*, Palette, Search, Users, CheckCircle */ } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { apiOAuthMock, apiOAuthProviders } from "@/lib/api";
@@ -39,11 +39,11 @@ interface FormData {
 }
 
 const roleOptions = [
-  { id: "engineer", label: "Engineer", icon: Code, description: "Build and automate with AI" },
+  // { id: "engineer", label: "Engineer", icon: Code, description: "Build and automate with AI" },
   { id: "marketer", label: "Marketer", icon: Megaphone, description: "Create campaigns and copy" },
-  { id: "designer", label: "Designer", icon: Palette, description: "Design with AI assistance" },
-  { id: "researcher", label: "Researcher", icon: Search, description: "Analyze and synthesize data" },
-  { id: "manager", label: "Manager", icon: Users, description: "Lead AI-first teams" },
+  // { id: "designer", label: "Designer", icon: Palette, description: "Design with AI assistance" },
+  // { id: "researcher", label: "Researcher", icon: Search, description: "Analyze and synthesize data" },
+  // { id: "manager", label: "Manager", icon: Users, description: "Lead AI-first teams" },
 ];
 
 export default function Signup() {
@@ -410,21 +410,6 @@ export default function Signup() {
                     className="space-y-3"
                   >
                     <div className="flex items-center space-x-3">
-                      <RadioGroupItem value="engineering" id="engineering" />
-                      <label 
-                        htmlFor="engineering" 
-                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-muted/50 transition-colors"
-                      >
-                        <Code className="h-6 w-6 text-blue-600" />
-                        <div>
-                          <div className="font-medium">Engineering Track</div>
-                          <div className="text-sm text-muted-foreground">Code generation, refactoring, testing, and automation</div>
-                          <div className="text-xs text-blue-600 mt-1">6 modules • ~12 hours</div>
-                        </div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
                       <RadioGroupItem value="marketing" id="marketing" />
                       <label 
                         htmlFor="marketing" 
@@ -438,8 +423,22 @@ export default function Signup() {
                         </div>
                       </label>
                     </div>
-
-                    <div className="flex items-center space-x-3">
+                    {/* <div className="flex items-center space-x-3">
+                      <RadioGroupItem value="engineering" id="engineering" />
+                      <label 
+                        htmlFor="engineering" 
+                        className="flex items-center space-x-3 cursor-pointer flex-1 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-muted/50 transition-colors"
+                      >
+                        <Code className="h-6 w-6 text-blue-600" />
+                        <div>
+                          <div className="font-medium">Engineering Track</div>
+                          <div className="text-sm text-muted-foreground">Code generation, refactoring, testing, and automation</div>
+                          <div className="text-xs text-blue-600 mt-1">6 modules • ~12 hours</div>
+                        </div>
+                      </label>
+                    </div> */}
+                    
+                    {/* <div className="flex items-center space-x-3">
                       <RadioGroupItem value="design" id="design" />
                       <label 
                         htmlFor="design" 
@@ -452,9 +451,9 @@ export default function Signup() {
                           <div className="text-xs text-purple-600 mt-1">4 modules • ~8 hours</div>
                         </div>
                       </label>
-                    </div>
+                    </div> */}
 
-                    <div className="flex items-center space-x-3">
+                    {/* <div className="flex items-center space-x-3">
                       <RadioGroupItem value="research" id="research" />
                       <label 
                         htmlFor="research" 
@@ -467,7 +466,7 @@ export default function Signup() {
                           <div className="text-xs text-orange-600 mt-1">5 modules • ~10 hours</div>
                         </div>
                       </label>
-                    </div>
+                    </div> */}
                   </RadioGroup>
                 </div>
 

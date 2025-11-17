@@ -5,7 +5,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { handleDemo } from "./routes/demo";
-import authRouter from "./routes/auth";
+import authRouter, { signupStart as legacySignupStart, loginStart as legacyLoginStart, otpVerify as legacyOtpVerify, forgot as legacyForgot, resetComplete as legacyResetComplete, me as legacyMe, updateMe as legacyUpdateMe } from "./routes/auth";
 import authEnhancedRouter from "./routes/auth-enhanced";
 import sandboxRouter from "./routes/sandbox-ai";
 import communityRouter from "./routes/community-supabase";
@@ -177,7 +177,31 @@ export function createServer() {
 
   // Application routes
   app.use("/api/auth", authRouter); // Legacy auth routes (for backward compatibility)
-  app.use("/api/auth-v2", authEnhancedRouter); // Enhanced auth routes
+  
+  // Mount enhanced auth if Supabase is configured; otherwise provide a compatible fallback
+  const hasSupabase = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_ANON_KEY);
+  if (hasSupabase) {
+    app.use("/api/auth-v2", authEnhancedRouter); // Enhanced auth routes
+  } else {
+    const compat = express.Router();
+    // Map core flows to legacy handlers so the client can call /auth-v2/* in development
+    compat.post('/signup/start', legacySignupStart);
+    compat.post('/login/start', legacyLoginStart);
+    compat.post('/verify-otp', legacyOtpVerify);
+    compat.post('/forgot-password', legacyForgot);
+    compat.post('/reset-password', legacyResetComplete);
+    compat.get('/me', legacyMe);
+    compat.put('/me', legacyUpdateMe);
+    // Delegate logout to legacy route to ensure cookies are cleared consistently
+    compat.post('/logout', (req, res) => res.redirect(307, '/api/auth/logout'));
+    // Not available without Supabase-backed sessions
+    compat.post('/logout-all', (_req, res) => res.status(501).json({ error: 'Not implemented in development mode', code: 'NOT_IMPLEMENTED' }));
+    compat.get('/sessions', (_req, res) => res.status(501).json({ error: 'Not implemented in development mode', code: 'NOT_IMPLEMENTED' }));
+    compat.delete('/sessions/:sessionId', (_req, res) => res.status(501).json({ error: 'Not implemented in development mode', code: 'NOT_IMPLEMENTED' }));
+    compat.post('/refresh', (_req, res) => res.status(501).json({ error: 'Not implemented in development mode', code: 'NOT_IMPLEMENTED' }));
+    app.use('/api/auth-v2', compat);
+  }
+
   app.use("/api/sandbox", sandboxRouter);
   app.use("/api/community", communityRouter);
   app.use("/api/learning", learningRouter);

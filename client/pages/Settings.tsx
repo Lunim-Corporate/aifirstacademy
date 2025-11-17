@@ -101,7 +101,8 @@ export default function Settings() {
   // Profile State
   const [profile, setProfile] = useState({
     firstName: "", lastName: "", email: "", phone: "", company: "", bio: "",
-    personaRole: "engineer", displayName: "", location: "", website: "", jobTitle: "",
+    // personaRole: "engineer",
+    personaRole: "marketer", displayName: "", location: "", website: "", jobTitle: "",
     skills: [] as string[], interests: [] as string[], avatar: ""
   });
   
@@ -154,7 +155,8 @@ useEffect(() => {
     theme: "light" as "light" | "dark" | "auto", language: "en", timezone: "UTC",
     dateFormat: "MM/DD/YYYY", timeFormat: "12h" as "12h" | "24h", autoSave: true,
     analytics: true, personalization: true, experimentalFeatures: false,
-    defaultTrack: "engineering"
+    // defaultTrack: "engineering"
+    defaultTrack: "marketing"
   });
   
   // Show alert helper
@@ -252,17 +254,15 @@ useEffect(() => {
         
         // Apply theme if loaded
         if (prefs.theme) {
-          if (prefs.theme === 'dark') {
-            document.documentElement.classList.add('dark');
-          } else if (prefs.theme === 'light') {
-            document.documentElement.classList.remove('dark');
-          } else if (prefs.theme === 'auto') {
+          // Persist and apply theme globally
+          try {
+            const { applyTheme } = await import("@/lib/theme");
+            applyTheme(prefs.theme);
+          } catch {
+            // Fallback: minimal apply
             const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (systemDark) {
-              document.documentElement.classList.add('dark');
-            } else {
-              document.documentElement.classList.remove('dark');
-            }
+            const dark = prefs.theme === 'dark' || (prefs.theme === 'auto' && systemDark);
+            document.documentElement.classList.toggle('dark', dark);
           }
         }
       }
@@ -723,11 +723,11 @@ useEffect(() => {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="engineer">Engineer</SelectItem>
+                            {/* <SelectItem value="engineer">Engineer</SelectItem>
                             <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="designer">Designer</SelectItem>
+                            <SelectItem value="designer">Designer</SelectItem> */}
                             <SelectItem value="marketer">Marketer</SelectItem>
-                            <SelectItem value="researcher">Researcher</SelectItem>
+                            {/* <SelectItem value="researcher">Researcher</SelectItem> */}
                           </SelectContent>
                         </Select>
                       </div>
@@ -1314,22 +1314,17 @@ useEffect(() => {
                         <Label>Theme</Label>
                         <Select 
                           value={preferences.theme} 
-                          onValueChange={(value) => {
+                          onValueChange={async (value) => {
                             const themeValue = value as "light" | "dark" | "auto";
                             setPreferences(prev => ({ ...prev, theme: themeValue }));
-                            // Apply theme immediately
-                            if (themeValue === 'dark') {
-                              document.documentElement.classList.add('dark');
-                            } else if (themeValue === 'light') {
-                              document.documentElement.classList.remove('dark');
-                            } else {
-                              // Auto theme - respect system preference
+                            // Apply theme immediately and persist
+                            try {
+                              const { applyTheme } = await import("@/lib/theme");
+                              applyTheme(themeValue);
+                            } catch {
                               const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                              if (systemDark) {
-                                document.documentElement.classList.add('dark');
-                              } else {
-                                document.documentElement.classList.remove('dark');
-                              }
+                              const dark = themeValue === 'dark' || (themeValue === 'auto' && systemDark);
+                              document.documentElement.classList.toggle('dark', dark);
                             }
                           }}
                         >
@@ -1383,17 +1378,17 @@ useEffect(() => {
                       <div className="space-y-2">
                         <Label>Default Learning Track</Label>
                         <Select 
-                          value={preferences.defaultTrack || "engineering"} 
+                          value={preferences.defaultTrack || "marketing"} 
                           onValueChange={(value) => setPreferences(prev => ({ ...prev, defaultTrack: value }))}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="engineering">Engineering</SelectItem>
+                            {/* <SelectItem value="engineering">Engineering</SelectItem> */}
                             <SelectItem value="marketing">Marketing</SelectItem>
-                            <SelectItem value="design">Design</SelectItem>
-                            <SelectItem value="research">Research</SelectItem>
+                            {/* <SelectItem value="design">Design</SelectItem>
+                            <SelectItem value="research">Research</SelectItem> */}
                           </SelectContent>
                         </Select>
                       </div>

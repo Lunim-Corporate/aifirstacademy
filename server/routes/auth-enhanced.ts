@@ -82,17 +82,7 @@ async function createAndSendOtp(email: string, purpose: 'signup' | 'login' | 're
     expires_at: new Date(Date.now() + OTP_TTL_MS).toISOString(),
   });
 
-  // In development mode, log the code first (so users can proceed even if email fails)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('\n🔐 DEVELOPMENT MODE - OTP CODE:');
-    console.log(`Email: ${email}`);
-    console.log(`Purpose: ${purpose}`);
-    console.log(`Code: ${otp}`);
-    console.log(`Pending ID: ${pendingId}`);
-    console.log('Copy this code to verify your login/signup!\n');
-  }
-
-  // Try to send email, but don't fail the request if it fails in development
+  // Send OTP via email only (no console logging)
   try {
     await emailService.sendOTPEmail({
       email,
@@ -102,10 +92,8 @@ async function createAndSendOtp(email: string, purpose: 'signup' | 'login' | 're
     });
   } catch (emailError) {
     console.error('Failed to send OTP email:', emailError);
-    if (process.env.NODE_ENV !== 'development') {
-      throw emailError; // Only fail in production
-    }
-    console.log('⚠️  Email sending failed but continuing in development mode');
+    // Fail in all environments to ensure OTP is delivered via email
+    throw emailError;
   }
 
   return { pendingId };

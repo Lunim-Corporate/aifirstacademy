@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { loadAndApplyTheme } from "@/lib/theme";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -34,6 +35,9 @@ import VerifyOTP from "./pages/VerifyOTP";
 import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
+
+// Initialize and apply theme preference on app startup
+loadAndApplyTheme();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

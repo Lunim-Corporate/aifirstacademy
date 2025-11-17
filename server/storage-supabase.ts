@@ -852,7 +852,7 @@ export async function createResendAttempt(attempt: Omit<ResendAttempt, 'id' | 'c
   return withRetry(async () => {
     const newAttempt: ResendAttempt = {
       ...attempt,
-      id: createId('resend'),
+      id: createId(), // Use pure UUID to match uuid column type
       created_at: new Date().toISOString(),
     };
 
