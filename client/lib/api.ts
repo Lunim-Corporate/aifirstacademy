@@ -222,12 +222,41 @@ export async function apiMe(token?: string): Promise<MeResponse> {
   return res.json();
 }
 export async function apiMeCookie(): Promise<MeResponse> {
+  // Add timeout to prevent hanging requests
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout (reduced from 5s)
+  
   try {
-    return await fetchJsonOnce<MeResponse>(`/api/auth/me`, { 
+    // Use fetch directly with timeout support
+    const res = await fetch(`/api/auth/me`, { 
       credentials: "include",
-      headers: { ...headers }
+      headers: { ...headers },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Authentication failed' }));
+      
+      // Clear invalid tokens on auth failure
+      if (res.status === 401 || res.status === 404) {
+        localStorage.removeItem('auth_token');
+      }
+      
+      throw new Error(errorData.error || 'User not found');
+    }
+    
+    return res.json();
   } catch (error: any) {
+    clearTimeout(timeoutId);
+    
+    // If request was aborted or failed, don't throw if we're on login page
+    if (error.name === 'AbortError' || error.message?.includes('Network')) {
+      // Silently fail - user is likely logged out
+      throw new Error('Authentication check failed');
+    }
+    
     // Server will handle clearing HttpOnly cookies
     // Just clean up client-side storage
     localStorage.removeItem('auth_token');

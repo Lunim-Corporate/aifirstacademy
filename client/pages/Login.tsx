@@ -7,6 +7,7 @@ import { BrainCircuit, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { apiLoginStart, apiOAuthMock, apiOAuthProviders } from "@/lib/api";
+import { validatePassword } from "@/lib/password-validation";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,9 +16,11 @@ export default function Login() {
   const [providers, setProviders] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Load OAuth providers
     apiOAuthProviders().then(({ providers }) => setProviders(providers)).catch(() => setProviders([]));
     
     // Prevent back navigation after logout - if user tries to go back, redirect to login
@@ -48,10 +51,19 @@ export default function Login() {
     
     // Clear previous errors
     setError("");
+    setPasswordError(null);
 
     if (!email || !password) {
       setError("Please fill in all fields");
       return;
+    }
+
+    // Validate password format
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      setPasswordError(passwordValidation.errors[0] || "Password does not meet requirements");
+      setError(passwordValidation.errors[0] || "Password does not meet requirements");
+      return; // Prevent form submission
     }
 
     if (isLoading) return; // Prevent double submission
@@ -67,7 +79,23 @@ export default function Login() {
       
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Login failed');
+        // Handle password reset required
+        if (errorData.code === 'PASSWORD_RESET_REQUIRED' || errorData.requiresReset) {
+          setError('Password reset required. Please reset your password to continue.');
+          // Redirect to forgot password after a short delay
+          setTimeout(() => {
+            navigate('/forgot-password?email=' + encodeURIComponent(email));
+          }, 2000);
+          return;
+        }
+        // Handle backend password validation errors
+        if (errorData.code === 'WEAK_PASSWORD' || (errorData.error && errorData.error.includes('Password'))) {
+          setPasswordError(errorData.error || 'Password does not meet requirements');
+          setError(errorData.error || 'Password does not meet requirements');
+        } else {
+          throw new Error(errorData.error || 'Login failed');
+        }
+        return;
       }
       
       const { pendingId } = await res.json();
@@ -78,6 +106,9 @@ export default function Login() {
     } catch (err: any) {
       const errorMessage = err.message || "Login failed";
       setError(errorMessage);
+      if (errorMessage.includes('Password')) {
+        setPasswordError(errorMessage);
+      }
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);
@@ -188,9 +219,20 @@ export default function Login() {
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (error) setError(""); // Clear error on input change
+                      if (passwordError) setPasswordError(null); // Clear password error on input change
+                      // Real-time validation
+                      if (e.target.value.length > 0) {
+                        const validation = validatePassword(e.target.value);
+                        if (!validation.valid) {
+                          setPasswordError(validation.errors[0] || null);
+                        } else {
+                          setPasswordError(null);
+                        }
+                      }
                     }}
                     required
-                    className={error ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={error || passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    minLength={8}
                   />
                   <Button
                     type="button"
@@ -206,12 +248,25 @@ export default function Login() {
                     )}
                   </Button>
                 </div>
-                {error && (
+                {(passwordError || (error && error.includes('Password'))) && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                      <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Z" clipRule="evenodd" />
+                    </svg>
+                    {passwordError || error}
+                  </p>
+                )}
+                {error && !error.includes('Password') && (
                   <p className="text-sm text-red-500 flex items-center gap-1 mt-1">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                       <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Z" clipRule="evenodd" />
                     </svg>
                     {error}
+                  </p>
+                )}
+                {password.length > 0 && password.length < 8 && !passwordError && (
+                  <p className="text-xs text-muted-foreground">
+                    Password must be at least 8 characters long
                   </p>
                 )}
               </div>

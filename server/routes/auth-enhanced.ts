@@ -12,6 +12,7 @@ import {
   getResendAttempt,
   createResendAttempt,
   updateResendAttempt,
+  hashPassword,
   User
 } from '../storage-supabase';
 
@@ -27,6 +28,7 @@ import {
   checkSessionLimit,
   AuthenticatedRequest
 } from '../middleware/auth-enhanced';
+import { validatePassword, getPasswordErrorMessage } from '../utils/password-validation';
 
 const router = Router();
 
@@ -118,6 +120,17 @@ export const signupStart: RequestHandler = async (req, res) => {
       });
     }
 
+    // Validate password strength (CRITICAL: Backend enforcement)
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      const errorMessage = getPasswordErrorMessage(passwordValidation);
+      return res.status(400).json({ 
+        error: errorMessage || 'Password does not meet security requirements',
+        code: 'WEAK_PASSWORD',
+        details: passwordValidation.errors
+      });
+    }
+
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return res.status(409).json({ 
@@ -131,6 +144,16 @@ export const signupStart: RequestHandler = async (req, res) => {
       name,
       role: 'student' as const,
       is_verified: false,
+    });
+    
+    // Store password hash immediately after user creation
+    const salt = createId('salt');
+    const passwordHash = hashPassword(password, salt);
+    await updateUser(user.id, {
+      password_hash: passwordHash,
+      password_salt: salt,
+      password_reset_required: false,
+      password_updated_at: new Date().toISOString(),
     });
     
     const { pendingId } = await createAndSendOtp(email, 'signup', user.id, name);
@@ -180,6 +203,17 @@ export const loginStart: RequestHandler = async (req, res) => {
       });
     }
     
+    // Validate password format (must meet complexity requirements)
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      const errorMessage = getPasswordErrorMessage(passwordValidation);
+      return res.status(400).json({ 
+        error: errorMessage || 'Password does not meet security requirements',
+        code: 'WEAK_PASSWORD',
+        details: passwordValidation.errors
+      });
+    }
+    
     let user;
     try {
       user = await getUserByEmail(email);
@@ -198,9 +232,25 @@ export const loginStart: RequestHandler = async (req, res) => {
       });
     }
     
-    // For migration compatibility, skip password verification
-    // In production, you'd verify password hashes here
+    // Check if user needs to reset password (no password hash or reset required)
+    if (!user.password_hash || !user.password_salt || user.password_reset_required) {
+      return res.status(403).json({ 
+        error: 'Password reset required. Please reset your password to continue.',
+        code: 'PASSWORD_RESET_REQUIRED',
+        requiresReset: true
+      });
+    }
     
+    // Verify password hash matches stored hash
+    const providedHash = hashPassword(password, user.password_salt);
+    if (providedHash !== user.password_hash) {
+      return res.status(401).json({ 
+        error: 'Invalid email or password',
+        code: 'INVALID_CREDENTIALS'
+      });
+    }
+    
+    // Password verified successfully - proceed with OTP
     try {
       const { pendingId } = await createAndSendOtp(email, 'login', user.id, user.name);
       
@@ -296,8 +346,17 @@ export const otpVerify: RequestHandler = async (req, res) => {
     }
     
     // If signup and user not verified, mark as verified
+    // Also ensure password hash is stored (in case it wasn't stored during signup)
     if (entry.purpose === 'signup' && !user.is_verified) {
-      user = await updateUser(user.id, { is_verified: true });
+      const updates: any = { is_verified: true };
+      
+      // If password hash is missing, we need to get it from the signup request
+      // For now, we'll mark the user as needing password reset if hash is missing
+      if (!user.password_hash || !user.password_salt) {
+        updates.password_reset_required = true;
+      }
+      
+      user = await updateUser(user.id, updates);
     }
     
     // Try to create session with enhanced auth, fall back to legacy if tables don't exist
@@ -681,11 +740,23 @@ export const resetPassword: RequestHandler = async (req, res) => {
       });
     }
     
-    // Validate password strength
-    if (newPassword.length < 8) {
+    // Validate password strength (CRITICAL: Backend enforcement)
+    // Includes complexity requirements: lowercase, uppercase, number, special character
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      const errorMessage = getPasswordErrorMessage(passwordValidation);
       return res.status(400).json({ 
-        error: 'Password must be at least 8 characters',
-        code: 'WEAK_PASSWORD'
+        error: errorMessage || 'Password does not meet security requirements',
+        code: 'WEAK_PASSWORD',
+        details: passwordValidation.errors,
+        requirements: {
+          minLength: 8,
+          maxLength: 128,
+          requiresLowercase: true,
+          requiresUppercase: true,
+          requiresNumber: true,
+          requiresSpecialChar: true
+        }
       });
     }
     
@@ -730,12 +801,40 @@ export const resetPassword: RequestHandler = async (req, res) => {
       });
     }
     
-    // Update password (in production, you'd hash this)
-    // For now, we'll just mark the user as verified (password reset successful)
-    await updateUser(user.id, { is_verified: true });
+    // Store new password hash
+    const salt = createId('salt');
+    const passwordHash = hashPassword(newPassword, salt);
     
-    // Revoke all existing sessions for security
-    await sessionManager.revokeAllUserSessions(user.id);
+    try {
+      await updateUser(user.id, { 
+        password_hash: passwordHash,
+        password_salt: salt,
+        password_reset_required: false,
+        password_updated_at: new Date().toISOString(),
+        is_verified: true // Ensure user is verified after password reset
+      });
+    } catch (updateError: any) {
+      console.error('Error updating user password:', updateError);
+      
+      // Check if columns don't exist yet (migration not run)
+      if (updateError?.code === '42703' || updateError?.message?.includes('column')) {
+        return res.status(500).json({ 
+          error: 'Database migration required. Please run the password storage migration first.',
+          code: 'MIGRATION_REQUIRED',
+          details: 'The password_hash and password_salt columns need to be added to the users table.'
+        });
+      }
+      
+      throw updateError; // Re-throw if it's a different error
+    }
+    
+    // Revoke all existing sessions for security (gracefully handle if sessions don't exist)
+    try {
+      await sessionManager.revokeAllUserSessions(user.id);
+    } catch (sessionError) {
+      // Log but don't fail the request if session revocation fails
+      console.warn('Failed to revoke sessions (may not be critical):', sessionError);
+    }
     
     res.json({ 
       message: 'Password reset successfully',
@@ -745,7 +844,10 @@ export const resetPassword: RequestHandler = async (req, res) => {
     console.error('Reset password error:', error);
     res.status(500).json({ 
       error: 'Internal server error',
-      code: 'SERVER_ERROR'
+      code: 'SERVER_ERROR',
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error instanceof Error ? error.message : 'Unknown error' 
+      })
     });
   }
 };

@@ -15,6 +15,11 @@ export interface User {
   created_at: string;
   updated_at: string;
   is_verified?: boolean;
+  // Password storage
+  password_hash?: string;
+  password_salt?: string;
+  password_reset_required?: boolean;
+  password_updated_at?: string;
   // Profile fields
   persona_role?: "engineer" | "manager" | "designer" | "marketer" | "researcher";
   display_name?: string;

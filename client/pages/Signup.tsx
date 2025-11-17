@@ -9,6 +9,7 @@ import { BrainCircuit, Eye, EyeOff, /* Code, */ Megaphone /*, Palette, Search, U
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { apiOAuthMock, apiOAuthProviders } from "@/lib/api";
+import { validatePassword } from "@/lib/password-validation";
 
 // Enhanced signup API function
 const apiSignupStartEnhanced = async (name: string, email: string, password: string): Promise<{ pendingId: string }> => {
@@ -49,6 +50,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1);
   const [providers, setProviders] = useState<string[]>([]);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,10 +69,26 @@ export default function Signup() {
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Real-time password validation
+    if (field === "password") {
+      const validation = validatePassword(value);
+      setPasswordError(validation.valid ? null : validation.errors[0] || null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password before proceeding (for step 1)
+    if (step === 1) {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.valid) {
+        setPasswordError(passwordValidation.errors[0] || "Password does not meet requirements");
+        return; // Prevent form submission
+      }
+    }
+    
     if (step < 3) {
       setStep(step + 1);
     } else {
@@ -88,7 +106,13 @@ export default function Signup() {
         sessionStorage.setItem("auth_flow", "signup"); // Set flow for verification page
         navigate(`/verify-otp?pending=${encodeURIComponent(pendingId)}&email=${encodeURIComponent(formData.email)}`);
       } catch (err: any) {
-        alert(err.message || "Signup failed");
+        // Handle backend validation errors
+        if (err.message && err.message.includes("Password")) {
+          setPasswordError(err.message);
+          setStep(1); // Go back to step 1 to fix password
+        } else {
+          alert(err.message || "Signup failed");
+        }
       }
     }
   };
@@ -119,7 +143,8 @@ export default function Signup() {
   const canProceed = () => {
     switch (step) {
       case 1:
-        return formData.firstName && formData.lastName && formData.email && formData.password;
+        const passwordValidation = validatePassword(formData.password);
+        return formData.firstName && formData.lastName && formData.email && formData.password && passwordValidation.valid;
       case 2:
         return formData.role && formData.experience;
       case 3:
@@ -250,10 +275,12 @@ export default function Signup() {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Create a secure password"
+                        placeholder="Create a secure password (min. 8 characters)"
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         required
+                        className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                        minLength={8}
                       />
                       <Button
                         type="button"
@@ -269,6 +296,19 @@ export default function Signup() {
                         )}
                       </Button>
                     </div>
+                    {passwordError && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                          <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Z" clipRule="evenodd" />
+                        </svg>
+                        {passwordError}
+                      </p>
+                    )}
+                    {formData.password.length > 0 && formData.password.length < 8 && !passwordError && (
+                      <p className="text-xs text-muted-foreground">
+                        Password must be at least 8 characters long
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

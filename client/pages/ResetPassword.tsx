@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BrainCircuit, Eye, EyeOff, Clock, RefreshCw } from "lucide-react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { validatePassword } from "@/lib/password-validation";
 
 // Enhanced API functions
 const apiResetPassword = async (pendingId: string, code: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
@@ -16,7 +17,11 @@ const apiResetPassword = async (pendingId: string, code: string, newPassword: st
   
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Password reset failed');
+    const errorObj = new Error(error.error || 'Password reset failed');
+    // Attach response and error data for better error handling
+    (errorObj as any).response = res;
+    (errorObj as any).errorData = error;
+    throw errorObj;
   }
   
   return res.json();
@@ -52,6 +57,8 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   
   // Resend functionality
   const [canResend, setCanResend] = useState(false);
@@ -80,23 +87,41 @@ export default function ResetPassword() {
     }
   }, [resendCountdown]);
 
-  // Validate form
+  // Validate form with complexity requirements
   const isFormValid = () => {
-    return code.length === 6 && 
-           newPassword.length >= 8 && 
-           newPassword === confirmPassword;
+    if (code.length !== 6) return false;
+    if (newPassword !== confirmPassword) return false;
+    
+    const passwordValidation = validatePassword(newPassword);
+    return passwordValidation.valid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isFormValid()) {
-      setError("Please fill all fields correctly");
+    // Validate password before submission
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      setPasswordError(passwordValidation.errors[0] || "Password does not meet requirements");
+      setPasswordErrors(passwordValidation.errors);
+      setError("Please fix the password errors below");
+      return;
+    }
+
+    if (code.length !== 6) {
+      setError("Please enter a valid 6-digit code");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
     setLoading(true);
     setError("");
+    setPasswordError(null);
+    setPasswordErrors([]);
 
     try {
       await apiResetPassword(pendingId, code, newPassword);
@@ -111,7 +136,35 @@ export default function ResetPassword() {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-      setError(err.message || "Password reset failed");
+      let errorMessage = err.message || "Password reset failed";
+      
+      // Try to get error data from the attached errorData
+      if (err.errorData) {
+        const errorData = err.errorData;
+        errorMessage = errorData.error || errorMessage;
+        
+        // Handle migration required error
+        if (errorData.code === 'MIGRATION_REQUIRED') {
+          setError('Database migration required. Please contact support.');
+          console.error('Migration required:', errorData.details);
+          return;
+        }
+        
+        // Handle backend validation errors with details
+        if (errorData.details && Array.isArray(errorData.details)) {
+          setPasswordErrors(errorData.details);
+        }
+      }
+      
+      setError(errorMessage);
+      
+      // Handle backend validation errors with details
+      if (errorMessage.includes('Password') || errorMessage.includes('requirements') || errorMessage.includes('Migration')) {
+        setPasswordError(errorMessage);
+      }
+      
+      console.error('Password reset error:', err);
+      console.error('Error details:', err.errorData);
     } finally {
       setLoading(false);
     }
@@ -229,10 +282,31 @@ export default function ResetPassword() {
                   <Input
                     id="newPassword"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter new password"
+                    placeholder="Enter new password (min. 8 chars with complexity)"
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewPassword(value);
+                      
+                      // Real-time validation
+                      if (value.length > 0) {
+                        const validation = validatePassword(value);
+                        if (!validation.valid) {
+                          setPasswordError(validation.errors[0] || null);
+                          setPasswordErrors(validation.errors);
+                        } else {
+                          setPasswordError(null);
+                          setPasswordErrors([]);
+                        }
+                      } else {
+                        setPasswordError(null);
+                        setPasswordErrors([]);
+                      }
+                      
+                      if (error) setError("");
+                    }}
                     required
+                    className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
                     minLength={8}
                   />
                   <Button
@@ -249,8 +323,50 @@ export default function ResetPassword() {
                     )}
                   </Button>
                 </div>
-                {newPassword.length > 0 && newPassword.length < 8 && (
-                  <p className="text-xs text-red-500">Password must be at least 8 characters</p>
+                
+                {/* Password Requirements */}
+                {newPassword.length > 0 && (
+                  <div className="text-xs space-y-1">
+                    <p className="text-muted-foreground font-medium">Password must contain:</p>
+                    <ul className="list-disc list-inside space-y-0.5 ml-2">
+                      <li className={newPassword.length >= 8 ? "text-green-600" : "text-red-500"}>
+                        At least 8 characters
+                      </li>
+                      <li className={/[a-z]/.test(newPassword) ? "text-green-600" : "text-red-500"}>
+                        One lowercase letter
+                      </li>
+                      <li className={/[A-Z]/.test(newPassword) ? "text-green-600" : "text-red-500"}>
+                        One uppercase letter
+                      </li>
+                      <li className={/[0-9]/.test(newPassword) ? "text-green-600" : "text-red-500"}>
+                        One number
+                      </li>
+                      <li className={/[!@#$%^&*(),.?":{}|<>]/.test(newPassword) ? "text-green-600" : "text-red-500"}>
+                        One special character (!@#$%^&*(),.?":{}|&lt;&gt;)
+                      </li>
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Password Validation Errors */}
+                {passwordError && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                      <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Z" clipRule="evenodd" />
+                    </svg>
+                    {passwordError}
+                  </p>
+                )}
+                
+                {/* Show all errors if multiple */}
+                {passwordErrors.length > 1 && (
+                  <div className="text-xs text-red-500 space-y-1">
+                    {passwordErrors.slice(1).map((err, idx) => (
+                      <p key={idx} className="flex items-center gap-1">
+                        <span>•</span> {err}
+                      </p>
+                    ))}
+                  </div>
                 )}
               </div>
 
@@ -286,7 +402,7 @@ export default function ResetPassword() {
               </div>
 
               {/* Error Message */}
-              {error && (
+              {error && !error.includes('Password') && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                   {error}
                 </div>

@@ -618,7 +618,7 @@ useEffect(() => {
                           {profile.firstName.charAt(0)}{profile.lastName.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="space-y-2">
+                      <div className="flex items-center space-x-3">
                         <Button 
                           size="sm"
                           onClick={() => {
@@ -754,11 +754,11 @@ useEffect(() => {
                         className="min-h-[100px]"
                       />
                     </div>
-
+                    <div className="flex justify-center mt-6">
                     <Button 
                       disabled={saving.profile} 
                       onClick={saveProfile}
-                      className="w-full sm:w-auto save-success transition-all duration-200 hover:scale-105"
+                      className="group w-full sm:w-auto save-success transition-all duration-200 hover:scale-105 justify-center flex items-center"
                     >
                       {saving.profile ? (
                         <>
@@ -767,11 +767,12 @@ useEffect(() => {
                         </>
                       ) : (
                         <>
-                          <Check className="mr-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          Save Changes
+                          <Check className="mr-2 h-4 w-4 text-white" />
+                          <span className="text-center w-full">Save Changes</span>
                         </>
                       )}
                     </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

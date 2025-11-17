@@ -130,104 +130,86 @@ export default function Learning() {
       let currentUserRole = 'marketer'; // Default fallback aligns with marketing track
       
       try {
-        // Get user info and profile to determine role
-        try {
-          // Try token-based auth first, then fallback to cookie
-          let userInfo;
-          try {
-            userInfo = await apiMe();
-          } catch {
-            userInfo = await apiMeCookie();
-          }
-          console.log('User info:', userInfo);
-          
-          // Try to get user profile to get the role
-          try {
-            const profileInfo = await apiGetSettingsProfile();
-            if (profileInfo?.profile?.personaRole) {
-              currentUserRole = profileInfo.profile.personaRole;
-            }
-          } catch (profileError) {
-            console.warn('Could not load user profile:', profileError);
-            // Keep default role
-          }
-        } catch (authError) {
-          console.warn('User not authenticated:', authError);
-          // Continue with default role for demo purposes
-        }
+        // Load user profile and tracks/progress in parallel
+        const [profileResult, tracksResult, progressResult] = await Promise.allSettled([
+          // Get user profile to determine role (only if not already set)
+          currentUserRole === 'marketer' ? apiGetSettingsProfile() : Promise.resolve(null),
+          // Load all tracks
+          apiLearningTracks(),
+          // Load user progress
+          apiGetProgress()
+        ]);
         
+        // Update user role if profile was fetched
+        if (profileResult.status === 'fulfilled' && profileResult.value?.profile?.personaRole) {
+          currentUserRole = profileResult.value.profile.personaRole;
+        }
         setUserRole(currentUserRole);
         
-        // Load all tracks
-        const tracksResponse = await apiLearningTracks();
-        const allTracksData = tracksResponse.tracks || [];
-        setAllTracks(allTracksData);
-        
-        // Filter tracks by determined user role
-        const roleTracks = allTracksData.filter((track: any) => track.role === currentUserRole);
-        console.log('Role tracks found:', roleTracks.length, 'for role:', currentUserRole);
-        setTracks(roleTracks);
-        
-        if (roleTracks.length > 0) {
-          setSelectedTrack(roleTracks[0]);
-          // Expand first module if it exists
-          if (roleTracks[0].modules && roleTracks[0].modules.length > 0) {
-            setExpandedModules([roleTracks[0].modules[0].id]);
+        // Process tracks data
+        if (tracksResult.status === 'fulfilled') {
+          const allTracksData = tracksResult.value.tracks || [];
+          setAllTracks(allTracksData);
+          
+          // Filter tracks by determined user role
+          const roleTracks = allTracksData.filter((track: any) => track.role === currentUserRole);
+          setTracks(roleTracks);
+          
+          if (roleTracks.length > 0) {
+            setSelectedTrack(roleTracks[0]);
+            // Expand first module if it exists
+            if (roleTracks[0].modules && roleTracks[0].modules.length > 0) {
+              setExpandedModules([roleTracks[0].modules[0].id]);
+            }
           }
-        }
-        
-        // Load user progress
-        try {
-          const progressResponse = await apiGetProgress();
-          setUserProgress(progressResponse.progress || []);
-        } catch (error) {
-          console.warn('Could not load progress:', error);
-        }
-        
-        // Load user stats and recommendations
-        try {
-          // Calculate real stats based on progress
-          const totalLessonsCount = roleTracks.reduce((total: number, track: any) => 
-            total + track.modules.reduce((moduleTotal: number, module: any) => 
-              moduleTotal + (module.lessons?.length || 0), 0), 0);
+          
+          // Process progress data
+          const userProgress = progressResult.status === 'fulfilled' ? (progressResult.value.progress || []) : [];
+          setUserProgress(userProgress);
+          
+          // Calculate user stats and recommendations
+          try {
+            const totalLessonsCount = roleTracks.reduce((total: number, track: any) => 
+              total + (track.modules || []).reduce((moduleTotal: number, module: any) => 
+                moduleTotal + (module.lessons?.length || 0), 0), 0);
+              
+            const completedLessonsCount = userProgress.filter((p: any) => p.status === 'completed').length;
+            const completionRateCalc = totalLessonsCount > 0 ? Math.round((completedLessonsCount / totalLessonsCount) * 100) : 0;
             
-          const completedLessonsCount = (userProgress || []).filter((p: any) => p.status === 'completed').length;
-          const completionRateCalc = totalLessonsCount > 0 ? Math.round((completedLessonsCount / totalLessonsCount) * 100) : 0;
-          
-          setUserStats({
-            totalLessons: totalLessonsCount,
-            completedLessons: completedLessonsCount,
-            completionRate: completionRateCalc,
-            totalTime: roleTracks.reduce((total: number, track: any) => 
-              total + (track.estimatedHours || 0), 0),
-            streakDays: 7 // TODO: Calculate from actual usage data
-          });
-          
-          // Generate recommendations based on role
-          const recs = [];
-          for (const track of roleTracks) {
-            if (track.modules && track.modules.length > 0) {
-              for (const module of track.modules.slice(0, 2)) {
-                if (module.lessons && module.lessons.length > 0) {
-                  recs.push({
-                    trackId: track.id,
-                    trackTitle: track.title,
-                    moduleId: module.id,
-                    moduleTitle: module.title,
-                    lessonId: module.lessons[0].id,
-                    lessonTitle: module.lessons[0].title,
-                    type: module.lessons[0].type || 'text',
-                    duration: `${module.lessons[0].durationMin} min`,
-                    level: (module.lessons[0] as any).level || 'beginner'
-                  });
+            setUserStats({
+              totalLessons: totalLessonsCount,
+              completedLessons: completedLessonsCount,
+              completionRate: completionRateCalc,
+              totalTime: roleTracks.reduce((total: number, track: any) => 
+                total + (track.estimatedHours || 0), 0),
+              streakDays: 7 // TODO: Calculate from actual usage data
+            });
+            
+            // Generate recommendations based on role
+            const recs = [];
+            for (const track of roleTracks) {
+              if (track.modules && track.modules.length > 0) {
+                for (const module of track.modules.slice(0, 2)) {
+                  if (module.lessons && module.lessons.length > 0) {
+                    recs.push({
+                      trackId: track.id,
+                      trackTitle: track.title,
+                      moduleId: module.id,
+                      moduleTitle: module.title,
+                      lessonId: module.lessons[0].id,
+                      lessonTitle: module.lessons[0].title,
+                      type: module.lessons[0].type || 'text',
+                      duration: `${module.lessons[0].durationMin} min`,
+                      level: (module.lessons[0] as any).level || 'beginner'
+                    });
+                  }
                 }
               }
             }
+            setRecommendations(recs.slice(0, 6));
+          } catch (error) {
+            console.warn('Could not load stats:', error);
           }
-          setRecommendations(recs.slice(0, 6));
-          
-        } catch (error) {
-          console.warn('Could not load stats:', error);
         }
         
       } catch (error) {
@@ -238,7 +220,7 @@ export default function Learning() {
     };
     
     loadData();
-  }, [userRole]);
+  }, [user, authLoading]); // Depend on user and authLoading instead of userRole to avoid loops
   
   const handleRoleChange = (newRole: string) => {
     setUserRole(newRole);
