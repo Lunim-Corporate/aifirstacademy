@@ -130,7 +130,10 @@ export default function Dashboard() {
           if (profileInfo?.profile?.personaRole) {
             userRole = profileInfo.profile.personaRole;
           }
+        } catch (err) {
+          console.warn("Failed to load profile role:", err);
         }
+        
         
         // Load all data in parallel
         const [dashboardData, tracksData, progressData] = await Promise.allSettled([
