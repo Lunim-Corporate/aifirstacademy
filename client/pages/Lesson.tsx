@@ -144,9 +144,16 @@ export default function Lesson() {
       try {
         const l = await apiGetLesson(trackId, moduleId, lessonId);
         if (!mounted) return;
-        if (l && (l as any).lesson) setLesson(l);
-      } catch { setLesson(null); }
-      
+        if (l) {
+          setLesson({
+            trackId,
+            moduleId,
+            lesson: l, // flatten all lesson fields here
+          });
+        }
+      } catch {
+        setLesson(null);
+      }
       // Load user progress for accurate progress bar
       try {
         const progressData = await apiGetProgress();
@@ -320,47 +327,61 @@ export default function Lesson() {
       
       return (
         <div className="space-y-6">
-          <div className="aspect-video rounded-md overflow-hidden border border-gray-200 dark:border-gray-700/50 bg-muted/30">
-            {hasRealVideo ? (
-              isMp4 ? (
-                <video className="w-full h-full" controls controlsList="nodownload" src={current.videoUrl} onRateChange={(e)=>{}}>
-                  Sorry, your browser doesn't support embedded videos.
-                </video>
-              ) : (
-                <iframe className="w-full h-full" src={current.videoUrl || ""} title={current.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-              )
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
-                <div className="text-center space-y-4">
-                  <Video className="h-16 w-16 mx-auto text-muted-foreground" />
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">Video content coming soon</p>
-                    <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2">
-                      Duration: {current.durationMin || 'TBD'} minutes
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Enhanced lesson content for video lessons */}
-          {current.content && (
-            <div className="space-y-4">
-              <div className="border-l-4 border-brand-500 pl-4">
-                <h3 className="font-semibold mb-2">Lesson Overview</h3>
-                <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
-              </div>
+  <div className="aspect-video rounded-md overflow-hidden border border-gray-200 dark:border-gray-700/50 bg-muted/30">
+    {current?.videoUrl ? (
+      current.videoUrl.endsWith('.mp4') ? (
+        <video
+          className="w-full h-full"
+          controls
+          controlsList="nodownload"
+          src={current.videoUrl}
+        >
+          Sorry, your browser doesn't support embedded videos.
+        </video>
+      ) : (
+        <iframe
+          className="w-full h-full"
+          src={current.videoUrl}
+          title={current.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          loading="lazy"
+        />
+      )
+    ) : (
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
+        <div className="text-center space-y-4">
+          <Video className="h-16 w-16 mx-auto text-muted-foreground" />
+          <div>
+            <h3 className="font-semibold text-lg mb-2">{current?.title || 'Lesson'}</h3>
+            <p className="text-sm text-muted-foreground mb-4">Video content coming soon</p>
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2">
+              Duration: {current?.durationMin || 'TBD'} minutes
             </div>
-          )}
-          
-          <p className="text-sm text-muted-foreground border-t pt-4">
-            💡 <strong>Pro tip:</strong> Use the Transcript and Notes panels to the right. Press <kbd className="bg-muted px-1 rounded text-xs">/</kbd> to search transcript, <kbd className="bg-muted px-1 rounded text-xs">N</kbd> to focus notes.
-          </p>
+          </div>
         </div>
-      );
-    }
+      </div>
+    )}
+  </div>
+  {/* Lesson Content */}
+  {current?.content && (
+    <div className="space-y-4">
+      <div className="border-l-4 border-brand-500 pl-4">
+        <h3 className="font-semibold mb-2">Lesson Overview</h3>
+        <div
+          className="prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }}
+        />
+      </div>
+    </div>
+  )}
+  <p className="text-sm text-muted-foreground border-t pt-4">
+    💡 <strong>Pro tip:</strong> Use the Transcript and Notes panels to the right. Press{' '}
+    <kbd className="bg-muted px-1 rounded text-xs">/</kbd> to search transcript,{' '}
+    <kbd className="bg-muted px-1 rounded text-xs">N</kbd> to focus notes.
+  </p>
+</div>
+      )};
 
     // Enhanced text lessons with better formatting
     if (current.type === "text") {
@@ -523,7 +544,7 @@ export default function Lesson() {
 
   const transcriptText = (() => {
     if (!current) return "";
-    if (current.type === "video") {
+    /* if (current.type === "video") {
       return (
         "00:00 Welcome to AI Engineering Basics.\n" +
         "00:15 Today we will cover prompting, iteration, and evaluation.\n" +
@@ -531,7 +552,7 @@ export default function Lesson() {
         "02:30 Tips for evaluation and dataset design.\n" +
         "03:40 Summary and recommended readings."
       );
-    }
+    } */
     return (current.content || "");
   })();
 
@@ -690,4 +711,3 @@ export default function Lesson() {
     </div>
   );
 }
-

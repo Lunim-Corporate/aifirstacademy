@@ -42,7 +42,7 @@ import type {
   NewsletterRequest,
   NewsletterResponse,
 } from "@shared/api";
-
+import { supabase } from './supabaseClient';
 // Certificate types
 interface CertificateRequirements {
   completion: {
@@ -659,8 +659,32 @@ export async function apiLearningTracks(): Promise<{ tracks: Track[] }> {
 export async function apiGetTrack(trackId: string): Promise<{ track: Track | null }> {
   return fetchJsonOnce<{ track: Track | null }>(`/api/learning/tracks/${trackId}`);
 }
-export async function apiGetLesson(trackId: string, moduleId: string, lessonId: string): Promise<LessonContent> {
-  return fetchJsonOnce<LessonContent>(`/api/learning/tracks/${trackId}/modules/${moduleId}/lessons/${lessonId}`, { headers: { ...authHeaders() } });
+export async function apiGetLesson(trackId: string, moduleId: string, lessonId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('track_lessons')
+      .select('*')
+      .eq('id', lessonId)
+      .single();
+    if (error) throw error;
+    // Map Supabase row to frontend LessonContent object
+    const lesson = {
+      id: data.id,
+      title: data.title,
+      type: data.type,                   // 'video', 'text', etc.
+      content: data.content,
+      durationMin: data.duration_minutes,
+      videoUrl: data.video_url?.includes("player.vimeo.com/video")
+    ? data.video_url
+    : data.video_url?.replace("player.vimeo.com/", "player.vimeo.com/video/") || '',
+      prev: null,
+      next: null
+    };
+    return lesson;
+  } catch (err) {
+    console.error('Failed to fetch lesson:', err);
+    return null;
+  }
 }
 export async function apiSetLessonProgress(body: Omit<UserLessonProgress, "userId"|"updatedAt"|"startedAt"|"completedAt"> & { status: UserLessonProgress["status"] }): Promise<ProgressResponse> {
   return fetchJsonOnce<ProgressResponse>(`/api/learning/progress`, { 
