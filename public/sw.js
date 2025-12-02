@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ai-academy-v1';
+/* const CACHE_NAME = 'ai-academy-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -237,4 +237,4 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'GET_VERSION') {
     event.ports[0].postMessage({ version: CACHE_NAME });
   }
-});
+}); */
