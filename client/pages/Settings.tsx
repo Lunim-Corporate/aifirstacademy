@@ -590,14 +590,13 @@ useEffect(() => {
             )}
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 max-w-2xl h-auto py-1">
+              <TabsList className="grid w-full grid-cols-5 max-w-2xl h-auto py-1 gap-x-4">
                 <TabsTrigger className="py-2" value="profile">Profile</TabsTrigger>
                 <TabsTrigger className="py-2" value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger className="py-2" value="security">Security</TabsTrigger>
                 <TabsTrigger className="py-2" value="billing">Billing</TabsTrigger>
                 <TabsTrigger className="py-2" value="preferences">Preferences</TabsTrigger>
               </TabsList>
-
               {/* Profile Tab */}
               <TabsContent value="profile" className="space-y-6">
                 <Card>

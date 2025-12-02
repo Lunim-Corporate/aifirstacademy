@@ -531,16 +531,28 @@ const filteredTemplates = useMemo(() => {
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold">Prompt Sandbox</h1>
                 <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm">
-                    <History className="h-4 w-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-black text-white border-white hover:bg-black hover:text-white"
+                  >
+                    <History className="h-4 w-4 mr-2 text-white" />
                     History
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Bookmark className="h-4 w-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-black text-white border-white hover:bg-black hover:text-white"
+                  >
+                    <Bookmark className="h-4 w-4 mr-2 text-white" />
                     Save
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Share className="h-4 w-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-black text-white border-white hover:bg-black hover:text-white"
+                  >
+                    <Share className="h-4 w-4 mr-2 text-white" />
                     Share
                   </Button>
                 </div>
@@ -618,8 +630,16 @@ const filteredTemplates = useMemo(() => {
               {/* Advanced Settings */}
               <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    {showAdvanced ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-black text-white border-white hover:bg-black hover:text-white"
+                  >
+                    {showAdvanced ? (
+                      <ChevronUp className="h-4 w-4 mr-2 text-white" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 mr-2 text-white" />
+                    )}
                     Advanced Settings
                   </Button>
                 </CollapsibleTrigger>
@@ -644,9 +664,14 @@ const filteredTemplates = useMemo(() => {
                         </div>
                       </div>
                       <Button
-                        variant={compareMode ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCompareMode(!compareMode)}
+                        className={
+                          compareMode
+                            ? "bg-[#BBFEFF] text-black hover:bg-[#BBFEFF]"
+                            : "bg-black text-white border-white hover:bg-black hover:text-white"
+                        }
+                        variant={compareMode ? "default" : "outline"}
                       >
                         {compareMode ? "Enabled" : "Enable"}
                       </Button>

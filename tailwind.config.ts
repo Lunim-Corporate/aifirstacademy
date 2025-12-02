@@ -70,6 +70,11 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         // Lunim Studio brand colors
+        lunim: {
+          black: "#141420ff",        // Deep Space Black
+          neonBlue: "#BBFEFF",       // ✅ ONLY button/progress color
+          white: "#ffffff",
+        },
         brand: {
           DEFAULT: "#141420", // Deep Space Black
           foreground: "#ffffff",

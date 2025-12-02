@@ -485,11 +485,11 @@ export default function Community() {
                   </Dialog>
                 )}
               </div>
-              <TabsList className="grid w-full grid-cols-3 max-w-md mb-2 h-auto py-1">
-                <TabsTrigger className="py-2" value="gallery">Prompt Gallery</TabsTrigger>
-                <TabsTrigger className="py-2"value="discussions">Discussions</TabsTrigger>
-                <TabsTrigger className="py-2"value="challenges">Challenges</TabsTrigger>
-              </TabsList>
+             <TabsList className="grid w-full grid-cols-3 max-w-md mb-2 h-auto py-1 gap-x-4">
+              <TabsTrigger className="py-2" value="gallery">Prompt Gallery</TabsTrigger>
+              <TabsTrigger className="py-2" value="discussions">Discussions</TabsTrigger>
+              <TabsTrigger className="py-2" value="challenges">Challenges</TabsTrigger>
+            </TabsList>
             </div>
 
             <TabsContent value="gallery" className="p-6 space-y-6">
