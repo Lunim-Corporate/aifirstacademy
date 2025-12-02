@@ -350,37 +350,67 @@ export default function Library({ onAddTemplate }: LibraryProps) {
                 <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search library..." className="pl-9" />
               </div>
               <Select value={typeFilter} onValueChange={(v: any) => setTypeFilter(v)}>
-                <SelectTrigger><SelectValue placeholder="Filter type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="prompt">Prompts</SelectItem>
-                  <SelectItem value="template">Templates</SelectItem>
-                  <SelectItem value="guide">Guides</SelectItem>
-                  <SelectItem value="video">Videos</SelectItem>
+                <SelectTrigger
+                  className="w-full bg-black text-white border-white hover:bg-black hover:text-white"
+                >
+                  <SelectValue placeholder="Filter type" />
+                </SelectTrigger>
+                <SelectContent className="bg-black text-white border-white">
+                  <SelectItem value="all" className="hover:bg-primary hover:text-black">
+                    All
+                  </SelectItem>
+                  <SelectItem value="prompt" className="hover:bg-primary hover:text-black">
+                    Prompts
+                  </SelectItem>
+                  <SelectItem value="template" className="hover:bg-primary hover:text-black">
+                    Templates
+                  </SelectItem>
+                  <SelectItem value="guide" className="hover:bg-primary hover:text-black">
+                    Guides
+                  </SelectItem>
+                  <SelectItem value="video" className="hover:bg-primary hover:text-black">
+                    Videos
+                  </SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger><SelectValue placeholder="Filter category" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="Coding">Coding</SelectItem>
-                <SelectItem value="Debugging">Debugging</SelectItem>
-                <SelectItem value="Testing">Testing</SelectItem>
-                {/* Add more categories as you expand templates */}
+             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full bg-black text-white border-white hover:bg-black hover:text-white">
+                <SelectValue placeholder="Filter category" />
+              </SelectTrigger>
+              <SelectContent className="bg-black text-white border-white">
+                <SelectItem value="all" className="hover:bg-primary hover:text-black">
+                  All
+                </SelectItem>
+                <SelectItem value="Coding" className="hover:bg-primary hover:text-black">
+                  Coding
+                </SelectItem>
+                <SelectItem value="Debugging" className="hover:bg-primary hover:text-black">
+                  Debugging
+                </SelectItem>
+                <SelectItem value="Testing" className="hover:bg-primary hover:text-black">
+                  Testing
+                </SelectItem>
+                {/* Add more categories as needed */}
               </SelectContent>
             </Select>
 
               <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger><SelectValue placeholder="Sort" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="title">Title</SelectItem>
+                <SelectTrigger className="w-full bg-black text-white border-white hover:bg-black hover:text-white">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent className="bg-black text-white border-white">
+                  <SelectItem value="newest" className="hover:bg-primary hover:text-black">
+                    Newest
+                  </SelectItem>
+                  <SelectItem value="title" className="hover:bg-primary hover:text-black">
+                    Title
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <Tabs defaultValue="all" className="space-y-4">
-              <TabsList>
+              <TabsList className="flex space-x-4">
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="prompt">Prompts</TabsTrigger>
                 <TabsTrigger value="template">Templates</TabsTrigger>
@@ -479,6 +509,7 @@ export default function Library({ onAddTemplate }: LibraryProps) {
                                       size="sm"
                                       variant="outline"
                                       onClick={() => shareTemplateToCommunity(i)}
+                                      className="bg-black text-white border-white hover:bg-black hover:text-white"
                                     >
                                       Share
                                     </Button>

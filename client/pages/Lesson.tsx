@@ -347,6 +347,7 @@ export default function Lesson() {
           allowFullScreen
           loading="lazy"
         />
+        
       )
     ) : (
       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
@@ -363,6 +364,20 @@ export default function Lesson() {
       </div>
     )}
   </div>
+  <div className="flex justify-end mt-2">
+  <Button
+        size="sm"
+         className="bg-luminous black-white hover:bg-luminous/90"
+        variant="default"
+        onClick={() => {
+          sessionStorage.removeItem("sandboxPrompt"); // ensure prompt is empty
+          navigate("/sandbox");
+        }}
+        aria-label="Open Sandbox"
+      >
+        <Play className="h-4 w-4 mr-1" />Open Sandbox
+      </Button>
+      </div>
   {/* Lesson Content */}
   {current?.content && (
     <div className="space-y-4">
@@ -633,8 +648,27 @@ export default function Lesson() {
                 <p className="text-sm text-muted-foreground">{track?.title} • Module {(track?.modules || []).findIndex(x=>x.id===moduleId)+1}</p>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={goPrev} disabled={!lesson?.prev} aria-label="Previous lesson"><ChevronLeft className="h-4 w-4 mr-1" />Prev</Button>
-                <Button variant="outline" onClick={goNext} disabled={!lesson?.next} aria-label="Next lesson">Next<ChevronRight className="h-4 w-4 ml-1" /></Button>
+                <Button
+                  variant="outline"
+                  onClick={goPrev}
+                  disabled={!lesson?.prev}
+                  aria-label="Previous lesson"
+                  className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1 text-white" />
+                  Prev
+                </Button>
+              <Button
+                variant="outline"
+                onClick={goNext}
+                disabled={!lesson?.next}
+                aria-label="Next lesson"
+                className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1 text-white" />
+              </Button>
+
                 <Button onClick={markComplete} disabled={saving} aria-label="Mark lesson complete"><Check className="h-4 w-4 mr-1" />{saving?"Saving...":"Mark Complete"}</Button>
               </div>
             </div>

@@ -74,8 +74,13 @@ export default function Index() {
                 <Button size="lg" className="bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700" onClick={() => navigate('/signup')}>
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" className="group" onClick={() => setShowDemo(true)}>
-                  <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setShowDemo(true)}
+                  className="group bg-black text-white border-white hover:bg-black hover:text-white"
+                >
+                  <Play className="mr-2 h-4 w-4 text-white group-hover:scale-110 transition-transform" />
                   Watch Demo
                 </Button>
               </div>
@@ -212,7 +217,11 @@ export default function Index() {
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ready to transform your AI workflows?</h2>
           <p className="text-xl text-muted-foreground mb-8">Start free, upgrade anytime. Pro includes unlimited sandbox and all tracks.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700" asChild>
+            <Button
+              size="lg"
+              asChild
+              className="bg-primary text-black hover:bg-primary/90"
+            >
               <SafeLink to="/pricing">View Pricing</SafeLink>
             </Button>
             <Button size="lg" variant="outline" className="border-foreground text-foreground hover:bg-foreground/5" onClick={() => setShowDemo(true)}>
