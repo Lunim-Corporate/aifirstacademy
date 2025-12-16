@@ -65,7 +65,7 @@ export default function LoggedInHeader() {
       <div className="flex h-16 items-center px-6">
         <Link to="/dashboard" className="flex items-center space-x-4">
           <BrainCircuit className="h-8 w-8 text-brand-600" />
-          <span className="text-xl font-bold gradient-text">AI-First Academy</span>
+          <span className="text-xl font-bold gradient-text">AI-First Marketing Academy</span>
         </Link>
 
         <div className="ml-auto flex items-center space-x-4 relative">
