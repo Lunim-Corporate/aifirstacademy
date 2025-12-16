@@ -389,7 +389,9 @@ export default function Community() {
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Avatar className="h-8 w-8 ring-2 ring-brand-100">
-                            <AvatarImage src={`/api/placeholder/32/32?text=${getAuthorInitials(c.id)}`} />
+                            {/* Replaced 32x32 placeholder with simple avatar icon/fallback */}
+                            {/* <AvatarImage src={`/api/placeholder/32/32?text=${getAuthorInitials(c.id)}`} /> */}
+                            <AvatarImage src={""} />
                             <AvatarFallback className="bg-gradient-to-br from-brand-500 to-primary-600 text-white font-semibold text-xs">
                               {getAuthorInitials(c.id, authorNames.get(c.id))}
                             </AvatarFallback>

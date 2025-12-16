@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { BrainCircuit, Bell, Search as SearchIcon, Loader2, LogOut, Settings, ShieldCheck, Users, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { apiListNotifications, apiMarkAllNotificationsRead, apiMarkNotificationRead, apiMe, apiMeCookie, apiSearch, apiLogout } from "@/lib/api";
@@ -125,12 +126,12 @@ export default function AdminHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/api/placeholder/32/32" />
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </button>
+            <button className="flex items-center gap-2">
+  <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+    <User className="h-6 w-6 text-gray-700" />
+  </div>
+</button>
+
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="space-y-1">

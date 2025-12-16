@@ -4,11 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
-  Home,
   BookOpen, 
-  Code, 
-  Library,
-  Users,
   Award,
   Settings,
   Download,
@@ -22,9 +18,7 @@ import {
   Target,
   Calendar,
   Eye,
-  Printer,
   Linkedin,
-  Mail,
   Copy,
   Sparkles
 } from "lucide-react";
@@ -32,16 +26,23 @@ import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiVerifyCertificate, apiListCertificates, apiGenerateCertificate, apiShareCertificate, apiMe, apiLearningTracks, apiGetProgress } from "@/lib/api";
+import { apiVerifyCertificate, apiListCertificates, apiGenerateCertificate, apiShareCertificate, apiMe, apiLearningTracks, apiGetProgress, apiDashboard } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
+// Updated course navigation for marketing-only version.
+// Original navigation kept for future use:
+// const sidebarItems = [
+//   { icon: Home, label: "Dashboard", href: "/dashboard" },
+//   { icon: BookOpen, label: "Learning Path", href: "/learning" },
+//   { icon: Code, label: "Sandbox", href: "/sandbox" },
+//   { icon: Library, label: "Library", href: "/library" },
+//   { icon: Users, label: "Community", href: "/community" },
+//   { icon: Award, label: "Certificates", href: "/certificates", active: true },
+//   { icon: Settings, label: "Settings", href: "/settings" },
+// ];
 const sidebarItems = [
-  { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: BookOpen, label: "Learning Path", href: "/learning" },
-  { icon: Code, label: "Sandbox", href: "/sandbox" },
-  { icon: Library, label: "Library", href: "/library" },
-  { icon: Users, label: "Community", href: "/community" },
-  { icon: Award, label: "Certificates", href: "/certificates", active: true },
+  { icon: BookOpen, label: "Courses", href: "/learning" },
+  { icon: Award, label: "Achievements", href: "/certificates", active: true },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
@@ -181,6 +182,7 @@ export default function Certificates() {
   const [availableCertifications, setAvailableCertifications] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [earnedCertificates, setEarnedCertificates] = useState<any[]>([]);
+  const [skills, setSkills] = useState<any[]>([]);
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -269,6 +271,13 @@ export default function Certificates() {
         
         setEarnedCertificates(earned);
         
+        // Load skills / skills assessment from dashboard for Achievements view
+        try {
+          const dash = await apiDashboard();
+          setSkills(dash.skills || []);
+        } catch (err) {
+          console.warn("Could not load skills assessment:", err);
+        }
       } catch (error) {
         console.error('Failed to load certificate data:', error);
       } finally {
@@ -430,14 +439,14 @@ export default function Certificates() {
 
         {/* Main Content */}
         <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify_between">
             <div>
-              <h1 className="text-3xl font-bold">Certificates & Achievements</h1>
-              <p className="text-muted-foreground">Track your progress and showcase your AI workflow expertise</p>
+              <h1 className="text-3xl font-bold">Achievements</h1>
+              <p className="text-muted-foreground">Track your marketing AI skills and earned certificates.</p>
             </div>
           </div>
 
-          {/* Progress Overview */}
+          {/* Progress Overview & Skills Assessment */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -452,6 +461,42 @@ export default function Certificates() {
               </CardContent>
             </Card>
             
+            {/* Skills Assessment moved here from dashboard */}
+            <Card className="md:col-span-2">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Skills Assessment</CardTitle>
+                <Trophy className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {skills.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Your skills assessment will appear here once you start completing courses.
+                  </p>
+                ) : (
+                  skills.map((skill: any) => (
+                    <div key={skill.name} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{skill.name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {skill.level}
+                        </Badge>
+                      </div>
+                      <Progress value={skill.progress} className="h-2" />
+                      <div className="text-xs text-muted-foreground text-right">
+                        {skill.progress}%
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+          </div>
+
+          {/* Certificates section */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Your Certificates</h2>
+            <div className="grid gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">In Progress</CardTitle>
@@ -480,12 +525,7 @@ export default function Certificates() {
                 </p>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Earned Certificates */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Your Certificates</h2>
-            <div className="grid gap-6">
               {(earnedCertificates.length > 0 ? earnedCertificates : mockCertificates).map((cert: any) => (
                 <Card key={cert.id} className={cert.status === "earned" ? "border-success/20 bg-success/5" : ""}>
                   <CardHeader>

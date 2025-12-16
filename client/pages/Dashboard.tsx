@@ -30,13 +30,20 @@ import { apiMe, apiMeCookie, apiDashboard, apiLearningTracks, apiGetProgress, ap
 import type { DashboardResponse } from "@shared/api";
 import { useAuth } from "@/context/AuthContext";
 
+// Updated course navigation for marketing-only version.
+// Original navigation kept for future use:
+// const sidebarItems = [
+//   { icon: Home, label: "Dashboard", href: "/dashboard", active: true },
+//   { icon: BookOpen, label: "Learning Path", href: "/learning" },
+//   { icon: Code, label: "Sandbox", href: "/sandbox" },
+//   { icon: Library, label: "Library", href: "/library" },
+//   { icon: Users, label: "Community", href: "/community" },
+//   { icon: Award, label: "Certificates", href: "/certificates" },
+//   { icon: Settings, label: "Settings", href: "/settings" },
+// ];
 const sidebarItems = [
-  { icon: Home, label: "Dashboard", href: "/dashboard", active: true },
-  { icon: BookOpen, label: "Learning Path", href: "/learning" },
-  { icon: Code, label: "Sandbox", href: "/sandbox" },
-  { icon: Library, label: "Library", href: "/library" },
-  { icon: Users, label: "Community", href: "/community" },
-  { icon: Award, label: "Certificates", href: "/certificates" },
+  { icon: BookOpen, label: "Courses", href: "/learning" },
+  { icon: Award, label: "Achievements", href: "/certificates" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
@@ -123,18 +130,19 @@ export default function Dashboard() {
       
       // Load all data in parallel instead of sequentially for better performance
       try {
-        // Get user role
-        let userRole = 'marketer'; // Default fallback for marketing track
-        try {
-          const profileInfo = await apiGetSettingsProfile();
-          if (profileInfo?.profile?.personaRole) {
-            userRole = profileInfo.profile.personaRole;
-          }
-        } catch (err) {
-          console.warn("Failed to load profile role:", err);
-        }
-        
-        
+        // Marketing-only version: force marketer role for dashboard stats.
+        // Original dynamic role loading retained for reference:
+        // let userRole = 'marketer';
+        // try {
+        //   const profileInfo = await apiGetSettingsProfile();
+        //   if (profileInfo?.profile?.personaRole) {
+        //     userRole = profileInfo.profile.personaRole;
+        //   }
+        // } catch (err) {
+        //   console.warn("Failed to load profile role:", err);
+        // }
+        let userRole = 'marketer';
+
         // Load all data in parallel
         const [dashboardData, tracksData, progressData] = await Promise.allSettled([
           apiDashboard(),
@@ -391,89 +399,31 @@ export default function Dashboard() {
           </div>
 
           {/* Progress Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Simplified progress overview for marketing courses */}
+          <div className="grid grid-cols-1 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Overall Progress</CardTitle>
+                <CardTitle className="text-sm font-medium">Overall Course Progress</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{learningData?.overallProgress ?? data?.progress?.overall ?? 0}%</div>
-                <p className="text-xs text-muted-foreground">{learningData?.completedLessons ?? 0} of {learningData?.totalLessons ?? 0} lessons completed</p>
-                <Progress value={learningData?.overallProgress ?? data?.progress?.overall ?? 0} className="mt-2" />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Modules Completed</CardTitle>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{(() => {
-                  if (learningData?.userTracks) {
-                    const totalModules = learningData.userTracks.reduce((total: number, track: any) => total + track.modules.length, 0);
-                    const completedModules = learningData.userTracks.reduce((total: number, track: any) => {
-                      return total + track.modules.filter((module: any) => 
-                        module.lessons.every((lesson: any) => 
-                          learningData.userProgress?.some((p: any) => 
-                            p.track_id === track.id && p.module_id === module.id && p.lesson_id === lesson.id && p.status === 'completed'
-                          )
-                        )
-                      ).length;
-                    }, 0);
-                    return completedModules;
-                  }
-                  return data?.modules?.completed ?? 0;
-                })()}</div>
-                <p className="text-xs text-muted-foreground">of {(() => {
-                  if (learningData?.userTracks) {
-                    return learningData.userTracks.reduce((total: number, track: any) => total + track.modules.length, 0);
-                  }
-                  return data?.modules?.total ?? 0;
-                })()} total</p>
-                <Progress value={(() => {
-                  if (learningData?.userTracks) {
-                    const totalModules = learningData.userTracks.reduce((total: number, track: any) => total + track.modules.length, 0);
-                    const completedModules = learningData.userTracks.reduce((total: number, track: any) => {
-                      return total + track.modules.filter((module: any) => 
-                        module.lessons.every((lesson: any) => 
-                          learningData.userProgress?.some((p: any) => 
-                            p.track_id === track.id && p.module_id === module.id && p.lesson_id === lesson.id && p.status === 'completed'
-                          )
-                        )
-                      ).length;
-                    }, 0);
-                    return totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
-                  }
-                  return data?.modules?.percent ?? 0;
-                })()} className="mt-2" />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sandbox Score</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{data?.sandboxScore?.average ?? 87}</div>
-                <p className="text-xs text-muted-foreground">Average effectiveness</p>
-                <div className="flex space-x-1 mt-2">
-                  {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-3 w-3 ${i < Math.round(((data?.sandboxScore?.average ?? 87) / 100) * 5) ? "fill-warning text-warning" : "text-muted-foreground"}`}
-                  />
-                ))}
+                <div className="text-2xl font-bold">
+                  {learningData?.overallProgress ?? data?.progress?.overall ?? 0}%
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {learningData?.completedLessons ?? 0} of {learningData?.totalLessons ?? 0} lessons completed
+                </p>
+                <Progress
+                  value={learningData?.overallProgress ?? data?.progress?.overall ?? 0}
+                  className="mt-2"
+                />
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Current Learning & Skills */}
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Current Learning */}
+            <div className="space-y-6">
               {/* Current Module */}
               <Card>
                 <CardHeader>
@@ -512,7 +462,8 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Skills Map */}
+              {/* Skills Assessment has moved to Achievements page in marketing version.
+                  Original dashboard card kept here for reference:
               <Card>
                 <CardHeader>
                   <CardTitle>Skills Assessment</CardTitle>
@@ -536,145 +487,30 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Recommended Lessons */}
               <Card>
                 <CardHeader>
                   <CardTitle>Recommended for You</CardTitle>
                   <CardDescription>Based on your progress and goals</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {(data?.recommendations ?? [
-                    { title: "Audience Persona Refinement", track: "Marketing", duration: "15 min", difficulty: "Intermediate" },
-                    { title: "Campaign Ideation Sprints", track: "Marketing", duration: "20 min", difficulty: "Advanced" },
-                    { title: "Conversion Copy Testing", track: "Marketing", duration: "12 min", difficulty: "Beginner" },
-                  ]).map((lesson, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{lesson.title}</h4>
-                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <Badge variant="secondary" className="px-2 py-0">
-                            {lesson.track}
-                          </Badge>
-                          <span>•</span>
-                          <span>{lesson.duration}</span>
-                          <span>•</span>
-                          <span>{lesson.difficulty}</span>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  {(data?.recommendations ?? []).map((lesson, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      ...
                     </div>
                   ))}
                 </CardContent>
               </Card>
+              */}
             </div>
 
-            {/* Activity & Events Sidebar */}
+            {/* Right-hand dashboard column (activity, events, quick actions) is hidden
+                in the marketing courses experience but retained here for future use.
             <div className="space-y-6">
-              {/* Recent Activity */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {(data?.activity ?? recentActivity).map((activity, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.type === "completed" ? "bg-success" :
-                        activity.type === "shared" ? "bg-brand-600" :
-                        activity.type === "certificate" ? "bg-warning" :
-                        "bg-primary-600"
-                      }`} />
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">{activity.title}</p>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
-                        {activity.points && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{activity.points} XP
-                          </Badge>
-                        )}
-                        {activity.upvotes && (
-                          <Badge variant="secondary" className="text-xs">
-                            {activity.upvotes} upvotes
-                          </Badge>
-                        )}
-                        {activity.badge && (
-                          <Badge className="text-xs bg-warning/10 text-warning-foreground">
-                            {activity.badge}
-                          </Badge>
-                        )}
-                        {activity.rank && (
-                          <Badge className="text-xs bg-success/10 text-success-foreground">
-                            {activity.rank}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Upcoming Events */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Upcoming Events</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {(data?.events ?? upcomingEvents).map((event, index) => (
-                    <div key={index} className="space-y-2 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <h4 className="font-medium text-sm">{event.title}</h4>
-                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>{event.date}</span>
-                      </div>
-                      {event.instructor && (
-                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <Avatar className="h-4 w-4">
-                            <AvatarFallback className="text-xs">SC</AvatarFallback>
-                          </Avatar>
-                          <span>{event.instructor}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          {event.attendees ? `${event.attendees} attending` :
-                           event.participants ? `${event.participants} participants` : ""}
-                        </span>
-                        <Button asChild size="sm" variant="outline" className="text-xs">
-                          <Link to="/community">Join</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button asChild variant="outline" className="w-full justify-start">
-                    <Link to="/sandbox">
-                      <Code className="mr-2 h-4 w-4" />
-                      Open Sandbox
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full justify-start">
-                    <Link to="/community">
-                      <Users className="mr-2 h-4 w-4" />
-                      Browse Community
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full justify-start">
-                    <Link to="/certificates">
-                      <Award className="mr-2 h-4 w-4" />
-                      View Certificates
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+              <Card>...Recent Activity...</Card>
+              <Card>...Upcoming Events...</Card>
+              <Card>...Quick Actions...</Card>
             </div>
+            */}
           </div>
         </main>
       </div>

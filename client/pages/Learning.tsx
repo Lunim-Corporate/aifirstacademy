@@ -47,13 +47,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiLearningTracks, apiGetProgress, apiSetLessonProgress, apiMe, apiMeCookie, apiGetSettingsProfile } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
+// Updated course navigation for marketing-only version.
+// Original navigation kept for future use:
+// const sidebarItems = [
+//   { icon: Home, label: "Dashboard", href: "/dashboard" },
+//   { icon: BookOpen, label: "Learning Path", href: "/learning", active: true },
+//   { icon: Code, label: "Sandbox", href: "/sandbox" },
+//   { icon: Library, label: "Library", href: "/library" },
+//   { icon: Users, label: "Community", href: "/community" },
+//   { icon: Award, label: "Certificates", href: "/certificates" },
+//   { icon: Settings, label: "Settings", href: "/settings" },
+// ];
 const sidebarItems = [
-  { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: BookOpen, label: "Learning Path", href: "/learning", active: true },
-  { icon: Code, label: "Sandbox", href: "/sandbox" },
-  { icon: Library, label: "Library", href: "/library" },
-  { icon: Users, label: "Community", href: "/community" },
-  { icon: Award, label: "Certificates", href: "/certificates" },
+  { icon: BookOpen, label: "Courses", href: "/learning", active: true },
+  { icon: Award, label: "Achievements", href: "/certificates" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
@@ -127,25 +134,26 @@ export default function Learning() {
     }
     
     const loadData = async () => {
-      let currentUserRole = 'marketer'; // Default fallback aligns with marketing track
-      
+      // Marketing-only version: force marketer role for courses.
+      // Original dynamic role loading kept for reference:
+      // let currentUserRole = 'marketer';
+      // const [profileResult, tracksResult, progressResult] = await Promise.allSettled([
+      //   currentUserRole === 'marketer' ? apiGetSettingsProfile() : Promise.resolve(null),
+      //   apiLearningTracks(),
+      //   apiGetProgress()
+      // ]);
+      // if (profileResult.status === 'fulfilled' && profileResult.value?.profile?.personaRole) {
+      //   currentUserRole = profileResult.value.profile.personaRole;
+      // }
+      let currentUserRole = 'marketer';
+
       try {
-        // Load user profile and tracks/progress in parallel
-        const [profileResult, tracksResult, progressResult] = await Promise.allSettled([
-          // Get user profile to determine role (only if not already set)
-          currentUserRole === 'marketer' ? apiGetSettingsProfile() : Promise.resolve(null),
-          // Load all tracks
+        // Load tracks/progress in parallel
+        const [tracksResult, progressResult] = await Promise.allSettled([
           apiLearningTracks(),
-          // Load user progress
           apiGetProgress()
         ]);
-        
-        // Update user role if profile was fetched
-        if (profileResult.status === 'fulfilled' && profileResult.value?.profile?.personaRole) {
-          currentUserRole = profileResult.value.profile.personaRole;
-        }
-        setUserRole(currentUserRole);
-        
+
         // Process tracks data
         if (tracksResult.status === 'fulfilled') {
           const allTracksData = tracksResult.value.tracks || [];
@@ -562,418 +570,148 @@ export default function Learning() {
           </div>
           
           {/* Learning Stats Dashboard */}
+          {/* Overall progress - kept, now full width and simpler */}
           {userStats && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-2xl font-bold">{userStats.streakDays}</div>
-                      <p className="text-xs text-muted-foreground">Day Streak</p>
+                      <div className="text-2xl font-bold">{progressPercentage}%</div>
+                      <p className="text-xs text-muted-foreground">
+                        Overall progress across all marketing courses
+                      </p>
                     </div>
-                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                      <span className="text-orange-600 text-sm">🔥</span>
+                    <div className="w-48">
+                      <Progress value={progressPercentage} className="h-2" />
+                      <p className="mt-1 text-[11px] text-muted-foreground text-right">
+                        {completedLessons} of {totalLessons} lessons completed • {availableLessons} unlocked
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{progressPercentage}%</div>
-                  <p className="text-xs text-muted-foreground">Track Progress</p>
-                  <Progress value={progressPercentage} className="mt-2" />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{completedLessons}</div>
-                  <p className="text-xs text-muted-foreground">of {totalLessons} completed</p>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {availableLessons} lessons unlocked
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{userStats.totalTime}h</div>
-                  <p className="text-xs text-muted-foreground">Total content</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">{tracks.length}</div>
-                  <p className="text-xs text-muted-foreground">Available tracks</p>
                 </CardContent>
               </Card>
             </div>
           )}
-          
-          {/* Enhanced Quick Recommendations */}
+
+          {/* Recommendations and other dashboard-style boxes are hidden in the
+             simplified Courses view but preserved here for future use.
+
           {recommendations.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-brand-400 to-purple-500 rounded-xl blur opacity-60" />
-                    <div className="relative bg-gradient-to-r from-brand-500 to-purple-600 p-2 rounded-lg">
-                      <Sparkles className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Recommended for You</h2>
-                    <p className="text-slate-600 dark:text-slate-400">Continue your AI learning journey</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="lg" className="group hover:bg-brand-50 hover:border-brand-200">
-                  View All
-                  <ExternalLink className="h-4 w-4 ml-2 group-hover:scale-110 transition-transform" />
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {recommendations.slice(0, 3).map((rec, index) => {
-                  const Icon = getLessonIcon(rec.type);
-                  const gradients = [
-                    'from-blue-500/10 to-cyan-500/10 border-blue-200/60 dark:border-blue-500/20',
-                    'from-purple-500/10 to-pink-500/10 border-purple-200/60 dark:border-purple-500/20',
-                    'from-green-500/10 to-emerald-500/10 border-green-200/60 dark:border-green-500/20'
-                  ];
-                  
-                  return (
-                    <Card 
-                      key={index} 
-                      className={`group cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-500 relative overflow-hidden bg-gradient-to-br ${gradients[index % 3]}`}
-                      onClick={() => startLesson(rec.trackId, rec.moduleId, rec.lessonId)}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      <CardContent className="pt-6 relative z-10">
-                        <div className="flex items-start gap-4">
-                          <div className="relative">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-brand-400 to-purple-500 rounded-xl blur opacity-0 group-hover:opacity-60 transition-opacity duration-500" />
-                            <div className="relative bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm group-hover:shadow-lg transition-shadow duration-300">
-                              <Icon className="h-6 w-6 text-brand-600 group-hover:scale-110 transition-transform duration-300" />
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-lg truncate group-hover:text-brand-700 transition-colors">
-                              {rec.lessonTitle}
-                            </h3>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 truncate mb-3">
-                              {rec.trackTitle}
-                            </p>
-                            <div className="flex items-center gap-2 mb-3">
-                              <Badge 
-                                variant="secondary" 
-                                className="text-xs bg-white/60 dark:bg-slate-800/60 group-hover:bg-brand-100 group-hover:text-brand-800 transition-colors"
-                              >
-                                {rec.level}
-                              </Badge>
-                              <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                <Timer className="h-3 w-3" />
-                                {rec.duration}
-                              </span>
-                            </div>
-                            <Button 
-                              size="sm" 
-                              className="w-full bg-gradient-to-r from-brand-500 to-purple-600 hover:from-brand-600 hover:to-purple-700 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                startLesson(rec.trackId, rec.moduleId, rec.lessonId);
-                              }}
-                            >
-                              <Play className="h-4 w-4 mr-2" />
-                              Start Lesson
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
+            <div className="space-y-6">...Recommended for You cards...</div>
           )}
+          */}
           
           {/* Track Content - Only show if selectedTrack exists */}
           {selectedTrack && (
             <>
-              {/* Track Header */}
+              {/* Courses list */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedTrack.title}</h2>
-                    <p className="text-muted-foreground">{selectedTrack.description}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-brand-50 text-brand-700">
-                      {selectedTrack.level || 'Beginner'}
-                    </Badge>
-                    {selectedTrack.certificateAvailable && (
-                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                        <Award className="h-3 w-3 mr-1" />
-                        Certificate Available
-                      </Badge>
-                    )}
-                    <Button onClick={() => {
-                      const firstLesson = selectedTrack.modules?.[0]?.lessons?.[0];
-                      if (firstLesson && selectedTrack.modules?.[0]) {
-                        startLesson(selectedTrack.id, selectedTrack.modules[0].id, firstLesson.id);
-                      }
-                    }}>
-                      Start Track
-                    </Button>
-                  </div>
-                </div>
+                <h2 className="text-xl font-semibold">Courses</h2>
+                {selectedTrack.modules?.map((module: any, moduleIndex: number) => {
+                  const totalLessonDurationMinutes = module.lessons.reduce(
+                    (sum: number, l: any) => sum + (l.durationMin || 0),
+                    0
+                  );
+                  const hours = Math.round((totalLessonDurationMinutes / 60) * 10) / 10;
+                  const completedCount = module.lessons.filter(
+                    (l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === "completed"
+                  ).length;
+                  const isCompleted = completedCount === module.lessons.length;
+                  const isInProgress = !isCompleted && completedCount > 0;
 
-                {/* Progress Overview */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="text-2xl font-bold">{Math.round(progressPercentage)}%</div>
-                      <p className="text-xs text-muted-foreground">Overall Progress</p>
-                      <Progress value={progressPercentage} className="mt-2" />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="text-2xl font-bold">{selectedTrack.modules?.filter((m: any) => {
-                        const moduleCompleted = m.lessons.every((l: any) => 
-                          getLessonStatus(selectedTrack.id, m.id, l.id) === 'completed'
-                        );
-                        return moduleCompleted;
-                      }).length || 0}</div>
-                      <p className="text-xs text-muted-foreground">of {selectedTrack.modules?.length || 0} modules</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="text-2xl font-bold">{completedLessons}</div>
-                      <p className="text-xs text-muted-foreground">of {totalLessons} lessons</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="text-2xl font-bold">{Math.round((selectedTrack.modules?.reduce((total: number, module: any) => 
-                        total + module.lessons.reduce((sum: number, lesson: any) => sum + (lesson.durationMin || 0), 0), 0
-                      ) || 0) / 60)} hrs</div>
-                      <p className="text-xs text-muted-foreground">Total duration</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+                  // Determine if the course is locked based on previous modules
+                  let isCourseLocked = false;
+                  if (moduleIndex > 0) {
+                    const previousModule = selectedTrack.modules[moduleIndex - 1];
+                    const prevComplete = previousModule.lessons.every(
+                      (l: any) => getLessonStatus(selectedTrack.id, previousModule.id, l.id) === "completed"
+                    );
+                    isCourseLocked = !prevComplete;
+                  }
 
-              {/* Modules List */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Course Modules</h2>
-                {selectedTrack.modules?.map((module: any, moduleIndex: number) => (
-                  <Card key={module.id} className="overflow-hidden">
-                    <Collapsible 
-                      open={expandedModules.includes(module.id)}
-                      onOpenChange={() => toggleModule(module.id)}
+                  const firstLesson = module.lessons[0];
+
+                  return (
+                    <Card
+                      key={module.id}
+                      className={`overflow-hidden border ${
+                        isCourseLocked
+                          ? "opacity-70 border-dashed"
+                          : "hover:border-brand-300 hover:shadow-md cursor-pointer transition-colors"
+                      }`}
+                      onClick={() => {
+                        if (!isCourseLocked && firstLesson) {
+                          startLesson(selectedTrack.id, module.id, firstLesson.id);
+                        }
+                      }}
                     >
-                      <CollapsibleTrigger asChild>
-                        <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center space-x-2">
-                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                                  module.lessons.every((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'completed') ? "bg-success border-success text-white" :
-                                  module.lessons.some((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'in_progress') ? "bg-brand-100 border-brand-600 text-brand-600" :
-                                  "bg-muted border-gray-200 dark:border-gray-700 text-muted-foreground"
-                                }`}>
-                                  {module.lessons.every((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'completed') ? (
-                                    <CheckCircle className="h-4 w-4" />
-                                  ) : (
-                                    <span className="text-sm font-semibold">{moduleIndex + 1}</span>
-                                  )}
-                                </div>
-                                <div>
-                                  <CardTitle className="text-left">{module.title}</CardTitle>
-                                  <CardDescription className="text-left">{module.description}</CardDescription>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                              <div className="text-right">
-                                <div className="text-sm font-medium">{Math.round(module.lessons.reduce((sum: number, l: any) => sum + (l.durationMin || 0), 0) / 60 * 10) / 10}h</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {module.lessons.filter((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === "completed").length} of {module.lessons.length} lessons
-                                </div>
-                              </div>
-                              <Badge variant="outline" className={
-                                module.lessons.every((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'completed') ? "bg-success/10 text-success" :
-                                module.lessons.some((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'in_progress') ? "bg-brand-50 text-brand-700" :
-                                "text-muted-foreground"
-                              }>
-                                {module.lessons.every((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'completed') ? "Completed" :
-                                 module.lessons.some((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'in_progress') ? "In Progress" :
-                                 "Locked"}
-                              </Badge>
-                              {expandedModules.includes(module.id) ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                            </div>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                        <div className="flex items-center space-x-4">
+                          <div
+                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                              isCompleted
+                                ? "bg-success border-success text-white"
+                                : isInProgress
+                                ? "bg-brand-100 border-brand-600 text-brand-600"
+                                : "bg-muted border-gray-200 dark:border-gray-700 text-muted-foreground"
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle className="h-4 w-4" />
+                            ) : (
+                              <span className="text-sm font-semibold">{moduleIndex + 1}</span>
+                            )}
                           </div>
-                        </CardHeader>
-                      </CollapsibleTrigger>
-                      
-                      <CollapsibleContent>
-                        <CardContent className="pt-0 space-y-2">
-                          {module.lessons.map((lesson: any, lessonIndex: number) => {
-                            const LessonIcon = getLessonIcon(lesson.type);
-                            const lessonStatus = getLessonStatus(selectedTrack.id, module.id, lesson.id);
-                            const StatusIcon = getStatusIcon(lessonStatus);
-                            const statusColor = getStatusColor(lessonStatus);
-                            const isLocked = isLessonLocked(selectedTrack.id, module.id, lesson.id, lessonIndex, moduleIndex);
-                            
-                            return (
-                              <div 
-                                key={lesson.id}
-                                className={`flex items-center justify-between p-3 rounded-lg border ${
-                                  isLocked 
-                                    ? "border-gray-200 dark:border-gray-700/50 bg-muted/30" 
-                                    : "border-gray-200 dark:border-gray-700 hover:bg-muted/50 cursor-pointer"
-                                } transition-colors`}
-                                onClick={() => {
-                                  if (!isLocked) {
-                                    startLesson(selectedTrack.id, module.id, lesson.id);
-                                  }
-                                }}
-                              >
-                                <div className="flex items-center space-x-3">
-                                  <LessonIcon className={`h-4 w-4 ${statusColor}`} />
-                                  <div>
-                                    <div className={`font-medium ${isLocked ? "text-muted-foreground" : ""}`}>
-                                      {lesson.title}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {lesson.durationMin} min • {lesson.type}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  {lessonStatus === "completed" && (
-                                    <Badge variant="secondary" className="bg-success/10 text-success text-xs">
-                                      <Trophy className="h-3 w-3 mr-1" />
-                                      +50 XP
-                                    </Badge>
-                                  )}
-                                  <StatusIcon className={`h-4 w-4 ${statusColor}`} />
-                                  {lessonStatus === "in-progress" && (
-                                    <Button size="sm" onClick={(e) => {
-                                      e.stopPropagation();
-                                      startLesson(selectedTrack.id, module.id, lesson.id);
-                                    }}>
-                                      Continue
-                                    </Button>
-                                  )}
-                                  {lessonStatus === "completed" && (
-                                    <Button size="sm" variant="outline" onClick={(e) => {
-                                      e.stopPropagation();
-                                      startLesson(selectedTrack.id, module.id, lesson.id);
-                                    }}>
-                                      Review
-                                    </Button>
-                                  )}
-                                  {lessonStatus === "not_started" && !isLocked && (
-                                    <Button size="sm" onClick={(e) => {
-                                      e.stopPropagation();
-                                      startLesson(selectedTrack.id, module.id, lesson.id);
-                                    }}>
-                                      Start
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                          
-                          <div className="pt-4 border-t border-gray-200 dark:border-gray-700/50">
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm text-muted-foreground">
-                                Module progress: {module.lessons.filter((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === "completed").length} of {module.lessons.length} lessons
-                              </div>
-                              {module.lessons.every((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'completed') ? (
-                                <Badge className="bg-success text-white">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Completed
-                                </Badge>
-                              ) : (
-                                <Button size="sm" onClick={() => {
-                                  const nextLesson = module.lessons.find((l: any) => 
-                                    getLessonStatus(selectedTrack.id, module.id, l.id) !== 'completed'
-                                  );
-                                  if (nextLesson) {
-                                    startLesson(selectedTrack.id, module.id, nextLesson.id);
-                                  }
-                                }}>
-                                  {module.lessons.some((l: any) => getLessonStatus(selectedTrack.id, module.id, l.id) === 'in_progress') ? "Continue Module" : "Start Module"}
-                                </Button>
-                              )}
-                            </div>
+                          <div>
+                            <CardTitle className="text-left">{module.title}</CardTitle>
+                            <CardDescription className="text-left">
+                              {module.description}
+                            </CardDescription>
+                            {isCourseLocked && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Complete the previous course to unlock this one.
+                              </p>
+                            )}
                           </div>
-                        </CardContent>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-                ))}
+                        </div>
+                        <div className="flex flex-col items-end space-y-1">
+                          <div className="text-sm font-medium">{hours}h</div>
+                          <div className="text-xs text-muted-foreground">
+                            {completedCount} of {module.lessons.length} lessons
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              isCompleted
+                                ? "bg-success/10 text-success"
+                                : isInProgress
+                                ? "bg-brand-50 text-brand-700"
+                                : isCourseLocked
+                                ? "text-muted-foreground"
+                                : "bg-blue-50 text-blue-700"
+                            }
+                          >
+                            {isCompleted
+                              ? "Completed"
+                              : isInProgress
+                              ? "In Progress"
+                              : isCourseLocked
+                              ? "Locked"
+                              : "Ready to start"}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  );
+                })}
               </div>
 
-              {/* Track Completion */}
+              {/* Track completion section hidden for marketing MVP, kept for future use.
               <Card className="bg-gradient-to-r from-brand-50 to-primary-50 border-brand-200">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-brand-900">Complete the {(() => {
-                        const currentRole = roleOptions.find(r => r.value === userRole);
-                        return currentRole?.label || 'Learning';
-                      })()} Track</h3>
-                      <p className="text-brand-700 text-sm">
-                        Finish all modules to earn your {(() => {
-                          const currentRole = roleOptions.find(r => r.value === userRole);
-                          return currentRole?.label || 'Learning';
-                        })()} Track Certificate
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <Progress value={progressPercentage} className="w-32" />
-                      <Button 
-                        className="bg-brand-600 hover:bg-brand-700"
-                        onClick={() => setShowCertificateModal(true)}
-                      >
-                        <Award className="mr-2 h-4 w-4" />
-                        View Certificate Requirements
-                      </Button>
-                      <Button 
-                        onClick={() => {
-                          // Find the next lesson to start
-                          if (selectedTrack?.modules) {
-                            for (const [moduleIndex, module] of selectedTrack.modules.entries()) {
-                              for (const [lessonIndex, lesson] of module.lessons.entries()) {
-                                const lessonStatus = getLessonStatus(selectedTrack.id, module.id, lesson.id);
-                                const isLocked = isLessonLocked(selectedTrack.id, module.id, lesson.id, lessonIndex, moduleIndex);
-                                
-                                if (lessonStatus === 'in_progress' || (lessonStatus === 'not_started' && !isLocked)) {
-                                  startLesson(selectedTrack.id, module.id, lesson.id);
-                                  return;
-                                }
-                              }
-                            }
-                            // If no lesson found, start with the first lesson
-                            if (selectedTrack.modules[0]?.lessons[0]) {
-                              startLesson(selectedTrack.id, selectedTrack.modules[0].id, selectedTrack.modules[0].lessons[0].id);
-                            }
-                          }
-                        }}
-                      >
-                        <Play className="mr-2 h-4 w-4" />
-                        Continue Learning
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
+                <CardContent className="pt-6">...</CardContent>
               </Card>
+              */}
             </>
           )}
           
