@@ -575,29 +575,15 @@ export default function Lesson() {
     return (
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
-        <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
-            <nav className="p-4 space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="h-4 w-40" />
-                  {Array.from({ length: 3 }).map((__, j) => (
-                    <Skeleton key={j} className="h-3 w-32 ml-2" />
-                  ))}
-                </div>
-              ))}
-            </nav>
-          </aside>
+        <div className="h-[calc(100vh-4rem)] flex flex-col">
+          <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40">
+            <Skeleton className="h-3 w-40" />
+          </div>
           <main className="flex-1 p-6 space-y-4 overflow-y-auto">
             <Skeleton className="h-8 w-72" />
             <Skeleton className="h-5 w-96" />
             <Skeleton className="h-80 w-full" />
           </main>
-          <aside className="hidden xl:block w-96 border-l border-gray-200 dark:border-gray-700/40 p-4 space-y-3">
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </aside>
         </div>
       </div>
     );
@@ -607,45 +593,52 @@ export default function Lesson() {
     <div className="min-h-screen bg-background">
       <LoggedInHeader />
       <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-4" role="region" aria-label="Progress bar">
-          <div className="min-w-24 text-xs text-muted-foreground">{progress.completed}/{progress.total}</div>
+        <div
+          className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-4"
+          role="region"
+          aria-label="Progress bar"
+        >
+          <div className="min-w-24 text-xs text-muted-foreground">
+            {progress.completed}/{progress.total}
+          </div>
           <Progress value={progress.percent} className="h-2" />
           <div className="ml-auto flex items-center gap-2">
-            <Badge variant="outline" className="hidden sm:inline-flex">{progress.percent}% completed</Badge>
+            <Badge variant="outline" className="hidden sm:inline-flex">
+              {progress.percent}% completed
+            </Badge>
             <div className="text-xs text-muted-foreground hidden md:block">
               Lesson {progress.index}/{progress.total}
             </div>
           </div>
         </div>
         <div className="flex flex-1 overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto" aria-label="Course outline">
-            <nav className="p-4 space-y-4">
-              <div className="px-2 text-xs uppercase tracking-wide text-muted-foreground">{track?.title}</div>
-              {moduleList.map((m) => (
-                <div key={m.id} className="space-y-2">
-                  <div className="font-semibold flex items-center gap-2"><BookOpen className="h-4 w-4" />{m.title}</div>
-                  <div className="space-y-1">
-                    {m.lessons.map((l) => {
-                      const active = moduleId === m.id && lessonId === l.id;
-                      const Icon = l.type === "video" ? Video : l.type === "sandbox" ? Code : FileText;
-                      return (
-                        <Link key={l.id} to={`/learning/${trackId}/${m.id}/${l.id}`} className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${active ? "bg-brand-100 text-brand-700" : "text-muted-foreground hover:bg-muted/50"}`}>
-                          <Icon className="h-3 w-3" /> {l.title}
-                          <span className="ml-auto text-xs text-muted-foreground">{l.durationMin}m</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </nav>
-          </aside>
+          {/* Course index sidebar removed for single-course view, kept for future use.
+          <aside className="w-64 bg-muted/30 border-r ...">...</aside>
+          */}
 
-          <main className="flex-1 p-6 space-y-4 overflow-y-auto" role="main" aria-label="Lesson content">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold">{current?.title ?? ""}</h1>
-                <p className="text-sm text-muted-foreground">{track?.title} • Module {(track?.modules || []).findIndex(x=>x.id===moduleId)+1}</p>
+          <main
+            className="flex-1 p-6 space-y-4 overflow-y-auto"
+            role="main"
+            aria-label="Lesson content"
+          >
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/learning")}
+                  aria-label="Back to courses"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Back to Courses
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold">{current?.title ?? ""}</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {track?.title} • Module{" "}
+                    {(track?.modules || []).findIndex((x) => x.id === moduleId) + 1}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -658,88 +651,42 @@ export default function Lesson() {
                   <ChevronLeft className="h-4 w-4 mr-1 text-white" />
                   Prev
                 </Button>
-              <Button
-                variant="outline"
-                onClick={goNext}
-                disabled={!lesson?.next}
-                aria-label="Next lesson"
-                className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Next
-                <ChevronRight className="h-4 w-4 ml-1 text-white" />
-              </Button>
+                <Button
+                  variant="outline"
+                  onClick={goNext}
+                  disabled={!lesson?.next}
+                  aria-label="Next lesson"
+                  className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1 text-white" />
+                </Button>
 
-                <Button onClick={markComplete} disabled={saving} aria-label="Mark lesson complete"><Check className="h-4 w-4 mr-1" />{saving?"Saving...":"Mark Complete"}</Button>
+                <Button
+                  onClick={markComplete}
+                  disabled={saving}
+                  aria-label="Mark lesson complete"
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  {saving ? "Saving..." : "Mark Complete"}
+                </Button>
               </div>
             </div>
 
             <Card>
-              <CardContent className="pt-6">
-                {renderContent()}
-              </CardContent>
+              <CardContent className="pt-6">{renderContent()}</CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Recommended next</CardTitle>
-                <CardDescription>Based on this lesson, explore related resources</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Link to="/library" className="block p-3 rounded-md border hover:bg-muted/50">
-                  <div className="font-medium">Deep dive: Prompt patterns</div>
-                  <div className="text-xs text-muted-foreground">Reading • 10 min</div>
-                </Link>
-                <Link to="/community" className="block p-3 rounded-md border hover:bg-muted/50">
-                  <div className="font-medium">Discuss: Structuring evaluation sets</div>
-                  <div className="text-xs text-muted-foreground">Community</div>
-                </Link>
-                <Link to={lesson?.next ? `/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}` : "/learning"} className="block p-3 rounded-md border hover:bg-muted/50">
-                  <div className="font-medium">Continue to next lesson</div>
-                  <div className="text-xs text-muted-foreground">Stay in the flow</div>
-                </Link>
-              </CardContent>
-            </Card>
+            {/* Right-hand transcript/notes panel removed for simplified course view,
+                but the underlying functionality is preserved below for future use.
+
+            <Card>...Recommended next...</Card>
+            */}
           </main>
 
-          <aside className="hidden xl:flex w-96 border-l border-gray-200 dark:border-gray-700/40 h-full flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input ref={searchInputRef} value={transcriptQuery} onChange={(e)=> setTranscriptQuery(e.target.value)} placeholder="Search transcript (/)" aria-label="Search transcript" />
-            </div>
-            <ScrollArea className="p-4 flex-1">
-              <div className="space-y-3" aria-label="Transcript">
-                {transcriptText.split("\n").filter(Boolean).map((line, i) => (
-                  <div key={i} className="text-sm leading-relaxed">{highlight(line, transcriptQuery)}</div>
-                ))}
-              </div>
-              <Separator className="my-4" />
-              <div className="space-y-2" aria-label="Notes">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">My notes</div>
-                  <Badge variant="secondary" className="bg-brand-50 text-brand-700"><Award className="h-3 w-3 mr-1" />+5 XP</Badge>
-                </div>
-                <Textarea ref={noteInputRef} placeholder="Write a note (N)" className="min-h-[80px]" onKeyDown={(e)=>{ if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { addNote((e.target as HTMLTextAreaElement).value); } }} />
-                <div className="flex justify-end">
-                  <Button size="sm" onClick={()=> addNote(noteInputRef.current?.value || "")}><PlusCircle className="h-4 w-4 mr-1" />Add note</Button>
-                </div>
-                <div className="space-y-2">
-                  {notes.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">No notes yet.</div>
-                  ) : (
-                    notes.map((n) => (
-                      <div key={n.id} className="p-2 rounded-md border">
-                        <div className="text-xs text-muted-foreground">{new Date(n.createdAt).toLocaleString()}</div>
-                        <div className="text-sm whitespace-pre-wrap mt-1">{n.text}</div>
-                        <div className="flex justify-end mt-2">
-                          <Button variant="outline" size="sm" onClick={()=> removeNote(n.id)} aria-label="Delete note"><Trash2 className="h-4 w-4 mr-1" />Delete</Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </ScrollArea>
-          </aside>
+          {/* Full right-hand transcript & notes aside kept for future use.
+          <aside className="hidden xl:flex w-96 border-l ...">...</aside>
+          */}
         </div>
       </div>
     </div>

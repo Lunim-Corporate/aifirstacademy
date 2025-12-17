@@ -65,7 +65,7 @@ export default function LoggedInHeader() {
       <div className="flex h-16 items-center px-6">
         <Link to="/dashboard" className="flex items-center space-x-4">
           <BrainCircuit className="h-8 w-8 text-brand-600" />
-          <span className="text-xl font-bold gradient-text">AI-First Academy</span>
+          <span className="text-xl font-bold gradient-text">AI-First Marketing Academy</span>
         </Link>
 
         <div className="ml-auto flex items-center space-x-4 relative">
@@ -144,12 +144,17 @@ export default function LoggedInHeader() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/api/placeholder/32/32" />
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </button>
+            <button className="flex items-center gap-2">
+            <Avatar className="h-12 w-12">
+              <AvatarFallback className="flex items-center justify-center bg-gray-300 text-gray-700 text-lg font-semibold">
+                {user?.name
+                  ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
+                  : "U"}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+
+
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="space-y-1">
