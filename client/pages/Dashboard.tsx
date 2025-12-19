@@ -390,12 +390,6 @@ export default function Dashboard() {
               <h1 className="text-3xl font-bold">Welcome back, {displayName}!</h1>
               <p className="text-muted-foreground">Continue your AI mastery journey</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="bg-brand-50 text-brand-700">
-                <Zap className="h-3 w-3 mr-1" />
-                {data?.streakDays ?? 7}-day streak
-              </Badge>
-            </div>
           </div>
 
           {/* Progress Overview */}
@@ -435,7 +429,7 @@ export default function Dashboard() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-16 h-16 bg-brand-100 rounded-lg flex items-center justify-center">
-                      <Megaphone className="h-8 w-8 text-brand-600" />
+                      <Megaphone className="h-8 w-8" style={{color: '#bdeeff'}} />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold">{learningData?.currentModule?.title ?? data?.currentModule?.title ?? "High-Impact Campaign Strategy"}</h3>
