@@ -39,7 +39,7 @@ import {
   Brain,
   Rocket
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import CertificateRequirements from "@/components/CertificateRequirements";
 import { useEffect, useState, useMemo } from "react";
@@ -97,6 +97,7 @@ const getStatusColor = (status: string) => {
 
 export default function Learning() {
   const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [tracks, setTracks] = useState<any[]>([]);
@@ -110,11 +111,18 @@ export default function Learning() {
   
   // Redirect to login if not authenticated
   useEffect(() => {
+    console.log('Auth check:', { authLoading, user });
     if (!authLoading && !user) {
       const token = localStorage.getItem("auth_token");
+      console.log('No user found, checking token:', token);
       if (!token) {
+        console.log('No token found, redirecting to login');
         window.location.replace("/login");
+      } else {
+        console.log('Token found but no user, this might indicate an auth issue');
       }
+    } else if (!authLoading && user) {
+      console.log('User authenticated:', user);
     }
   }, [user, authLoading]);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
@@ -134,6 +142,7 @@ export default function Learning() {
     }
     
     const loadData = async () => {
+      console.log('Loading learning data for user:', user);
       // Marketing-only version: force marketer role for courses.
       // Original dynamic role loading kept for reference:
       // let currentUserRole = 'marketer';
@@ -240,7 +249,7 @@ export default function Learning() {
     setExpandedModules(prev => 
       prev.includes(moduleId) 
         ? prev.filter(id => id !== moduleId)
-        : [...prev, moduleId]
+        : [moduleId] // Only keep the newly expanded module, auto-collapse others
     );
   };
   
@@ -318,6 +327,8 @@ export default function Learning() {
     let moduleOrder = -1;
     let lessonTitle = 'Unknown Lesson';
     
+    console.log('Starting lesson with params:', { trackId, moduleId, lessonId, checkLocked });
+    
     selectedTrack?.modules?.forEach((module: any, mIdx: number) => {
       const lIdx = module.lessons.findIndex((l: any) => l.id === lessonId && module.id === moduleId);
       if (lIdx !== -1) {
@@ -326,6 +337,8 @@ export default function Learning() {
         lessonTitle = module.lessons[lIdx].title;
       }
     });
+    
+    console.log('Lesson details found:', { lessonOrder, moduleOrder, lessonTitle });
     
     // Check if lesson is locked and prevent access
     if (checkLocked && lessonOrder !== -1 && moduleOrder !== -1) {
@@ -349,24 +362,50 @@ export default function Learning() {
       // Check if user is authenticated by trying to get current user
       let userInfo;
       try {
+        console.log('Attempting token-based authentication...');
         userInfo = await apiMe();
-        console.log('User authenticated:', userInfo.id);
-      } catch {
+        console.log('User authenticated via token:', userInfo.id);
+      } catch (tokenError) {
+        console.log('Token authentication failed, trying cookie authentication:', tokenError);
         try {
+          console.log('Attempting cookie-based authentication...');
           userInfo = await apiMeCookie();
           console.log('User authenticated via cookie:', userInfo.id);
-        } catch (authError) {
-          console.error('Authentication failed:', authError);
-          alert('Please log in to access lessons.');
-          window.location.href = '/login';
+        } catch (cookieError) {
+          console.error('Both token and cookie authentication failed:', { tokenError, cookieError });
+          
+          // Check if we actually have a token but it's invalid
+          const token = localStorage.getItem('auth_token');
+          console.log('Current auth token status:', { tokenExists: !!token, tokenLength: token ? token.length : 0 });
+          
+          if (token) {
+            console.log('Token exists but authentication failed, clearing it');
+            localStorage.removeItem('auth_token');
+          }
+          
+          // Don't redirect to login if we're already on a protected page
+          // This might be causing the infinite loop
+          // Check if we're already on a login-required page
+          console.log('Current pathname:', window.location.pathname);
+          if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+            alert('Authentication failed. Please log in again.');
+            window.location.href = '/login';
+          } else {
+            alert('Authentication failed. Please try logging in again.');
+          }
           return;
         }
       }
       
       // Set lesson as in progress
       console.log('Setting lesson progress to in_progress...');
-      await apiSetLessonProgress({ trackId, moduleId, lessonId, status: 'in_progress' });
-      console.log('Progress updated successfully');
+      try {
+        await apiSetLessonProgress({ trackId, moduleId, lessonId, status: 'in_progress' });
+        console.log('Progress updated successfully');
+      } catch (progressError) {
+        console.error('Failed to update progress:', progressError);
+        // Continue anyway since this shouldn't block lesson access
+      }
       
       // Navigate to lesson
       window.location.href = `/learning/${trackId}/${moduleId}/${lessonId}`;
@@ -521,11 +560,11 @@ export default function Learning() {
                   to={item.href}
                   className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     item.active
-                      ? "bg-brand-100 text-brand-700 border border-brand-200"
+                      ? "text-[#bdeeff] border border-[#bdeeff]"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={`h-4 w-4 ${item.active ? "text-[#bdeeff]" : ""}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -538,7 +577,7 @@ export default function Learning() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Learning Path</h1>
+              <h1 className="text-3xl font-bold">Courses</h1>
               <p className="text-muted-foreground">
                 Master AI skills tailored to your {(() => {
                   const currentRole = roleOptions.find(r => r.value === userRole);
@@ -547,25 +586,18 @@ export default function Learning() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="bg-brand-50 text-brand-700 text-sm py-1 px-3">
+              <Badge variant="outline" className="text-sm py-1 px-3" style={{ backgroundColor: '#bdeeff', color: '#000' }}>
                 {(() => {
                   const currentRole = roleOptions.find(r => r.value === userRole);
                   const Icon = currentRole?.icon || Code;
                   return (
                     <>
-                      <Icon className="h-4 w-4 mr-2" />
+                      <Icon className="h-4 w-4 mr-2" style={{ color: '#000' }} />
                       {currentRole?.label || 'Engineer'}
                     </>
                   );
                 })()}
               </Badge>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => window.location.href = '/settings'}
-              >
-                Change in Settings
-              </Button>
             </div>
           </div>
           
@@ -630,79 +662,157 @@ export default function Learning() {
                     isCourseLocked = !prevComplete;
                   }
 
-                  const firstLesson = module.lessons[0];
+                  // Check if this module is expanded
+                  const isExpanded = expandedModules.includes(module.id);
 
                   return (
-                    <Card
-                      key={module.id}
-                      className={`overflow-hidden border ${
-                        isCourseLocked
-                          ? "opacity-70 border-dashed"
-                          : "hover:border-brand-300 hover:shadow-md cursor-pointer transition-colors"
-                      }`}
-                      onClick={() => {
-                        if (!isCourseLocked && firstLesson) {
-                          startLesson(selectedTrack.id, module.id, firstLesson.id);
-                        }
-                      }}
-                    >
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                        <div className="flex items-center space-x-4">
-                          <div
-                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
-                              isCompleted
-                                ? "bg-success border-success text-white"
-                                : isInProgress
-                                ? "bg-brand-100 border-brand-600 text-brand-600"
-                                : "bg-muted border-gray-200 dark:border-gray-700 text-muted-foreground"
-                            }`}
-                          >
-                            {isCompleted ? (
-                              <CheckCircle className="h-4 w-4" />
-                            ) : (
-                              <span className="text-sm font-semibold">{moduleIndex + 1}</span>
-                            )}
+                    <Collapsible key={module.id} open={isExpanded} onOpenChange={() => toggleModule(module.id)}>
+                      <Card
+                        className={`overflow-hidden border ${
+                          isCourseLocked
+                            ? "opacity-70 border-dashed"
+                            : "transition-colors"
+                        }`}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <CardHeader className={`flex flex-row items-center justify-between space-y-0 cursor-pointer ${isExpanded ? 'bg-muted/30' : ''}`}>
+                            <div className="flex items-center space-x-4">
+                              <div
+                                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                                  isCompleted
+                                    ? "bg-success border-success text-white"
+                                    : isInProgress
+                                    ? "bg-brand-100 border-brand-600 text-brand-600"
+                                    : "bg-muted border-gray-200 dark:border-gray-700 text-muted-foreground"
+                                }`}
+                              >
+                                {isCompleted ? (
+                                  <CheckCircle className="h-4 w-4" />
+                                ) : (
+                                  <span className="text-sm font-semibold">{moduleIndex + 1}</span>
+                                )}
+                              </div>
+                              <div className="text-left">
+                                <CardTitle>{module.title}</CardTitle>
+                                <CardDescription>
+                                  {module.description}
+                                </CardDescription>
+                                {isCourseLocked && (
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Complete the previous course to unlock this one.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              <div className="flex flex-col items-end space-y-1">
+                                <div className="text-sm font-medium">{hours}h</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {completedCount} of {module.lessons.length} lessons
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    isCompleted
+                                      ? "bg-success/10 text-success"
+                                      : isInProgress
+                                      ? "bg-brand-50 text-brand-700"
+                                      : isCourseLocked
+                                      ? "text-muted-foreground"
+                                      : "bg-blue-50 text-blue-700"
+                                  }
+                                >
+                                  {isCompleted
+                                    ? "Completed"
+                                    : isInProgress
+                                    ? "In Progress"
+                                    : isCourseLocked
+                                    ? "Locked"
+                                    : "Ready to start"}
+                                </Badge>
+                              </div>
+                              <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                            </div>
+                          </CardHeader>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="px-6 pb-6 pt-2">
+                          <div className="space-y-3 mt-2">
+                            {module.lessons.map((lesson: any, lessonIndex: number) => {
+                              // Check if lesson is locked based on progression rules
+                              const lessonLocked = isLessonLocked(selectedTrack.id, module.id, lesson.id, lessonIndex, moduleIndex);
+                              const lessonStatus = getLessonStatus(selectedTrack.id, module.id, lesson.id);
+                              const isLessonCompleted = lessonStatus === 'completed';
+                              
+                              const LessonIcon = getLessonIcon(lesson.type);
+                              
+                              // Determine if this lesson is currently active based on URL
+                              const isActiveLesson = location.pathname === `/learning/${selectedTrack.id}/${module.id}/${lesson.id}`;
+                              
+                              return (
+                                <div 
+                                  key={lesson.id}
+                                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                                    lessonLocked 
+                                      ? "opacity-60 cursor-not-allowed" 
+                                      : "hover:bg-muted/50 cursor-pointer"
+                                  } ${isLessonCompleted ? "bg-success/10 border-success/20" : ""}`}
+                                  onClick={() => {
+                                    if (!lessonLocked) {
+                                      startLesson(selectedTrack.id, module.id, lesson.id, true);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <div className={`p-2 rounded-full ${isLessonCompleted ? "bg-success text-white" : lessonLocked ? "bg-muted text-muted-foreground" : isActiveLesson ? "bg-[#bdeeff] text-black" : "bg-brand-100 text-brand-600"}`}>
+                                      {isLessonCompleted ? (
+                                        <CheckCircle className="h-4 w-4" />
+                                      ) : (
+                                        <LessonIcon className="h-4 w-4" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-sm">{lesson.title}</div>
+                                      <div className="text-xs text-muted-foreground flex items-center space-x-2">
+                                        <span>{lesson.durationMin || 0} min</span>
+                                        {lessonLocked && (
+                                          <span className="flex items-center">
+                                            <Lock className="h-3 w-3 mr-1" />
+                                            Locked
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${
+                                        isLessonCompleted 
+                                          ? "bg-success/10 text-success border-success/20" 
+                                          : lessonLocked 
+                                            ? "bg-muted text-muted-foreground" 
+                                            : "bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100"
+                                      }`}
+                                      onClick={() => {
+                                        if (!lessonLocked) {
+                                          startLesson(selectedTrack.id, module.id, lesson.id, false); // Don't check locked status when clicking badge
+                                        }
+                                      }}
+                                    >
+                                      {isLessonCompleted 
+                                        ? "Completed" 
+                                        : lessonLocked 
+                                          ? "Locked" 
+                                          : "Ready"}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div>
-                            <CardTitle className="text-left">{module.title}</CardTitle>
-                            <CardDescription className="text-left">
-                              {module.description}
-                            </CardDescription>
-                            {isCourseLocked && (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                Complete the previous course to unlock this one.
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <div className="text-sm font-medium">{hours}h</div>
-                          <div className="text-xs text-muted-foreground">
-                            {completedCount} of {module.lessons.length} lessons
-                          </div>
-                          <Badge
-                            variant="outline"
-                            className={
-                              isCompleted
-                                ? "bg-success/10 text-success"
-                                : isInProgress
-                                ? "bg-brand-50 text-brand-700"
-                                : isCourseLocked
-                                ? "text-muted-foreground"
-                                : "bg-blue-50 text-blue-700"
-                            }
-                          >
-                            {isCompleted
-                              ? "Completed"
-                              : isInProgress
-                              ? "In Progress"
-                              : isCourseLocked
-                              ? "Locked"
-                              : "Ready to start"}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                    </Card>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
                   );
                 })}
               </div>
