@@ -25,8 +25,8 @@ export default function Teams() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <SafeLink to="/" className="flex items-center">
-                <BrainCircuit className="h-8 w-8 text-brand-600" />
-                <span className="ml-2 text-xl font-bold gradient-text">AI-First Academy</span>
+                <BrainCircuit className="h-8 w-8 text-primary-600" />
+                <span className="ml-2 text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
               </SafeLink>
               <div className="hidden md:ml-10 md:flex space-x-8">
                 <SafeLink to="/product" className="text-muted-foreground hover:text-foreground">Product</SafeLink>
