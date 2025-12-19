@@ -51,7 +51,7 @@ export default function AdminHeader() {
       <div className="flex h-16 items-center px-6 gap-4">
         <Link to="/admin" className="flex items-center space-x-4">
           <BrainCircuit className="h-8 w-8 text-primary-600" />
-          <span className="text-xl font-bold gradient-text">AI-First Academy</span>
+          <span className="text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
           <span className="ml-2 text-xs px-2 py-1 rounded-full bg-primary-600 text-white">Admin</span>
         </Link>
 
