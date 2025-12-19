@@ -64,83 +64,13 @@ export default function LoggedInHeader() {
     <header className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-6">
         <Link to="/dashboard" className="flex items-center space-x-4">
-          <BrainCircuit className="h-8 w-8 text-brand-600" />
-          <span className="text-xl font-bold gradient-text">AI-First Marketing Academy</span>
+          <BrainCircuit className="h-8 w-8 text-primary-600" />
+          <span className="text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
         </Link>
 
         <div className="ml-auto flex items-center space-x-4 relative">
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={q}
-              onChange={(e) => onSearchChange(e.target.value)}
-              onFocus={() => { if (results?.items?.length) setSearchOpen(true); }}
-              onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
-              type="search"
-              placeholder="Search courses, prompts..."
-              className="pl-10 pr-8 py-2 w-64 bg-muted/50"
-            />
-            {searching && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
-            {searchOpen && results && (
-              <div className="absolute z-50 mt-2 left-0 sm:right-0 sm:left-auto w-[28rem] max-w-[95vw] max-h-[65vh] overflow-auto bg-background border border-gray-200 dark:border-gray-700 rounded-md shadow-lg ring-1 ring-border">
-                {results.items.length === 0 ? (
-                  <div className="p-3 text-sm text-muted-foreground">No results</div>
-                ) : (
-                  <ul className="p-1">
-                    {results.items.map((it) => (
-                      <li key={`${it.kind}:${it.id}`}>
-                        <button
-                          className="w-full text-left px-3 py-2 hover:bg-muted/50 rounded-md"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => {
-                            setSearchOpen(false);
-                            if (it.href) nav(it.href);
-                          }}
-                        >
-                          <div className="text-sm font-medium truncate">{it.title}</div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {it.kind}{it.snippet ? ` • ${it.snippet}` : ""}
-                          </div>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
 
-          <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-4 w-4" />
-                {unread > 0 && <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-red-600 text-[10px] text-white grid place-items-center">{unread > 9 ? "9+" : unread}</span>}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-0">
-              <div className="p-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <div className="text-sm font-medium">Notifications</div>
-                <button className="text-xs text-brand-700 hover:underline disabled:text-muted-foreground" disabled={!unread} onClick={async()=>{ const res = await apiMarkAllNotificationsRead(); setNotif(n=> n ? { ...n, unread: res.unread, notifications: n.notifications.map(x=> ({...x, readAt: x.readAt || new Date().toISOString()})) } : n); }}>Mark all as read</button>
-              </div>
-              <div className="max-h-96 overflow-auto">
-                {(notif?.notifications || []).length === 0 ? (
-                  <div className="p-4 text-sm text-muted-foreground">You're all caught up.</div>
-                ) : (
-                  (notif!.notifications).map(n => (
-                    <button key={n.id} className={`w-full text-left px-3 py-2 border-b border-gray-200 dark:border-gray-700/50 hover:bg-muted/50 ${!n.readAt ? "bg-brand-50/40" : ""}`} onClick={async()=>{
-                      try { await apiMarkNotificationRead(n.id); } catch {}
-                      setNotif(curr => curr ? { ...curr, notifications: curr.notifications.map(x => x.id === n.id ? { ...x, readAt: x.readAt || new Date().toISOString() } : x), unread: Math.max(0, (curr.unread||0) - (n.readAt ? 0 : 1)) } : curr);
-                      if (n.href) nav(n.href);
-                    }}>
-                      <div className="text-sm font-medium leading-tight">{n.title}</div>
-                      {n.body && <div className="text-xs text-muted-foreground leading-tight line-clamp-2">{n.body}</div>}
-                      <div className="text-[10px] text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -162,12 +92,6 @@ export default function LoggedInHeader() {
                 {user?.email && <div className="text-xs text-muted-foreground">{user.email}</div>}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => nav("/dashboard")}>
-                <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => nav("/library")}>
-                <LibraryIcon className="mr-2 h-4 w-4" /> Library
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => nav("/settings")}>
                 <Settings className="mr-2 h-4 w-4" /> Settings
               </DropdownMenuItem>
