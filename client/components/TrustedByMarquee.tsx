@@ -104,7 +104,7 @@ export default function TrustedByMarquee({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={wrapperRef} className="relative overflow-hidden text-muted-foreground">
           <div className="flex items-center gap-x-6 mb-4">
-            <span className="text-xs uppercase tracking-widest shrink-0">Trusted by teams at</span>
+            <span className="text-xs uppercase tracking-widest shrink-0">Trusted by marketers at</span>
           </div>
           <div className="relative">
             <div
