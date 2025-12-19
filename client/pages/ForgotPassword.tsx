@@ -49,8 +49,8 @@ export default function ForgotPassword() {
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center">
-            <BrainCircuit className="h-8 w-8 text-brand-600" />
-            <span className="ml-2 text-xl font-bold gradient-text">AI-First Academy</span>
+            <BrainCircuit className="h-8 w-8 text-primary-600" />
+            <span className="ml-2 text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
           </Link>
         </div>
         <Card className="border-gray-200 dark:border-gray-700/50 shadow-2xl bg-background/80 backdrop-blur">
