@@ -69,20 +69,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
     
-    // Only listen to focus events if we have a token (avoid unnecessary checks on login page)
-    const handleFocus = () => {
-      const token = localStorage.getItem("auth_token");
-      if (token && isMounted) {
-        onAuthChanged();
-      }
-    };
-    window.addEventListener("focus", handleFocus);
+    // Removed focus event listener to prevent automatic logout/re-authentication
+    // This was causing unwanted refreshes and potential logout issues
 
     return () => {
       isMounted = false;
       window.removeEventListener("auth-changed", onAuthChanged as any);
       window.removeEventListener("storage", onAuthChanged);
-      window.removeEventListener("focus", handleFocus);
     };
   }, []);
 
