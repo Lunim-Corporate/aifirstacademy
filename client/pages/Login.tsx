@@ -13,6 +13,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [providers, setProviders] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -22,6 +23,13 @@ export default function Login() {
   useEffect(() => {
     // Load OAuth providers
     apiOAuthProviders().then(({ providers }) => setProviders(providers)).catch(() => setProviders([]));
+    
+    // Load saved email if "Remember me" was previously checked
+    const savedEmail = localStorage.getItem("remembered_email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
     
     // Prevent back navigation after logout - if user tries to go back, redirect to login
     const handlePopState = (e: PopStateEvent) => {
@@ -102,6 +110,14 @@ export default function Login() {
       sessionStorage.setItem("auth_pending_id", pendingId);
       sessionStorage.setItem("auth_pending_email", email);
       sessionStorage.setItem("auth_flow", "login"); // Set flow for verification page
+      
+      // Save email if "Remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem("remembered_email", email);
+      } else {
+        localStorage.removeItem("remembered_email");
+      }
+      
       navigate(`/verify-otp?pending=${encodeURIComponent(pendingId)}&email=${encodeURIComponent(email)}`);
     } catch (err: any) {
       const errorMessage = err.message || "Login failed";
@@ -130,6 +146,14 @@ export default function Login() {
       const name = email.split("@")[0];
       const { token } = await apiOAuthMock(provider, email, name);
       localStorage.setItem("auth_token", token);
+      
+      // Save email if "Remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem("remembered_email", email);
+      } else {
+        localStorage.removeItem("remembered_email");
+      }
+      
       window.dispatchEvent(new Event('auth-changed'));
       navigate("/dashboard");
     } catch (e: any) {
@@ -145,8 +169,8 @@ export default function Login() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center">
-            <BrainCircuit className="h-8 w-8 text-brand-600" />
-            <span className="ml-2 text-xl font-bold gradient-text">AI-First Marketing Academy</span>
+            <BrainCircuit className="h-8 w-8 text-primary-600" />
+            <span className="ml-2 text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
           </Link>
         </div>
 
@@ -248,9 +272,9 @@ export default function Login() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <EyeOff className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
@@ -279,10 +303,15 @@ export default function Login() {
 
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center space-x-2">
-                  <input type="checkbox" className="rounded border-gray-300" />
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-300" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
                   <span className="text-muted-foreground">Remember me</span>
                 </label>
-                <Link to="/forgot-password" className="text-brand-600 hover:text-brand-700 transition-colors">
+                <Link to="/forgot-password" className="text-white hover:text-white transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -290,7 +319,7 @@ export default function Login() {
               <Button 
                 type="submit" 
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700 disabled:opacity-50"
+                className="w-full bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
@@ -322,7 +351,7 @@ export default function Login() {
             {/* Sign up link */}
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>
-              <Link to="/signup" className="text-brand-600 hover:text-brand-700 font-medium transition-colors">
+              <Link to="/signup" className="text-white hover:text-white font-medium transition-colors">
                 Sign up for free
               </Link>
             </div>
