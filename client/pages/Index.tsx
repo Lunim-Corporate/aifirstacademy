@@ -32,23 +32,18 @@ export default function Index() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <BrainCircuit className="h-8 w-8 text-brand-600" />
-                <span className="ml-2 text-xl font-bold gradient-text">AI-First Academy</span>
+                <BrainCircuit className="h-8 w-8 text-primary-600" />
+                <span className="ml-2 text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
               </div>
               <div className="hidden md:ml-10 md:flex space-x-8">
-                <SafeLink to="/product" className="text-muted-foreground hover:text-foreground transition-colors">Product</SafeLink>
-                <SafeLink to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</SafeLink>
-                <SafeLink to="/teams" className="text-muted-foreground hover:text-foreground transition-colors">For Teams</SafeLink>
-                <SafeLink to="/resources" className="text-muted-foreground hover:text-foreground transition-colors">Resources</SafeLink>
-                <SafeLink to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</SafeLink>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" asChild>
                 <SafeLink to="/login">Login</SafeLink>
               </Button>
-              <Button asChild>
-                <SafeLink to="/signup">Start Free Trial</SafeLink>
+              <Button asChild className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black">
+                <SafeLink to="/signup">Create Free Account</SafeLink>
               </Button>
             </div>
           </div>
@@ -62,17 +57,16 @@ export default function Index() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <div className="space-y-4">
-                <Badge variant="secondary" className="bg-brand-50 text-brand-700 border-brand-200">🚀 Public Beta</Badge>
                 <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-foreground">
-                  Master <span className="gradient-text">AI Workflows</span> that ship
+                  Master <span className="gradient-text">Marketing AI Workflows</span> that ship
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-2xl">
-                  Learn, practice, and certify practical AI skills through interactive challenges and real-time LLM feedback. Built for individuals and enterprise teams.
+                  Learn, practice, and certify practical AI skills through interactive challenges and real-time LLM feedback. Built for marketers.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700" onClick={() => navigate('/signup')}>
-                  Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                <Button size="lg" className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black" onClick={() => navigate('/signup')}>
+                  Create Free Account <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <Button
                   size="lg"
@@ -85,17 +79,17 @@ export default function Index() {
                 </Button>
               </div>
               <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                <div className="flex items-center"><Check className="h-4 w-4 text-success mr-2" />No credit card</div>
+                <div className="flex items-center"><Check className="h-4 w-4 text-success mr-2" />Free</div>
                 <div className="flex items-center"><Check className="h-4 w-4 text-success mr-2" />2-hour onboarding</div>
                 <div className="flex items-center"><Check className="h-4 w-4 text-success mr-2" />Live LLM scoring</div>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative transform rotate-6 translate-y-2 translate-x-2 scale-105">
               <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-primary-400/20 rounded-2xl blur-3xl" />
               <Card className="relative bg-background/80 backdrop-blur border-gray-200 dark:border-gray-700/50 shadow-2xl">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary">Prompt Sandbox</Badge>
+                    <Badge variant="secondary" className="bg-gradient-to-r from-primary-600 to-brand-600 text-white">Prompt Playground</Badge>
                     <div className="flex space-x-1">
                       <div className="w-3 h-3 bg-destructive rounded-full" />
                       <div className="w-3 h-3 bg-warning rounded-full" />
@@ -131,13 +125,13 @@ export default function Index() {
               Hands-on learning with real AI feedback, rich content, and enterprise controls.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <Card className="group hover:shadow-lg transition-all duration-200 border-gray-200 dark:border-gray-700/50">
               <CardHeader>
                 <div className="w-12 h-12 bg-brand-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-brand-200 transition-colors">
                   <Code className="h-6 w-6 text-brand-600" />
                 </div>
-                <CardTitle>Interactive Sandbox</CardTitle>
+                <CardTitle>Interactive Playground</CardTitle>
                 <CardDescription>Practice with live LLMs and get instant scoring.</CardDescription>
               </CardHeader>
             </Card>
@@ -147,27 +141,10 @@ export default function Index() {
                   <BookOpen className="h-6 w-6 text-primary-600" />
                 </div>
                 <CardTitle>Structured Tracks</CardTitle>
-                <CardDescription>Role-based paths across engineering, marketing, and more.</CardDescription>
+                <CardDescription>Role-based paths for marketing professionals.</CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group hover:shadow-lg transition-all duration-200 border-gray-200 dark:border-gray-700/50">
-              <CardHeader>
-                <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-success/20 transition-colors">
-                  <Users className="h-6 w-6 text-success" />
-                </div>
-                <CardTitle>Team Management</CardTitle>
-                <CardDescription>Cohorts, analytics, certificates, and SSO.</CardDescription>
-              </CardHeader>
-            </Card>
-            <Card className="group hover:shadow-lg transition-all duration-200 border-gray-200 dark:border-gray-700/50">
-              <CardHeader>
-                <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-warning/20 transition-colors">
-                  <Target className="h-6 w-6 text-warning" />
-                </div>
-                <CardTitle>Community Gallery</CardTitle>
-                <CardDescription>Share prompts, learn from peers, and climb leaderboards.</CardDescription>
-              </CardHeader>
-            </Card>
+
           </div>
         </div>
       </section>
@@ -176,7 +153,7 @@ export default function Index() {
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold">Trusted by Teams Worldwide</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold">Trusted by Marketers Worldwide</h2>
             <p className="text-xl text-muted-foreground">Real outcomes, fast adoption</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -215,14 +192,14 @@ export default function Index() {
       <section className="py-24 bg-muted/30">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ready to transform your AI workflows?</h2>
-          <p className="text-xl text-muted-foreground mb-8">Start free, upgrade anytime. Pro includes unlimited sandbox and all tracks.</p>
+          <p className="text-xl text-muted-foreground mb-8">Start free today and master marketing AI workflows.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              asChild
-              className="bg-primary text-black hover:bg-primary/90"
+              onClick={() => navigate('/signup')}
+              className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
             >
-              <SafeLink to="/pricing">View Pricing</SafeLink>
+              Create Free Account
             </Button>
             <Button size="lg" variant="outline" className="border-foreground text-foreground hover:bg-foreground/5" onClick={() => setShowDemo(true)}>
               Watch Demo
@@ -235,7 +212,7 @@ export default function Index() {
       <MarketingFooter />
 
       <Dialog open={showDemo} onOpenChange={setShowDemo}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Product Demo</DialogTitle>
           </DialogHeader>
@@ -243,7 +220,7 @@ export default function Index() {
             <iframe
               className="w-full h-full rounded-md"
               src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-              title="AI-First Academy Demo"
+              title="AI-First Marketing Academy Demo"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
