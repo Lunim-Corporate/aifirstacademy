@@ -171,8 +171,6 @@
   [role="button"],
   input[type="button"],
   input[type="submit"] {
-    background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
   }
 }
 
@@ -202,7 +200,6 @@
   .button-neon {
     @apply px-6 py-2 rounded-lg font-semibold cursor-pointer transition-all duration-200;
     background-color: hsl(var(--primary));
-    color: hsl(var(--primary-foreground));
   }
   .button-neon:hover {
     opacity: 0.9;
