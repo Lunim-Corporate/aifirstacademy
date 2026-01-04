@@ -11,10 +11,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { copyText } from "@/lib/utils";
-import { Check, Play, BookOpen, Video, FileText, Code, ChevronLeft, ChevronRight, Search, PlusCircle, Trash2, Award, Target, HelpCircle, Lock, Terminal } from "lucide-react";
+import { Check, Play, BookOpen, Video, FileText, Code, ChevronLeft, ChevronRight, Search, PlusCircle, Trash2, Award, Target, HelpCircle, Lock, Terminal, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import type { Track, TrackModule, TrackModuleLesson, LessonContent, LessonType } from "@shared/api";
 import { apiGetTrack, apiGetLesson, apiSetLessonProgress, apiGetProgress, apiMe, apiMeCookie } from "@/lib/api";
 import Playground from "@/components/Playground";
+import { toast } from "@/hooks/use-toast";
+
 
 function isPreviewHost() {
   return false; // Preview mode disabled
@@ -34,7 +36,7 @@ function mdToHtml(src: string): string {
       })
       .join('\n')
       // Code fences
-      .replace(/```([\w]*)?\n([\s\S]*?)```/g, '<pre class="bg-muted rounded-lg p-4 overflow-x-auto my-4"><code class="text-sm">$2</code></pre>')
+      .replace(/```([\w]*)?\n([[\\\\s\\\\S]*?S]*?)```/g, '<pre class="bg-muted rounded-lg p-4 overflow-x-auto my-4"><code class="text-sm">$2</code></pre>')
       // Inline code
       .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
       // Bold
@@ -49,59 +51,20 @@ function mdToHtml(src: string): string {
   }
 }
 
-function mockCourse(trackId: string, moduleId: string, lessonId: string): { track: Track; lesson: LessonContent } {
-  const modules: TrackModule[] = Array.from({ length: 3 }).map((_, mi) => ({
-    id: `m${mi + 1}`,
-    title: `Module ${mi + 1}`,
-    description: `Skills for week ${mi + 1}`,
-    lessons: Array.from({ length: 5 }).map((__, li) => ({
-      id: `l${li + 1}`,
-      title: `Lesson ${li + 1}`,
-      durationMin: 8 + li * 2,
-      type: li % 3 === 0 ? ("video" as LessonType) : li % 3 === 1 ? ("text" as LessonType) : ("playground" as LessonType),
-      status: li === 0 ? "in-progress" : "locked",
-    })),
-  }));
-  const track: Track = { id: trackId || "t_js", title: "AI Engineering Fundamentals", level: "beginner", modules };
-  const mod = modules.find((m) => m.id === moduleId) || modules[0];
-  const les = mod.lessons.find((l) => l.id === lessonId) || mod.lessons[0];
-  const modIdx = modules.findIndex((m) => m.id === mod.id);
-  const lesIdx = mod.lessons.findIndex((l) => l.id === les.id);
-  const prev = lesIdx > 0 ? { trackId: track.id, moduleId: mod.id, lessonId: mod.lessons[lesIdx - 1].id } : modIdx > 0 ? { trackId: track.id, moduleId: modules[modIdx - 1].id, lessonId: modules[modIdx - 1].lessons.slice(-1)[0].id } : null;
-  const next = lesIdx < mod.lessons.length - 1 ? { trackId: track.id, moduleId: mod.id, lessonId: mod.lessons[lesIdx + 1].id } : modIdx < modules.length - 1 ? { trackId: track.id, moduleId: modules[modIdx + 1].id, lessonId: modules[modIdx + 1].lessons[0].id } : null;
-  const lesson: LessonContent = {
-    trackId: track.id,
-    moduleId: mod.id,
-    lesson: {
-      ...les,
-      type: les.type || "video",
-      content: les.type === "text" || les.type === "playground" ?
-        (les.type === "text" ?
-          "Welcome to the lesson. This is a sample reading with selectable text so you can add notes. Use the notes panel on the right to jot ideas.\n\nTips: Keep prompts specific, add constraints, and iterate based on model feedback." :
-          "You are an AI engineer. Create a prompt that extracts key insights from product reviews and outputs a JSON with sentiment, features, and issues.") :
-        undefined,
-      videoUrl: les.type === "video" ?
-        "https://www.youtube.com/embed/dQw4w9WgXcQ" :
-        undefined,
-    },
-    prev,
-    next,
-  };
-  return { track, lesson };
-}
+
 
 function formatProgress(track: Track | null, current: { moduleId: string; lessonId: string }, userProgress: any[] = []) {
   const modules = track?.modules || [];
   const allLessons = modules.flatMap((m) => m.lessons.map((l) => ({ m: m.id, l: l.id })));
   const idx = allLessons.findIndex((x) => x.m === current.moduleId && x.l === current.lessonId);
-  
+
   // Count only completed lessons for progress percentage
   const completedCount = userProgress.filter((p: any) => p.status === 'completed').length;
-  const percent = allLessons.length ? Math.round((completedCount / allLessons.length) * 100) : 0;
-  
-  return { 
-    total: allLessons.length, 
-    index: idx + 1, 
+  const percent = allLessons.length ? Math.min(100, Math.round((completedCount / allLessons.length) * 100)) : 0;
+
+  return {
+    total: allLessons.length,
+    index: idx + 1,
     percent,
     completed: completedCount
   };
@@ -120,14 +83,168 @@ function extractPromptFromContent(content: string): string {
   if (codeBlockMatch && codeBlockMatch[1]) {
     return codeBlockMatch[1].trim();
   }
-  
+
   // If no code block, return the first paragraph
   const paragraphMatch = content.match(/^(.*?)\n/);
   if (paragraphMatch && paragraphMatch[1]) {
     return paragraphMatch[1].trim();
   }
-  
+
   return content.substring(0, 200); // fallback to first 200 characters
+}
+
+// Utility functions for navigation and progress
+
+// Find next lesson in the track
+function findNextLesson(track: Track | null, moduleId: string, lessonId: string) {
+  if (!track) return null;
+
+  const modules = track.modules || [];
+  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  if (moduleIndex === -1) return null;
+
+  const currentModule = modules[moduleIndex];
+  const lessons = currentModule.lessons || [];
+  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  if (lessonIndex === -1) return null;
+
+  // If not the last lesson in the module, go to next lesson in same module
+  if (lessonIndex < lessons.length - 1) {
+    const nextLesson = lessons[lessonIndex + 1];
+    return {
+      trackId: track.id,
+      moduleId,
+      lessonId: nextLesson.id
+    };
+  }
+
+  // If last lesson in module but not last module, go to first lesson of next module
+  if (moduleIndex < modules.length - 1) {
+    const nextModule = modules[moduleIndex + 1];
+    const nextLessons = nextModule.lessons || [];
+    if (nextLessons.length > 0) {
+      const firstLesson = nextLessons[0];
+      return {
+        trackId: track.id,
+        moduleId: nextModule.id,
+        lessonId: firstLesson.id
+      };
+    }
+  }
+
+  // No next lesson found
+  return null;
+}
+
+// Find previous lesson in the track
+function findPrevLesson(track: Track | null, moduleId: string, lessonId: string) {
+  if (!track) return null;
+
+  const modules = track.modules || [];
+  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  if (moduleIndex === -1) return null;
+
+  const currentModule = modules[moduleIndex];
+  const lessons = currentModule.lessons || [];
+  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  if (lessonIndex === -1) return null;
+
+  // If not the first lesson in the module, go to previous lesson in same module
+  if (lessonIndex > 0) {
+    const prevLesson = lessons[lessonIndex - 1];
+    return {
+      trackId: track.id,
+      moduleId,
+      lessonId: prevLesson.id
+    };
+  }
+
+  // If first lesson in module but not first module, go to last lesson of previous module
+  if (moduleIndex > 0) {
+    const prevModule = modules[moduleIndex - 1];
+    const prevLessons = prevModule.lessons || [];
+    if (prevLessons.length > 0) {
+      const lastLesson = prevLessons[prevLessons.length - 1];
+      return {
+        trackId: track.id,
+        moduleId: prevModule.id,
+        lessonId: lastLesson.id
+      };
+    }
+  }
+
+  // No previous lesson found
+  return null;
+}
+
+// Check if lesson is the last lesson in the track
+function isLastLesson(track: Track | null, moduleId: string, lessonId: string): boolean {
+  if (!track) return false;
+
+  const modules = track.modules || [];
+  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  if (moduleIndex === -1) return false;
+
+  const currentModule = modules[moduleIndex];
+  const lessons = currentModule.lessons || [];
+  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  if (lessonIndex === -1) return false;
+
+  // Check if this is the last lesson in the last module
+  const isLastLessonInModule = lessonIndex === lessons.length - 1;
+  const isLastModule = moduleIndex === modules.length - 1;
+
+  return isLastModule && isLastLessonInModule;
+}
+
+// Check if lesson is locked based on progress
+function checkLessonLocked(track: Track | null, moduleId: string, lessonId: string, userProgress: any[], trackId: string): boolean {
+  if (!track || !moduleId || !lessonId || !userProgress || !trackId) {
+    return false;
+  }
+
+  // Find the current lesson's position in the track
+  const modules = track.modules || [];
+  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  if (moduleIndex === -1) return false;
+
+  const currentModule = modules[moduleIndex];
+  const lessons = currentModule.lessons || [];
+  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  if (lessonIndex === -1) return false;
+
+  // First lesson of first module is never locked
+  if (moduleIndex === 0 && lessonIndex === 0) return false;
+
+  // Check if the DIRECT previous lesson is completed
+  let previousLessonId;
+  let previousLessonModuleId;
+
+  if (lessonIndex > 0) {
+    // Previous lesson in the same module
+    previousLessonId = lessons[lessonIndex - 1].id;
+    previousLessonModuleId = moduleId;
+  } else if (moduleIndex > 0) {
+    // Last lesson of the previous module
+    const prevModule = modules[moduleIndex - 1];
+    const prevModuleLessons = prevModule.lessons || [];
+    if (prevModuleLessons.length > 0) {
+      previousLessonId = prevModuleLessons[prevModuleLessons.length - 1].id;
+      previousLessonModuleId = prevModule.id;
+    }
+  }
+
+  if (!previousLessonId) return false;
+
+  // Check if that specific previous lesson is completed
+  const previousProgress = userProgress.find((p: any) =>
+    p.track_id === trackId &&
+    p.module_id === previousLessonModuleId &&
+    p.lesson_id === previousLessonId
+  );
+
+  // The lesson is locked if the previous lesson is NOT completed
+  return previousProgress?.status !== 'completed';
 }
 
 export default function Lesson() {
@@ -137,6 +254,7 @@ export default function Lesson() {
   const [lesson, setLesson] = useState<LessonContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [showPlayground, setShowPlayground] = useState(false);
 
@@ -154,11 +272,15 @@ export default function Lesson() {
 
   useEffect(() => {
     let mounted = true;
+
+    // Reset navigating state when component mounts
+    setNavigating(false);
+
     (async () => {
       // Debug authentication
-      const token = localStorage.getItem("auth_token");
-      console.log('Lesson data loading useEffect - Auth token:', token ? 'Present' : 'Missing');
-      
+      // const token = localStorage.getItem("auth_token");
+      // console.log('Lesson data loading useEffect - Auth token:', token ? 'Present' : 'Missing');
+
       try {
         const t = await apiGetTrack(trackId);
         if (!mounted) return;
@@ -179,23 +301,9 @@ export default function Lesson() {
       }
       // Load user progress for accurate progress bar
       try {
-        console.log('Loading user progress for:', { trackId, moduleId, lessonId });
-        
-        // Check if we have cached progress from previous lesson completion
-        const cachedProgress = localStorage.getItem('userProgressCache');
-        if (cachedProgress) {
-          console.log('Using cached progress');
-          const parsedProgress = JSON.parse(cachedProgress);
-          if (mounted) {
-            setUserProgress(parsedProgress);
-            // Don't return here, still fetch from API to ensure we have the latest data
-          }
-        }
-        
         // Small delay to ensure API has time to update after previous lesson completion
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 500));
         const progressData = await apiGetProgress();
-        console.log('Loaded user progress from API:', progressData);
         if (mounted) {
           setUserProgress(progressData.progress || []);
           // Update cache with fresh data
@@ -206,204 +314,196 @@ export default function Lesson() {
           }
         }
       } catch (error) {
-        console.warn('Could not load user progress:', error);
+        // console.warn('Could not load user progress:', error);
         if (mounted) {
           setUserProgress([]);
         }
       }
-      
+
       finally {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { 
-      mounted = false; 
+    return () => {
+      mounted = false;
       // Clear progress cache when component unmounts to avoid stale data
       try {
         localStorage.removeItem('userProgressCache');
-        console.log('Cleared progress cache');
       } catch (e) {
         console.warn('Could not clear progress cache:', e);
       }
     };
   }, [trackId, moduleId, lessonId]);
 
-  useEffect(() => {
-    // Mock data fallback for development
-    if (!loading && (!track || !lesson)) {
-      const mock = mockCourse(trackId, moduleId, lessonId);
-      if (!track) setTrack(mock.track);
-      if (!lesson) setLesson(mock.lesson);
-    }
-  }, [loading, track, lesson, trackId, moduleId, lessonId]);
 
-  useEffect(() => {
-    (async () => {
-      // Debug authentication
-      const token = localStorage.getItem("auth_token");
-      console.log('Lesson progress useEffect - Auth token:', token ? 'Present' : 'Missing');
-      
-      // Calculate lessonLocked locally for this effect
-      const calculatedLessonLocked = (() => {
-        if (!track || !moduleId || !lessonId || !userProgress || !trackId) {
-          console.log('Lesson locking calculation - missing required data');
-          return false;
-        }
-        
-        // Find current module and lesson positions
-        const modules = track.modules || [];
-        const moduleIndex = modules.findIndex(m => m.id === moduleId);
-        if (moduleIndex === -1) {
-          console.log('Lesson locking calculation - module not found');
-          return false;
-        }
-        
-        const currentModule = modules[moduleIndex];
-        const lessons = currentModule.lessons || [];
-        const lessonIndex = lessons.findIndex(l => l.id === lessonId);
-        if (lessonIndex === -1) {
-          console.log('Lesson locking calculation - lesson not found');
-          return false;
-        }
-        
-        console.log('Lesson locking calculation - checking lesson', { moduleId, lessonId, moduleIndex, lessonIndex, userProgressLength: userProgress?.length });
-        
-        // First lesson of first module is never locked
-        if (moduleIndex === 0 && lessonIndex === 0) {
-          console.log('Lesson locking calculation - first lesson of first module, not locked');
-          return false;
-        }
-        
-        // For lessons in the same module, check if previous lesson is completed
-        if (lessonIndex > 0) {
-          const previousLesson = lessons[lessonIndex - 1];
-          const previousProgress = userProgress.find((p: any) => 
-            p.track_id === trackId && p.module_id === moduleId && p.lesson_id === previousLesson.id
-          );
-          console.log('Lesson locking calculation - checking previous lesson in same module', { 
-            previousLessonId: previousLesson.id, 
-            previousProgress 
-          });
-          return previousProgress?.status !== 'completed';
-        }
-        
-        // For first lesson in a module, check if previous module is completed
-        if (lessonIndex === 0 && moduleIndex > 0) {
-          const previousModule = modules[moduleIndex - 1];
-          // Check if all lessons in previous module are completed
-          const allPreviousCompleted = (previousModule.lessons || []).every(lesson => {
-            const progress = userProgress.find((p: any) => 
-              p.track_id === trackId && p.module_id === previousModule.id && p.lesson_id === lesson.id
-            );
-            return progress?.status === 'completed';
-          });
-          console.log('Lesson locking calculation - checking previous module completion', { 
-            previousModuleId: previousModule.id, 
-            allPreviousCompleted 
-          });
-          return !allPreviousCompleted;
-        }
-        
-        console.log('Lesson locking calculation - default case, not locked');
-        return false;
-      })();
 
-      console.log('Lesson locking effect - calculatedLessonLocked:', calculatedLessonLocked);
-      // Only mark as in_progress if lesson is not locked
-      if (!calculatedLessonLocked) {
-        try { 
-          console.log('Setting lesson progress to in_progress');
-          await apiSetLessonProgress({ trackId, moduleId, lessonId, status: "in_progress" }); 
-          console.log('Successfully set lesson progress to in_progress');
-        } catch (error) {
-          console.error('Failed to set lesson progress to in_progress:', error);
-        } 
-      } else {
-        console.log('Lesson is locked, not setting in_progress status');
-      }
-    })();
-  }, [trackId, moduleId, lessonId, track, userProgress]);
+
 
   const moduleList: TrackModule[] = useMemo(() => track?.modules || [], [track]);
   const progress = useMemo(() => formatProgress(track, { moduleId, lessonId }, userProgress), [track, moduleId, lessonId, userProgress]);
-  
+
   // Compute if current lesson is locked
   const lessonLocked = useMemo(() => {
-    // If we don't have the necessary data, assume not locked
-    if (!trackId || !moduleId || !lessonId || !userProgress || !track) return false;
-    
-    // Find the current lesson's position in the track
-    const modules = track.modules || [];
-    const moduleIndex = modules.findIndex(m => m.id === moduleId);
-    if (moduleIndex === -1) return false;
-    
-    const currentModule = modules[moduleIndex];
-    const lessons = currentModule.lessons || [];
-    const lessonIndex = lessons.findIndex(l => l.id === lessonId);
-    if (lessonIndex === -1) return false;
-    
-    // First lesson of first module is never locked
-    if (moduleIndex === 0 && lessonIndex === 0) return false;
-    
-    // Check if the DIRECT previous lesson is completed
-    let previousLessonId;
-    
-    if (lessonIndex > 0) {
-      // Previous lesson in the same module
-      previousLessonId = lessons[lessonIndex - 1].id;
-    } else if (moduleIndex > 0) {
-      // Last lesson of the previous module
-      const prevModule = modules[moduleIndex - 1];
-      const prevModuleLessons = prevModule.lessons || [];
-      if (prevModuleLessons.length > 0) {
-        previousLessonId = prevModuleLessons[prevModuleLessons.length - 1].id;
+    return checkLessonLocked(track, moduleId, lessonId, userProgress, trackId);
+  }, [track, moduleId, lessonId, userProgress, trackId]);
+
+  // Update lesson status to in_progress when lesson loads (if not locked)
+  useEffect(() => {
+    if (track && moduleId && lessonId && !lessonLocked && userProgress && trackId) {
+      const updateProgress = async () => {
+        try {
+          await apiSetLessonProgress({ trackId, moduleId, lessonId, status: "in_progress" });
+        } catch (error) {
+          console.error('Failed to set lesson progress to in_progress:', error);
+        }
+      };
+
+      // Only update if not already completed
+      const currentLessonProgress = userProgress.find((p: any) =>
+        p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId
+      );
+
+      if (currentLessonProgress?.status !== 'completed') {
+        updateProgress();
       }
     }
-    
-    if (!previousLessonId) return false;
-    
-    // Check if that specific previous lesson is completed
-    const previousProgress = userProgress.find((p: any) => 
-      p.track_id === trackId && 
-      p.module_id === (lessonIndex > 0 ? moduleId : modules[moduleIndex - 1].id) && 
-      p.lesson_id === previousLessonId
-    );
-    
-    // The lesson is locked if the previous lesson is NOT completed
-    return previousProgress?.status !== 'completed';
-  }, [track, moduleId, lessonId, userProgress, trackId]);
-  
+  }, [track, moduleId, lessonId, lessonLocked, userProgress, trackId]);
+
   // Compute if current lesson is completed
   const lessonCompleted = useMemo(() => {
-    console.log('Calculating lessonCompleted for:', { trackId, moduleId, lessonId });
-    console.log('User progress for completed check:', userProgress);
-    
+
     if (!trackId || !moduleId || !lessonId || !userProgress) {
-      console.log('lessonCompleted calculation - missing required data');
       return false;
     }
-    
-    const progress = userProgress.find((p: any) => 
+
+    const progress = userProgress.find((p: any) =>
       p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId
     );
-    
-    console.log('Found progress for current lesson:', progress);
+
     const isCompleted = progress?.status === 'completed';
-    console.log('lessonCompleted calculation result:', isCompleted);
     return isCompleted;
   }, [trackId, moduleId, lessonId, userProgress]);
-  
+
   // Compute if there is a previous lesson
   // Compute if there is a previous lesson
   const hasPrevLesson = useMemo(() => {
-    return !!lesson?.prev;
-  }, [lesson]);
-  
+    return !!lesson?.prev || !!findPrevLesson(track, moduleId, lessonId);
+  }, [lesson, track, moduleId, lessonId]);
+
   // Compute if there is a next lesson
   const hasNextLesson = useMemo(() => {
-    return !!lesson?.next;
-  }, [lesson]);
-  
+    return !!lesson?.next || !!findNextLesson(track, moduleId, lessonId);
+  }, [lesson, track, moduleId, lessonId]);
+
+  // Helper function to handle API calls for marking lesson complete
+  const markLessonCompleteApi = async () => {
+    // Validate authentication
+    let userInfo;
+    try {
+      userInfo = await apiMe();
+    } catch {
+      try {
+        userInfo = await apiMeCookie();
+      } catch (authError) {
+        console.error('Authentication failed during completion:', authError);
+        throw new Error('Unauthorized');
+      }
+    }
+
+    // Mark lesson as completed via API
+    const result = await apiSetLessonProgress({ trackId, moduleId, lessonId, status: "completed" });
+
+    // Update local progress state
+    const updatedProgress = [
+      ...userProgress.filter((p: any) =>
+        !(p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId)
+      ),
+      {
+        track_id: trackId,
+        module_id: moduleId,
+        lesson_id: lessonId,
+        status: "completed",
+        updated_at: new Date().toISOString()
+      }
+    ];
+    setUserProgress(updatedProgress);
+
+    return result;
+  };
+
+  // Function to refresh progress data with retry logic
+  const refreshProgress = async () => {
+    const maxRetries = 3;
+    let retries = 0;
+
+    while (retries < maxRetries) {
+      try {
+        // Small delay to ensure API has updated
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const progressData = await apiGetProgress();
+
+        // Only update if we got valid data
+        if (progressData && progressData.progress !== undefined) {
+          setUserProgress(progressData.progress || []);
+          // Update cache with fresh data
+          try {
+            localStorage.setItem('userProgressCache', JSON.stringify(progressData.progress || []));
+          } catch (e) {
+            console.warn('Could not update progress cache:', e);
+          }
+          break; // Success, exit retry loop
+        }
+      } catch (error) {
+        retries++;
+        console.warn(`Failed to refresh progress (attempt ${retries}/${maxRetries}):`, error);
+
+        // If this was the last attempt, show an error
+        if (retries >= maxRetries) {
+          console.error('Failed to refresh progress after all retries:', error);
+        }
+      }
+    }
+  };
+
+  // Helper function to handle navigation after lesson completion
+  const navigateAfterComplete = async () => {
+    // Refresh progress data to ensure it's up to date
+    await refreshProgress();
+
+    // Small additional delay to ensure API has fully processed the completion
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Check if this is actually the last lesson in the track
+    const isLastLessonCheck = !lesson?.next && !findNextLesson(track, moduleId, lessonId);
+
+    if (lesson?.next) {
+      setNavigating(true);
+      navigate(`/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}`);
+    } else if (isLastLessonCheck) {
+      // Only show final lesson message if this is truly the last lesson
+      toast({
+        title: 'Congratulations!',
+        description: 'You have completed the final lesson in this track.',
+        variant: 'default',
+      });
+    } else {
+      // Try to compute next lesson manually as fallback
+      const nextLesson = findNextLesson(track, moduleId, lessonId);
+      if (nextLesson) {
+        setNavigating(true);
+        navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+        return;
+      }
+
+      // If we can't compute next lesson, show a generic completion message
+      toast({
+        title: 'Continuing to next lesson',
+        description: 'Lesson completed! Continuing to next lesson...',
+        variant: 'default',
+      });
+    }
+  };
+
   // Keyboard navigation
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -418,274 +518,108 @@ export default function Lesson() {
 
   // Compute previous lesson navigation
   const goPrev = () => {
-    if (lesson?.prev) {
-      navigate(`/learning/${lesson.prev.trackId}/${lesson.prev.moduleId}/${lesson.prev.lessonId}`);
-    } else {
-      // Fallback logic if lesson.prev is not available
-      if (track && moduleId && lessonId) {
-        const modules = track.modules || [];
-        const moduleIndex = modules.findIndex(m => m.id === moduleId);
-        if (moduleIndex !== -1) {
-          const currentModule = modules[moduleIndex];
-          const lessons = currentModule.lessons || [];
-          const lessonIndex = lessons.findIndex(l => l.id === lessonId);
-          
-          if (lessonIndex !== -1) {
-            // If not the first lesson in the module, go to previous lesson in same module
-            if (lessonIndex > 0) {
-              const prevLesson = lessons[lessonIndex - 1];
-              navigate(`/learning/${trackId}/${moduleId}/${prevLesson.id}`);
-              return;
-            }
-            
-            // If first lesson in module but not first module, go to last lesson of previous module
-            if (moduleIndex > 0) {
-              const prevModule = modules[moduleIndex - 1];
-              const prevLessons = prevModule.lessons || [];
-              if (prevLessons.length > 0) {
-                const lastLesson = prevLessons[prevLessons.length - 1];
-                navigate(`/learning/${trackId}/${prevModule.id}/${lastLesson.id}`);
-                return;
-              }
-            }
-          }
-        }
-      }
-    }
-  };
-  
-  // Compute next lesson navigation
-  const goNext = () => {
-    if (lesson?.next) {
-      navigate(`/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}`);
-    } else {
-      // Fallback logic if lesson.next is not available
-      if (track && moduleId && lessonId) {
-        const modules = track.modules || [];
-        const moduleIndex = modules.findIndex(m => m.id === moduleId);
-        if (moduleIndex !== -1) {
-          const currentModule = modules[moduleIndex];
-          const lessons = currentModule.lessons || [];
-          const lessonIndex = lessons.findIndex(l => l.id === lessonId);
-          
-          if (lessonIndex !== -1) {
-            // If not the last lesson in the module, go to next lesson in same module
-            if (lessonIndex < lessons.length - 1) {
-              const nextLesson = lessons[lessonIndex + 1];
-              navigate(`/learning/${trackId}/${moduleId}/${nextLesson.id}`);
-              return;
-            }
-            
-            // If last lesson in module but not last module, go to first lesson of next module
-            if (moduleIndex < modules.length - 1) {
-              const nextModule = modules[moduleIndex + 1];
-              const nextLessons = nextModule.lessons || [];
-              if (nextLessons.length > 0) {
-                const firstLesson = nextLessons[0];
-                navigate(`/learning/${trackId}/${nextModule.id}/${firstLesson.id}`);
-                return;
-              }
-            }
-          }
-        }
-      }
+    const prevLesson = lesson?.prev || findPrevLesson(track, moduleId, lessonId);
+    if (prevLesson && !navigating) {
+      setNavigating(true);
+      navigate(`/learning/${prevLesson.trackId}/${prevLesson.moduleId}/${prevLesson.lessonId}`);
     }
   };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") { e.preventDefault(); if (lesson?.prev) goPrev(); }
-      if (e.key === "ArrowRight") { e.preventDefault(); if (lesson?.next) goNext(); }
-      if (e.key === "/") { e.preventDefault(); searchInputRef.current?.focus(); }
-      if (e.key.toLowerCase() === "n") { e.preventDefault(); noteInputRef.current?.focus(); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lesson, goPrev, goNext]);
+  // Compute next lesson navigation
+  const goNext = () => {
+    const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
+    if (nextLesson && !navigating) {
+      setNavigating(true);
+      navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+    }
+  };
+
+
 
   const markComplete = async () => {
     if (!lesson) return;
-    
+
     // Debug authentication
-    const token = localStorage.getItem("auth_token");
-    console.log('Mark complete - Auth token:', token ? 'Present' : 'Missing');
-    
+    // const token = localStorage.getItem("auth_token");
+    // console.log('Mark complete - Auth token:', token ? 'Present' : 'Missing');
+
     // Don't allow marking a completed lesson again
     if (lessonCompleted) {
       // Navigate to next lesson if available
-      // Use the same logic as in markComplete for consistency
-      if (lesson?.next) {
-        navigate(`/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}`);
-      } else {
-        // Try to compute next lesson manually as fallback
-        if (track && moduleId && lessonId) {
-          const modules = track.modules || [];
-          const moduleIndex = modules.findIndex(m => m.id === moduleId);
-          if (moduleIndex !== -1) {
-            const currentModule = modules[moduleIndex];
-            const lessons = currentModule.lessons || [];
-            const lessonIndex = lessons.findIndex(l => l.id === lessonId);
-            
-            if (lessonIndex !== -1) {
-              // If not the last lesson in the module, go to next lesson in same module
-              if (lessonIndex < lessons.length - 1) {
-                const nextLesson = lessons[lessonIndex + 1];
-                navigate(`/learning/${trackId}/${moduleId}/${nextLesson.id}`);
-                return;
-              }
-              
-              // If last lesson in module but not last module, go to first lesson of next module
-              if (moduleIndex < modules.length - 1) {
-                const nextModule = modules[moduleIndex + 1];
-                const nextLessons = nextModule.lessons || [];
-                if (nextLessons.length > 0) {
-                  const firstLesson = nextLessons[0];
-                  navigate(`/learning/${trackId}/${nextModule.id}/${firstLesson.id}`);
-                  return;
-                }
-              }
-            }
-          }
-        }
-        
-        // If we can't compute next lesson, show a message
-        alert('You have already completed this lesson.');
+      const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
+      if (nextLesson) {
+        setNavigating(true);
+        navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+        return;
       }
+
+      // If we can't compute next lesson, show a message
+      toast({
+        title: 'Already Completed',
+        description: 'You have already completed this lesson.',
+        variant: 'default',
+      });
       return;
     }
-    
+
     // Don't allow marking a locked lesson
     if (lessonLocked) {
-      alert('This lesson is locked. Please complete the previous lessons first.');
+      toast({
+        title: 'Lesson Locked',
+        description: 'This lesson is locked. Please complete the previous lessons first.',
+        variant: 'destructive',
+      });
       return;
     }
-    
+
     setSaving(true);
-    
+
     try {
-      console.log('Marking lesson complete:', { trackId, moduleId, lessonId });
-      let userInfo;
-      try {
-        userInfo = await apiMe();
-      } catch {
-        try {
-          userInfo = await apiMeCookie();
-        } catch (authError) {
-          console.error('Authentication failed during completion:', authError);
-          alert('Your session has expired. Please log in again to save your progress.');
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login';
-          return;
-        }
-      }
-      
       // 1. Mark lesson as completed via API
-      const result = await apiSetLessonProgress({ trackId, moduleId, lessonId, status: "completed" });
-      console.log('Lesson marked complete successfully:', result);
-      
-      // 2. Update local progress state IMMEDIATELY and consistently
-      // This approach updates the state by adding the new completion
-      const updatedProgress = [
-        ...userProgress.filter((p: any) => 
-          !(p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId)
-        ),
-        {
-          track_id: trackId,
-          module_id: moduleId,
-          lesson_id: lessonId,
-          status: "completed",
-          updated_at: new Date().toISOString()
-        }
-      ];
-      console.log('Setting updated progress state:', updatedProgress);
-      setUserProgress(updatedProgress);
-      
-      // Small delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // 3. Navigate to next lesson
-      // Check if this is actually the last lesson in the track
-      const isLastLesson = !lesson?.next;
-      
-      if (lesson?.next) {
-        setTimeout(() => {
-          navigate(`/learning/${lesson.next.trackId}/${lesson.next.moduleId}/${lesson.next.lessonId}`);
-        }, 1000); // Reduced delay for smoother navigation
-      } else if (isLastLesson) {
-        // Only show final lesson message if this is truly the last lesson
-        setTimeout(() => {
-          alert('Congratulations! You have completed the final lesson in this track.');
-        }, 1000);
-      } else {
-        // If there's no next lesson data but it's not the last lesson, 
-        // still navigate to what should be the next lesson
-        // This handles cases where lesson.next might not be populated
-        console.log('No next lesson data found, checking track structure');
-        
-        // Try to compute next lesson manually as fallback
-        if (track && moduleId && lessonId) {
-          const modules = track.modules || [];
-          const moduleIndex = modules.findIndex(m => m.id === moduleId);
-          if (moduleIndex !== -1) {
-            const currentModule = modules[moduleIndex];
-            const lessons = currentModule.lessons || [];
-            const lessonIndex = lessons.findIndex(l => l.id === lessonId);
-            
-            if (lessonIndex !== -1) {
-              // If not the last lesson in the module, go to next lesson in same module
-              if (lessonIndex < lessons.length - 1) {
-                const nextLesson = lessons[lessonIndex + 1];
-                setTimeout(() => {
-                  navigate(`/learning/${trackId}/${moduleId}/${nextLesson.id}`);
-                }, 1000);
-                return;
-              }
-              
-              // If last lesson in module but not last module, go to first lesson of next module
-              if (moduleIndex < modules.length - 1) {
-                const nextModule = modules[moduleIndex + 1];
-                const nextLessons = nextModule.lessons || [];
-                if (nextLessons.length > 0) {
-                  const firstLesson = nextLessons[0];
-                  setTimeout(() => {
-                    navigate(`/learning/${trackId}/${nextModule.id}/${firstLesson.id}`);
-                  }, 1000);
-                  return;
-                }
-              }
-            }
-          }
-        }
-        
-        // If we can't compute next lesson, show a generic completion message
-        setTimeout(() => {
-          alert('Lesson completed! Continuing to next lesson...');
-        }, 1000);
-      }
-      
+      await markLessonCompleteApi();
+
+      // 2. Navigate to next lesson
+      await navigateAfterComplete();
+
     } catch (e: any) {
       console.error('Failed to mark lesson complete:', e);
-      console.error('Error details:', { message: e?.message, status: e?.status, stack: e?.stack });
-      
+
       // Provide more specific error messages
       let errorMessage = 'Failed to save your progress.';
-      
+
       if (e?.message?.includes('Unauthorized')) {
         errorMessage = 'Your session has expired. Please log in again to save your progress.';
         localStorage.removeItem('auth_token');
-        alert(errorMessage);
+        toast({
+          title: 'Session Expired',
+          description: errorMessage,
+          variant: 'destructive',
+        });
         window.location.href = '/login';
         return;
       } else if (e?.message?.includes('Network') || e?.message?.includes('Failed to fetch')) {
         errorMessage = 'Network error. Please check your connection and try again.';
+        toast({
+          title: 'Network Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
       } else if (e?.message) {
         errorMessage = `Error: ${e.message}`;
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred while saving your progress.',
+          variant: 'destructive',
+        });
       }
-      
-      alert(errorMessage);
-    } finally { 
-      setSaving(false); 
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -710,341 +644,259 @@ export default function Lesson() {
       </div>
     );
 
-    // Enhanced video lessons with proper content support
-    if (current.type === "video") {
-      const isMp4 = (current.videoUrl || "").endsWith(".mp4");
-      const hasRealVideo = current.videoUrl && !current.videoUrl.includes('dQw4w9WgXcQ'); // Detect placeholder
-      
-      return (
-        <div className="space-y-6">
-  <div className="aspect-video rounded-md overflow-hidden border border-gray-200 dark:border-gray-700/50 bg-muted/30">
-    {current?.videoUrl ? (
-      current.videoUrl.endsWith('.mp4') ? (
-        <video
-          className="w-full h-full"
-          controls
-          controlsList="nodownload"
-          src={current.videoUrl}
-        >
-          Sorry, your browser doesn't support embedded videos.
-        </video>
-      ) : (
-        <iframe
-          className="w-full h-full"
-          src={current.videoUrl}
-          title={current.title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          loading="lazy"
-        />
-        
-      )
-    ) : (
-      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
-        <div className="text-center space-y-4">
-          <Video className="h-16 w-16 mx-auto text-muted-foreground" />
-          <div>
-            <h3 className="font-semibold text-lg mb-2">{current?.title || 'Lesson'}</h3>
-            <p className="text-sm text-muted-foreground mb-4">Video content coming soon</p>
-            <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2">
-              Duration: {current?.durationMin || 'TBD'} minutes
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-  <div className="flex justify-end mt-2">
-  <Button
-        size="sm"
-         className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
-        variant="default"
-        onClick={() => {
-          console.log('Video lesson playground button clicked', showPlayground);
-          setShowPlayground(!showPlayground);
-        }}
-        aria-label="Toggle Playground"
-      >
-        <Terminal className="h-4 w-4 mr-1" />
-        {showPlayground ? "Close Playground" : "Open Playground"}
-      </Button>
-      </div>
-  {/* Lesson Content */}
-  {current?.content && (
-    <div className="space-y-4">
-      <div className="border-l-4 border-brand-500 pl-4">
-        <h3 className="font-semibold mb-2">Lesson Overview</h3>
-        <div
-          className="prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }}
-        />
-      </div>
-    </div>
-  )}
-  
-  {/* Playground - Always render when showPlayground is true */}
-  {showPlayground && (
-    <div className="my-6">
-      <Playground 
-        initialPrompt={current?.content ? extractPromptFromContent(current.content) : ""}
-        onClose={() => setShowPlayground(false)}
-      />
-    </div>
-  )}
-  
-  <p className="text-sm text-muted-foreground border-t pt-4">
-    💡 <strong>Pro tip:</strong> Use the Transcript and Notes panels to the right. Press{' '}
-    <kbd className="bg-muted px-1 rounded text-xs">/</kbd> to search transcript,{' '}
-    <kbd className="bg-muted px-1 rounded text-xs">N</kbd> to focus notes.
-  </p>
-</div>
-      )};
-
-    // Enhanced text lessons with better formatting
-    if (current.type === "text") {
-      return (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
-              variant="default"
-              onClick={() => setShowPlayground(!showPlayground)}
-              aria-label="Toggle Playground"
-            >
-              <Terminal className="h-4 w-4 mr-1" />
-              {showPlayground ? "Close Playground" : "Open Playground"}
-            </Button>
-          </div>
-          
-          {current.content ? (
-            <div className="prose prose-gray dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
-              <p className="text-muted-foreground">Reading content is being prepared for this lesson.</p>
-            </div>
-          )}
-          
-          {/* Playground - Rendered when showPlayground is true */}
-          {showPlayground && (
-            <div className="my-6">
-              <Playground 
-                initialPrompt={current?.content ? extractPromptFromContent(current.content) : ""}
-                onClose={() => setShowPlayground(false)}
-              />
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Enhanced playground lessons with better UX
-    if (current.type === "sandbox" || current.type === "playground") {
-      return (
-        <div className="space-y-6">
-          {current.content ? (
-            <>
-              {/* Lesson instructions */}
-              <div className="bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 rounded-lg p-6">
-                <div className="flex items-start gap-3">
-                  <Code className="h-6 w-6 text-brand-600 mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-brand-900 dark:text-brand-100 mb-2">Playground Exercise</h3>
-                    <div className="prose prose-sm prose-brand max-w-none" dangerouslySetInnerHTML={{
-                      __html: mdToHtml(
-                        current.content
-                          .split('\n')
-                          .slice(0, current.content.indexOf('```') > 0 ? current.content.split('\n').findIndex(line => line.includes('```')) : 5)
-                          .join('\n')
-                      )
-                    }} />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Extract and display code/prompt */}
-              {(() => {
-                const codeMatch = current.content.match(/```[\w]*\n([\s\S]*?)```/);
-                const promptContent = codeMatch ? codeMatch[1].trim() : 
-                  // Fallback: look for lines that seem like prompts
-                  current.content.split('\n').find(line => 
-                    line.includes('prompt') || line.includes('Create') || line.includes('Generate') || line.length > 50
-                  ) || current.content.split('\n').slice(-3).join('\n');
-                
-                return promptContent && (
-                  <Card className="border-gray-200 dark:border-gray-700/50">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Target className="h-5 w-5" />
-                        Practice Prompt
-                      </CardTitle>
-                      <CardDescription>
-                        Copy this prompt to the Playground and experiment with it
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-muted rounded-md p-4 font-mono text-sm overflow-auto max-h-64" aria-label="Playground prompt">
-                        <pre className="whitespace-pre-wrap">{promptContent}</pre>
-                      </div>
-                      <div className="flex gap-3 justify-end mt-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={async() => { 
-                            const ok = await copyText(promptContent); 
-                            if (!ok) alert("Failed to copy to clipboard"); 
-                            else {
-                              // Show success feedback
-                              const btn = document.activeElement as HTMLButtonElement;
-                              const originalText = btn?.textContent;
-                              if (btn && originalText) {
-                                btn.textContent = "Copied!";
-                                setTimeout(() => btn.textContent = originalText, 2000);
-                              }
-                            }
-                          }} 
-                          aria-label="Copy to clipboard"
-                        >
-                          <Check className="h-4 w-4 mr-1" />Copy
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            console.log('Open in Playground button clicked');
-                            setShowPlayground(true);
-                          }}
-                          aria-label="Open in Playground"
-                        >
-                          <Terminal className="h-4 w-4 mr-1" />Open in Playground
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })()} 
-
-              {/* Additional content after the code block */}
-              {(() => {
-                const afterCodeMatch = current.content.match(/```[\w]*\n[\s\S]*?```\n\n([\s\S]+)/);
-                const additionalContent = afterCodeMatch ? afterCodeMatch[1].trim() : null;
-                
-                return additionalContent && (
-                  <div className="prose prose-sm max-w-none pt-4 border-t">
-                    <div dangerouslySetInnerHTML={{
-                      __html: mdToHtml(additionalContent)
-                    }} />
-                  </div>
-                );
-              })()} 
-            </>
-          ) : (
-            <div className="space-y-6">
-              <div className="text-center py-6">
-                <Code className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
-                <p className="text-muted-foreground mb-4">Interactive exercise with Playground</p>
-              </div>
-              
-              {/* Playground - Rendered when showPlayground is true */}
-              {showPlayground && (
-                <div className="my-6">
-                  <Playground 
-                    initialPrompt={current?.content || ""}
-                    onClose={() => setShowPlayground(false)}
-                  />
-                </div>
-              )}
-              
-              {current.content && (
-                <div className="prose prose-gray dark:prose-invert max-w-none border-t pt-6">
-                  <div dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Quiz/Assessment lessons
-    if (current.type === "quiz" || current.type === "assessment") {
-      return (
-        <div className="space-y-6">
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
-              variant="default"
-              onClick={() => setShowPlayground(!showPlayground)}
-              aria-label="Toggle Playground"
-            >
-              <Terminal className="h-4 w-4 mr-1" />
-              {showPlayground ? "Close Playground" : "Open Playground"}
-            </Button>
-          </div>
-          
-          <div className="text-center py-12">
-            <HelpCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
-            <p className="text-muted-foreground mb-4">Interactive quiz feature coming soon.</p>
-            <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 max-w-sm mx-auto">
-              This will include knowledge checks, practical assessments, and progress validation.
-            </div>
-          </div>
-          
-          {/* Playground - Rendered when showPlayground is true */}
-          {showPlayground && (
-            <div className="my-6">
-              <Playground 
-                initialPrompt={current?.title || ""}
-                onClose={() => setShowPlayground(false)}
-              />
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Fallback for unknown lesson types
+    // Unified lesson rendering for all types
     return (
-      <div className="space-y-6">
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
-            variant="default"
-            onClick={() => setShowPlayground(!showPlayground)}
-            aria-label="Toggle Playground"
-          >
-            <Terminal className="h-4 w-4 mr-1" />
-            {showPlayground ? "Close Playground" : "Open Playground"}
-          </Button>
-        </div>
-        
-        <div className="text-center py-12">
-          <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
-          <p className="text-muted-foreground mb-4">Lesson type "{current.type}" is not yet supported.</p>
-          <div className="text-sm text-muted-foreground">
-            Please contact support or check back later.
+        <div className="space-y-6">
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
+              variant="default"
+              onClick={() => setShowPlayground(!showPlayground)}
+              aria-label="Toggle Playground"
+            >
+              <Terminal className="h-4 w-4 mr-1" />
+              {showPlayground ? "Close Playground" : "Open Playground"}
+            </Button>
           </div>
+
+          {/* Render content based on lesson type */}
+          {(() => {
+            switch(current.type) {
+              case "video":
+                const isMp4 = (current.videoUrl || "").endsWith(".mp4");
+                return (
+                  <>
+                    <div className="aspect-video rounded-md overflow-hidden border border-gray-200 dark:border-gray-700/50 bg-muted/30">
+                      {current?.videoUrl ? (
+                        current.videoUrl.endsWith('.mp4') ? (
+                          <video
+                            className="w-full h-full"
+                            controls
+                            controlsList="nodownload"
+                            src={current.videoUrl}
+                          >
+                            Sorry, your browser doesn't support embedded videos.
+                          </video>
+                        ) : (
+                          <iframe
+                            className="w-full h-full"
+                            src={current.videoUrl}
+                            title={current.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            loading="lazy"
+                          />
+                        )
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
+                          <div className="text-center space-y-4">
+                            <Video className="h-16 w-16 mx-auto text-muted-foreground" />
+                            <div>
+                              <h3 className="font-semibold text-lg mb-2">{current?.title || 'Lesson'}</h3>
+                              <p className="text-sm text-muted-foreground mb-4">Video content coming soon</p>
+                              <div className="text-xs text-muted-foreground bg-muted/50 rounded px-3 py-2">
+                                Duration: {current?.durationMin || 'TBD'} minutes
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {current?.content && (
+                      <div className="space-y-4 mt-4">
+                        <div className="border-l-4 border-brand-500 pl-4">
+                          <h3 className="font-semibold mb-2">Lesson Overview</h3>
+                          <div
+                            className="prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-sm text-muted-foreground border-t pt-4">
+                      💡 <strong>Pro tip:</strong> Use the Transcript and Notes panels to the right. Press{' '}
+                      <kbd className="bg-muted px-1 rounded text-xs">/</kbd> to search transcript,{' '}
+                      <kbd className="bg-muted px-1 rounded text-xs">N</kbd> to focus notes.
+                    </p>
+                  </>
+                );
+
+              case "text":
+                return (
+                  <>
+                    {current.content ? (
+                      <div className="prose prose-gray dark:prose-invert max-w-none">
+                        <div dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+                        <p className="text-muted-foreground">Reading content is being prepared for this lesson.</p>
+                      </div>
+                    )}
+                  </>
+                );
+
+              case "sandbox":
+              case "playground":
+                return (
+                  <>
+                    {current.content ? (
+                      <>
+                        {/* Lesson instructions */}
+                        <div className="bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 rounded-lg p-6">
+                          <div className="flex items-start gap-3">
+                            <Code className="h-6 w-6 text-brand-600 mt-1 flex-shrink-0" />
+                            <div>
+                              <h3 className="font-semibold text-brand-900 dark:text-brand-100 mb-2">Playground Exercise</h3>
+                              <div className="prose prose-sm prose-brand max-w-none" dangerouslySetInnerHTML={{
+                                __html: mdToHtml(
+                                  current.content
+                                    .split('\n')
+                                    .slice(0, current.content.indexOf('```') > 0 ? current.content.split('\n').findIndex(line => line.includes('```')) : 5)
+                                    .join('\n')
+                                )
+                              }} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Extract and display code/prompt */}
+                        {(() => {
+                          const codeMatch = current.content.match(/```[\w]*\n([[\\\\s\\\\S]*?S]*?)```/);
+                          const promptContent = codeMatch ? codeMatch[1].trim() :
+                            // Fallback: look for lines that seem like prompts
+                            current.content.split('\n').find(line =>
+                              line.includes('prompt') || line.includes('Create') || line.includes('Generate') || line.length > 50
+                            ) || current.content.split('\n').slice(-3).join('\n');
+
+                          return promptContent && (
+                            <Card className="border-gray-200 dark:border-gray-700/50">
+                              <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                  <Target className="h-5 w-5" />
+                                  Practice Prompt
+                                </CardTitle>
+                                <CardDescription>
+                                  Copy this prompt to the Playground and experiment with it
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="bg-muted rounded-md p-4 font-mono text-sm overflow-auto max-h-64" aria-label="Playground prompt">
+                                  <pre className="whitespace-pre-wrap">{promptContent}</pre>
+                                </div>
+                                <div className="flex gap-3 justify-end mt-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async() => {
+                                      const ok = await copyText(promptContent);
+                                      if (!ok) alert("Failed to copy to clipboard");
+                                      else {
+                                        // Show success feedback
+                                        const btn = document.activeElement as HTMLButtonElement;
+                                        const originalText = btn?.textContent;
+                                        if (btn && originalText) {
+                                          btn.textContent = "Copied!";
+                                          setTimeout(() => btn.textContent = originalText, 2000);
+                                        }
+                                      }
+                                    }}
+                                    aria-label="Copy to clipboard"
+                                  >
+                                    <Check className="h-4 w-4 mr-1" />Copy
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setShowPlayground(true);
+                                    }}
+                                    aria-label="Open in Playground"
+                                  >
+                                    <Terminal className="h-4 w-4 mr-1" />Open in Playground
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })()}
+
+                        {/* Additional content after the code block */}
+                        {(() => {
+                          const afterCodeMatch = current.content.match(/```[\w]*\n[\s\S]*?```\n\n([\s\S]+)/);
+                          const additionalContent = afterCodeMatch ? afterCodeMatch[1].trim() : null;
+
+                          return additionalContent && (
+                            <div className="prose prose-sm max-w-none pt-4 border-t">
+                              <div dangerouslySetInnerHTML={{
+                                __html: mdToHtml(additionalContent)
+                              }} />
+                            </div>
+                          );
+                        })()}
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-center py-6">
+                          <Code className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                          <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+                          <p className="text-muted-foreground mb-4">Interactive exercise with Playground</p>
+                        </div>
+
+                        {current.content && (
+                          <div className="prose prose-gray dark:prose-invert max-w-none border-t pt-6">
+                            <div dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                );
+
+              case "quiz":
+              case "assessment":
+                return (
+                  <>
+                    <div className="text-center py-12">
+                      <HelpCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+                      <p className="text-muted-foreground mb-4">Interactive quiz feature coming soon.</p>
+                      <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 max-w-sm mx-auto">
+                        This will include knowledge checks, practical assessments, and progress validation.
+                      </div>
+                    </div>
+                  </>
+                );
+
+              default:
+                return (
+                  <>
+                    <div className="text-center py-12">
+                      <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="font-semibold text-lg mb-2">{current.title}</h3>
+                      <p className="text-muted-foreground mb-4">Lesson type "{current.type}" is not yet supported.</p>
+                      <div className="text-sm text-muted-foreground">
+                        Please contact support or check back later.
+                      </div>
+                    </div>
+                  </>
+                );
+            }
+          })()}
+
+          {/* Playground - Always render when showPlayground is true */}
+          {showPlayground && (
+            <div className="my-6">
+              <Playground
+                initialPrompt={current?.content ? extractPromptFromContent(current.content) : current?.title || ""}
+                onClose={() => setShowPlayground(false)}
+              />
+            </div>
+          )}
         </div>
-        
-        {/* Playground - Rendered when showPlayground is true */}
-        {showPlayground && (
-          <div className="my-6">
-            <Playground 
-              initialPrompt={current?.title || ""}
-              onClose={() => setShowPlayground(false)}
-            />
-          </div>
-        )}
-      </div>
-    );
+      );
   };
 
   const transcriptText = (() => {
@@ -1082,35 +934,27 @@ export default function Lesson() {
   return (
     <div className="min-h-screen bg-background">
       <LoggedInHeader />
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <div
-          className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-4"
-          role="region"
-          aria-label="Progress bar"
-        >
-          <div className="min-w-24 text-xs text-muted-foreground">
-            {progress.completed}/{progress.total}
-          </div>
-          <Progress value={progress.percent} className="h-2" />
-          <div className="ml-auto flex items-center gap-2">
-            <Badge variant="outline" className="hidden sm:inline-flex">
-              {progress.percent}% completed
-            </Badge>
-            <div className="text-xs text-muted-foreground hidden md:block">
-              Lesson {progress.index}/{progress.total}
+      <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div
+            className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-4"
+            role="region"
+            aria-label="Progress bar"
+          >
+            <div className="min-w-24 text-xs text-muted-foreground">
+              {progress.completed}/{progress.total}
+            </div>
+            <Progress value={progress.percent} className="h-2" />
+            <div className="ml-auto flex items-center gap-2">
+              <Badge variant="outline" className="hidden sm:inline-flex">
+                {progress.percent}% completed
+              </Badge>
+              <div className="text-xs text-muted-foreground hidden md:block">
+                Lesson {progress.index}/{progress.total}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex flex-1 overflow-hidden">
-          {/* Course index sidebar removed for single-course view, kept for future use.
-          <aside className="w-64 bg-muted/30 border-r ...">...</aside>
-          */}
-
-          <main
-            className="flex-1 p-6 space-y-4 overflow-y-auto"
-            role="main"
-            aria-label="Lesson content"
-          >
+          <div className="flex-1 overflow-y-auto p-6">
             <div className="flex items-center justify-between gap-4 mb-2">
               <div className="flex items-center gap-3">
                 <Button
@@ -1134,7 +978,7 @@ export default function Lesson() {
                 <Button
                   variant="outline"
                   onClick={goPrev}
-                  disabled={!lesson?.prev}
+                  disabled={!lesson?.prev && !findPrevLesson(track, moduleId, lessonId) || navigating}
                   aria-label="Previous lesson"
                   className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -1144,7 +988,7 @@ export default function Lesson() {
                 <Button
                   variant="outline"
                   onClick={goNext}
-                  disabled={!lesson?.next}
+                  disabled={!lesson?.next && !findNextLesson(track, moduleId, lessonId) || navigating}
                   aria-label="Next lesson"
                   className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                 >
@@ -1154,7 +998,7 @@ export default function Lesson() {
 
                 <Button
                   onClick={markComplete}
-                  disabled={saving || lessonLocked}
+                  disabled={saving || lessonLocked || lessonCompleted || navigating}
                   aria-label="Mark lesson complete"
                 >
                   <Check className="h-4 w-4 mr-1" />
@@ -1183,11 +1027,7 @@ export default function Lesson() {
 
             <Card>...Recommended next...</Card>
             */}
-          </main>
-
-          {/* Full right-hand transcript & notes aside kept for future use.
-          <aside className="hidden xl:flex w-96 border-l ...">...</aside>
-          */}
+          </div>
         </div>
       </div>
     </div>
