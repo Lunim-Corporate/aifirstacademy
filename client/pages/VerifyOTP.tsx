@@ -224,7 +224,7 @@ export default function VerifyOTP() {
               {/* Submit Button */}
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700 disabled:opacity-50 transition-all duration-200"
+                className="w-full bg-gradient-to-r from-primary-700 to-brand-700 hover:from-primary-800 hover:to-brand-800 text-white disabled:opacity-50 transition-all duration-200"
                 disabled={verifying || code.length < 6}
               >
                 {verifying ? (
