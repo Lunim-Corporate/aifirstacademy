@@ -286,7 +286,7 @@ export interface DashboardResponse {
 }
 
 // Learning
-export type LessonType = "text" | "sandbox" | "quiz" | "video" | "assessment";
+export type LessonType = "text" | "sandbox" | "quiz" | "video" | "assessment" | "playground";
 export interface TrackModuleLesson {
   id: string;
   title: string;
