@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
+import Sidebar from "@/components/Sidebar";
 import { useEffect, useState } from "react";
 import { apiMe, apiMeCookie, apiDashboard, apiLearningTracks, apiGetProgress, apiGetSettingsProfile } from "@/lib/api";
 import type { DashboardResponse } from "@shared/api";
@@ -239,19 +240,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
-            <nav className="p-4 space-y-2">
-              {sidebarItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium ${item.active ? "bg-brand-100 border border-brand-200" : "bg-transparent"}`}>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                );
-              })}
-            </nav>
-          </aside>
+          <Sidebar />
           <main className="flex-1 p-6 space-y-6 overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
@@ -359,28 +348,7 @@ export default function Dashboard() {
       <LoggedInHeader />
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
-          <nav className="p-4 space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active
-                      ? "bg-brand-100 text-brand-700 border border-brand-200"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        <Sidebar />
 
         {/* Main Content */}
         <main className="flex-1 p-6 space-y-6 overflow-y-auto">

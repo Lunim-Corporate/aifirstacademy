@@ -33,6 +33,7 @@ import {
   Trophy,
   Check,
 } from "lucide-react";
+import Sidebar from "@/components/Sidebar";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { copyText } from "@/lib/utils";
@@ -337,89 +338,7 @@ export default function Community() {
       <LoggedInHeader />
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
-          <nav className="p-4 space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active ? "bg-brand-100 text-brand-700 border border-brand-200" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700/40">
-            <h3 className="font-semibold mb-3 flex items-center">
-              <Trophy className="h-4 w-4 mr-2 text-amber-500" />
-              Top Contributors
-            </h3>
-            <div className="space-y-2">
-              {isContribLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-md p-2">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <div className="space-y-1">
-                        <Skeleton className="h-3 w-24" />
-                        <Skeleton className="h-2 w-32" />
-                      </div>
-                    </div>
-                    <div className="w-24">
-                      <Skeleton className="h-3 w-full" />
-                    </div>
-                  </div>
-                ))
-              ) : topContributors.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No contributors yet.</div>
-              ) : (
-                topContributors.map((c, idx) => {
-                  const pctBase = topContributors[0]?.score || 1;
-                  const pct = Math.max(8, Math.min(100, Math.round((c.score / pctBase) * 100)));
-                  const rankColor = idx === 0 ? "bg-amber-500" : idx === 1 ? "bg-zinc-300" : idx === 2 ? "bg-orange-400" : "bg-muted";
-                  return (
-                    <div key={c.id} className="group flex items-center justify-between rounded-md p-2 hover:bg-muted/40 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <Avatar className="h-8 w-8 ring-2 ring-brand-100">
-                            {/* Replaced 32x32 placeholder with simple avatar icon/fallback */}
-                            {/* <AvatarImage src={`/api/placeholder/32/32?text=${getAuthorInitials(c.id)}`} /> */}
-                            <AvatarImage src={""} />
-                            <AvatarFallback className="bg-gradient-to-br from-brand-500 to-primary-600 text-white font-semibold text-xs">
-                              {getAuthorInitials(c.id, authorNames.get(c.id))}
-                            </AvatarFallback>
-                          </Avatar>
-                          {idx < 3 && (
-                            <span className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ${rankColor} text-[10px] grid place-items-center text-white font-bold`}>{idx + 1}</span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium leading-tight">{authorNames.get(c.id) || `User ${c.id.slice(-4)}`}</div>
-                          <div className="text-xs text-muted-foreground">{c.prompts} prompts · {c.discussions} discussions · {c.entries} entries</div>
-                        </div>
-                      </div>
-                      <div className="w-24">
-                        <div className="flex items-center justify-end text-xs font-medium tabular-nums">
-                          {Math.round(c.score)}
-                        </div>
-                        <div className="mt-1 h-1.5 w-full rounded bg-muted overflow-hidden">
-                          <div className="h-full rounded bg-brand-600" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </aside>
+        <Sidebar />
 
         <main className="flex-1 overflow-y-auto">
           <Tabs value={tab} onValueChange={(v:any)=>setTab(v)} className="h-full">

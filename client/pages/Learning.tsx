@@ -42,6 +42,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import CertificateRequirements from "@/components/CertificateRequirements";
+import Sidebar from "@/components/Sidebar";
 import { useEffect, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiLearningTracks, apiGetProgress, apiSetLessonProgress, apiMe, apiMeCookie, apiGetSettingsProfile } from "@/lib/api";
@@ -549,28 +550,7 @@ export default function Learning() {
       <LoggedInHeader />
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
-          <nav className="p-4 space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active
-                      ? "text-[#bdeeff] border border-[#bdeeff]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${item.active ? "text-[#bdeeff]" : ""}`} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        <Sidebar />
 
         {/* Main Content */}
         <main className="flex-1 p-6 space-y-6 overflow-y-auto">

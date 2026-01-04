@@ -27,6 +27,7 @@ import {
   Play,
   Check,
 } from "lucide-react";
+import Sidebar from "@/components/Sidebar";
 import { Link, useNavigate } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import { useEffect, useMemo, useState } from "react";
@@ -252,26 +253,7 @@ export default function Library({ onAddTemplate }: LibraryProps) {
       <LoggedInHeader />
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-full overflow-y-auto">
-          <nav className="p-4 space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active ? "bg-brand-100 text-brand-700 border border-brand-200" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        <Sidebar />
 
         {/* Main */}
         <main className="flex-1 p-6 overflow-y-auto">
