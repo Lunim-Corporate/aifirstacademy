@@ -36,6 +36,7 @@ import {
   History,
   Bookmark
 } from "lucide-react";
+import Sidebar from "@/components/Sidebar";
 import React, {useMemo } from "react";
 import { Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
@@ -426,16 +427,7 @@ const filteredTemplates = useMemo(() => {
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-          <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
-            <nav className="p-4 space-y-2">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="flex items-center space-x-3 px-3 py-2 rounded-lg">
-                  <Skeleton className="h-4 w-4 rounded-full" />
-                  <Skeleton className="h-4 w-28" />
-                </div>
-              ))}
-            </nav>
-          </aside>
+          <Sidebar />
           <main className="flex-1 flex overflow-y-auto">
             <div className="flex-1 flex flex-col">
               <div className="border-b border-border/40 p-4">
@@ -478,49 +470,7 @@ const filteredTemplates = useMemo(() => {
       <LoggedInHeader />
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-muted/30 border-r border-border/40 h-full overflow-y-auto">
-          <nav className="p-4 space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active 
-                      ? "bg-brand-100 text-brand-700 border border-brand-200" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Templates */}
-          <div className="p-4 border-t border-border/40">
-            <h3 className="font-semibold mb-3">Quick Templates</h3>
-            <div className="space-y-2">
-              {filteredTemplates.map((template) => (
-                <Card
-                  key={template.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleTemplateSelect(template)}
-                >
-                  <CardContent className="p-3">
-                    <h4 className="font-medium text-sm">{template.title}</h4>
-                    <p className="text-xs text-muted-foreground">{template.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-
-
-            </div>
-          </div>
-        </aside>
+        <Sidebar />
 
         {/* Main Content */}
         <main className="flex-1 flex overflow-y-auto">
@@ -563,8 +513,8 @@ const filteredTemplates = useMemo(() => {
                 <div className="space-y-2">
                   <Label>Model</Label>
                   <Select value={selectedModel} onValueChange={setSelectedModel}>
-                    <SelectTrigger>
-                      <SelectValue />
+                    <SelectTrigger className="text-white [&>span]:text-white">
+                      <SelectValue placeholder="Select a model" className="text-white" />
                     </SelectTrigger>
                     <SelectContent>
                       {modelOptions.map((model) => (
@@ -606,7 +556,7 @@ const filteredTemplates = useMemo(() => {
                   <Button 
                     onClick={handleRunPrompt}
                     disabled={isLoading || !userPrompt.trim() || remainingRuns === 0}
-                    className="w-full bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700"
+                    className="w-full bg-[#bdeeff] hover:bg-[#bdeeff] text-black font-medium"
                   >
                     {isLoading ? (
                       <>
