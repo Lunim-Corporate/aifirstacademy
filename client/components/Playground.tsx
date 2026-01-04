@@ -187,8 +187,8 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
             <div className="space-y-2">
               <Label>Model</Label>
               <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className="text-white [&>span]:text-white">
+                  <SelectValue placeholder="Select a model" className="text-white" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableModels.map((model) => (
@@ -230,7 +230,7 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
               <Button 
                 onClick={handleRunPrompt}
                 disabled={isLoading || !userPrompt.trim()}
-                className="w-full bg-gradient-to-r from-primary-600 to-brand-600 hover:from-primary-700 hover:to-brand-700"
+                className="w-full bg-[#bdeeff] hover:bg-[#bdeeff] text-black font-medium"
               >
                 {isLoading ? (
                   <>
