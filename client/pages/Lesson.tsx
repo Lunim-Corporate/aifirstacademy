@@ -22,36 +22,127 @@ function isPreviewHost() {
   return false; // Preview mode disabled
 }
 
-// Minimal markdown to HTML converter for lesson content (headings, lists, code, inline code, bold)
+// Simple markdown to HTML converter for lesson content
 function mdToHtml(src: string): string {
   try {
-    const html = src
-      .split('\n')
-      .map(line => {
-        if (line.startsWith('### ')) return `<h3 class="text-xl font-semibold mt-6 mb-3">${line.slice(4)}</h3>`;
-        if (line.startsWith('## ')) return `<h2 class="text-2xl font-semibold mt-8 mb-4">${line.slice(3)}</h2>`;
-        if (line.startsWith('# ')) return `<h1 class="text-3xl font-bold mt-10 mb-6">${line.slice(2)}</h1>`;
-        if (line.trim().startsWith('- ')) return `<li class="mb-2">${line.trim().slice(2)}</li>`;
-        return line;
-      })
-      .join('\n')
+    // Process tables first (most complex)
+    let processed = src;
+    
+    // Simple table detection and conversion
+    const lines = processed.split('\n');
+    const result: string[] = [];
+    let i = 0;
+    
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      
+      // Check for table start (line with pipes)
+      if (line.startsWith('|') && line.endsWith('|')) {
+        const tableStart = i;
+        let tableEnd = i;
+        
+        // Find table bounds
+        while (tableEnd < lines.length) {
+          const currentLine = lines[tableEnd].trim();
+          if (currentLine.startsWith('|') && currentLine.endsWith('|')) {
+            tableEnd++;
+          } else {
+            break;
+          }
+        }
+        
+        // Check if it looks like a valid table (header + separator + data)
+        if (tableEnd - tableStart >= 2) {
+          const tableLines = lines.slice(tableStart, tableEnd);
+          let hasSeparator = false;
+          
+          // Check for separator row
+          for (const tableLine of tableLines) {
+            const trimmed = tableLine.trim();
+            if (trimmed.includes('|') && trimmed.includes('-') && trimmed.replace(/[|\-\s]/g, '').length === 0) {
+              hasSeparator = true;
+              break;
+            }
+          }
+          
+          if (hasSeparator) {
+            // Convert to HTML table
+            let tableHtml = '<table class="border-collapse border border-gray-300 my-4">';
+            let inHeader = true;
+            
+            for (const tableLine of tableLines) {
+              const trimmedLine = tableLine.trim();
+              
+              // Check if separator row
+              if (trimmedLine.includes('|') && trimmedLine.includes('-') && trimmedLine.replace(/[|\-\s]/g, '').length === 0) {
+                inHeader = false;
+                continue;
+              }
+              
+              // Extract cells
+              const cells = trimmedLine
+                .replace(/^\|/, '')
+                .replace(/\|$/, '')
+                .split('|')
+                .map(cell => cell.trim());
+              
+              if (inHeader) {
+                tableHtml += '<thead class="bg-gray-100"><tr>';
+                for (const cell of cells) {
+                  tableHtml += `<th class="border border-gray-300 px-4 py-2 font-semibold text-gray-900">${cell}</th>`;
+                }
+                tableHtml += '</tr></thead>';
+              } else {
+                if (!tableHtml.includes('<tbody>')) tableHtml += '<tbody>';
+                tableHtml += '<tr>';
+                for (const cell of cells) {
+                  tableHtml += `<td class="border border-gray-300 px-4 py-2">${cell}</td>`;
+                }
+                tableHtml += '</tr>';
+              }
+            }
+            
+            if (tableHtml.includes('<tbody>')) tableHtml += '</tbody>';
+            tableHtml += '</table>';
+            
+            result.push(tableHtml);
+            i = tableEnd;
+            continue;
+          }
+        }
+      }
+      
+      result.push(lines[i]);
+      i++;
+    }
+    
+    processed = result.join('\n');
+    
+    // Process remaining markdown elements
+    return processed
       // Code fences
-      .replace(/```([\w]*)?\n([[\\\\s\\\\S]*?S]*?)```/g, '<pre class="bg-muted rounded-lg p-4 overflow-x-auto my-4"><code class="text-sm">$2</code></pre>')
-      // Inline code
-      .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
+      .replace(/```([\w]*)?\n([\s\S]*?)```/g, '<pre class="bg-muted rounded-lg p-4 overflow-x-auto my-4"><code class="text-sm">$2</code></pre>')
+      // Headers
+      .replace(/^### (.*)$/gm, '<h3 class="text-xl font-semibold mt-6 mb-3">$1</h3>')
+      .replace(/^## (.*)$/gm, '<h2 class="text-2xl font-semibold mt-8 mb-4">$1</h2>')
+      .replace(/^# (.*)$/gm, '<h1 class="text-3xl font-bold mt-10 mb-6">$1</h1>')
       // Bold
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      // Paragraphs for plain lines that are not HTML blocks
-      .split('\n')
-      .map(l => (l.trim() && !l.startsWith('<') ? `<p class="mb-4">${l}</p>` : l))
-      .join('\n');
-    return html;
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Inline code
+      .replace(/`(.*?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>')
+      // Lists
+      .replace(/^\s*-\s+(.*)$/gm, '<li class="mb-2">$1</li>')
+      // Wrap consecutive list items
+      .replace(/(<li class="mb-2">.*<\/li>\s*)+/g, '<ul class="list-disc pl-5 mb-4">$&</ul>')
+      // Wrap remaining content in paragraphs
+      .replace(/^(?!\s*<[^>]+>)(.+)$/gm, '<p class="mb-4">$1</p>')
+      // Clean up empty paragraphs around HTML elements
+      .replace(/<p[^>]*>\s*(<[a-z][^>]*>.*<\/[^>]+>)\s*<\/p>/gi, '$1')
+      .replace(/<p[^>]*>\s*<\/p>/g, '');
   } catch {
     return src.replace(/\n/g, '<br>');
   }
 }
-
-
 
 function formatProgress(track: Track | null, current: { moduleId: string; lessonId: string }, userProgress: any[] = []) {
   const modules = track?.modules || [];
@@ -72,8 +163,9 @@ function formatProgress(track: Track | null, current: { moduleId: string; lesson
 
 function highlight(text: string, q: string) {
   if (!q) return text;
-  const parts = text.split(new RegExp(`(${q.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")})`, "ig"));
-  return parts.map((p, i) => (i % 2 === 1 ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-600/40 rounded px-0.5">{p}</mark> : <span key={i}>{p}</span>));
+  const escapedQuery = q.replace(/[-/\^$*+?.()|[\]{}]/g, "\\$&");
+  const regex = new RegExp(`(${escapedQuery})`, "ig");
+  return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-600/40 rounded px-0.5">$1</mark>');
 }
 
 function extractPromptFromContent(content: string): string {
@@ -507,6 +599,11 @@ export default function Lesson() {
   // Keyboard navigation
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Skip keyboard shortcuts if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) {
+        return;
+      }
+      
       if (e.key === "ArrowLeft") { e.preventDefault(); if (hasPrevLesson) goPrev(); }
       if (e.key === "ArrowRight") { e.preventDefault(); if (hasNextLesson) goNext(); }
       if (e.key === "/") { e.preventDefault(); searchInputRef.current?.focus(); }
@@ -901,16 +998,20 @@ export default function Lesson() {
 
   const transcriptText = (() => {
     if (!current) return "";
-    /* if (current.type === "video") {
-      return (
-        "00:00 Welcome to AI Engineering Basics.\n" +
-        "00:15 Today we will cover prompting, iteration, and evaluation.\n" +
-        "01:10 Prompt structure: role, task, constraints, examples.\n" +
-        "02:30 Tips for evaluation and dataset design.\n" +
-        "03:40 Summary and recommended readings."
-      );
-    } */
-    return (current.content || "");
+    
+    // For video lessons, we want to use content as additional material
+    if (current.type === "video") {
+      // Return content - this could be transcript, summary, or additional notes
+      // Clean up any problematic markdown that might cause layout issues
+      const cleanContent = (current.content || "")
+        .replace(/^\s*#+\s*/gm, '\n') // Remove leading markdown headers
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+        .replace(/`(.*?)`/g, '$1') // Remove inline code formatting
+        .trim();
+      return cleanContent;
+    }
+    
+    return ""; // Only show for video lessons
   })();
 
   if (loading) {
@@ -1018,15 +1119,135 @@ export default function Lesson() {
               </div>
             </div>
 
-            <Card>
-              <CardContent className="pt-6">{renderContent()}</CardContent>
-            </Card>
-
-            {/* Right-hand transcript/notes panel removed for simplified course view,
-                but the underlying functionality is preserved below for future use.
-
-            <Card>...Recommended next...</Card>
-            */}
+            <div className="flex gap-6 min-h-0">
+              <div className="flex-1 min-w-0 min-h-0">
+                <Card className="h-full">
+                  <CardContent className="pt-6 h-full">{renderContent()}</CardContent>
+                </Card>
+              </div>
+              
+              <div className="space-y-4 flex-shrink-0 min-h-0">
+                {/* Right-hand additional content panel for video lessons */}
+                {(current?.type === 'video') && (
+                  <Card className="w-80 flex-shrink-0">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Lesson Content</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mt-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Input
+                            placeholder="Search content..."
+                            value={transcriptQuery}
+                            onChange={(e) => setTranscriptQuery(e.target.value)}
+                            ref={searchInputRef}
+                            className="text-sm"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setTranscriptQuery("")}
+                            className="h-8"
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                        
+                        {transcriptQuery ? (
+                          <>
+                            <div className="text-xs text-muted-foreground mb-2">
+                              {transcriptText.split("\n").filter(line => line.toLowerCase().includes(transcriptQuery.toLowerCase())).length} result{transcriptText.split("\n").filter(line => line.toLowerCase().includes(transcriptQuery.toLowerCase())).length !== 1 ? 's' : ''}
+                            </div>
+                            <ScrollArea className="h-80 overflow-y-auto">
+                              <div className="text-sm">
+                                {transcriptText
+                                  .split("\n")
+                                  .filter(line => line.toLowerCase().includes(transcriptQuery.toLowerCase()))
+                                  .map((line, i) => (
+                                    <div 
+                                      key={i} 
+                                      className="py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0 break-words p-2 bg-muted/20 rounded"
+                                      dangerouslySetInnerHTML={{ 
+                                        __html: highlight(line, transcriptQuery) 
+                                      }} 
+                                    />
+                                  ))}
+                              </div>
+                            </ScrollArea>
+                          </>
+                        ) : (
+                          <ScrollArea className="h-80 overflow-y-auto">
+                            <div className="text-sm text-muted-foreground prose prose-sm max-w-none break-words">
+                              <div dangerouslySetInnerHTML={{ __html: mdToHtml(transcriptText) }} />
+                            </div>
+                          </ScrollArea>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* Notes panel - always visible */}
+                <Card className="w-80 flex-shrink-0">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Notes</CardTitle>
+                    <CardDescription>
+                      Personal notes for this lesson
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <Textarea
+                        placeholder="Add a note..."
+                        ref={noteInputRef}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            addNote((e.target as HTMLTextAreaElement).value);
+                          }
+                        }}
+                        className="text-sm min-h-[100px]"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const text = noteInputRef.current?.value.trim();
+                          if (text) addNote(text);
+                        }}
+                        className="w-full"
+                      >
+                        Add Note
+                      </Button>
+                      
+                      <div className="max-h-96 overflow-y-auto space-y-2">
+                        {notes.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No notes yet
+                          </p>
+                        ) : (
+                          notes.map((note) => (
+                            <div key={note.id} className="p-3 bg-muted/30 rounded-lg border text-sm relative group break-words">
+                              <p className="whitespace-pre-wrap break-words">{note.text}</p>
+                              <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+                                <span>{new Date(note.createdAt).toLocaleString()}</span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => removeNote(note.id)}
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                                >
+                                  <XCircle className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>
