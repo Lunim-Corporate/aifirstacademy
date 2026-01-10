@@ -84,7 +84,7 @@ export default function Index() {
                 <div className="flex items-center"><Check className="h-4 w-4 text-success mr-2" />Live LLM scoring</div>
               </div>
             </div>
-            <div className="relative transform rotate-6 translate-y-2 translate-x-2 scale-105">
+            <div className="relative transform rotate-4 translate-y-2 translate-x-2 scale-105">
               <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-primary-400/20 rounded-2xl blur-3xl" />
               <Card className="relative bg-background/80 backdrop-blur border-gray-200 dark:border-gray-700/50 shadow-2xl">
                 <CardHeader>

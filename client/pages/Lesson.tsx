@@ -16,6 +16,8 @@ import type { Track, TrackModule, TrackModuleLesson, LessonContent, LessonType }
 import { apiGetTrack, apiGetLesson, apiSetLessonProgress, apiGetProgress, apiMe, apiMeCookie } from "@/lib/api";
 import Playground from "@/components/Playground";
 import { toast } from "@/hooks/use-toast";
+import Sandbox from "./Sandbox";
+import SandboxPlayground from "./SandboxPlayground";
 
 
 function isPreviewHost() {
@@ -744,19 +746,6 @@ export default function Lesson() {
     // Unified lesson rendering for all types
     return (
         <div className="space-y-6">
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
-              variant="default"
-              onClick={() => setShowPlayground(!showPlayground)}
-              aria-label="Toggle Playground"
-            >
-              <Terminal className="h-4 w-4 mr-1" />
-              {showPlayground ? "Close Playground" : "Open Playground"}
-            </Button>
-          </div>
-
           {/* Render content based on lesson type */}
           {(() => {
             switch(current.type) {
@@ -804,6 +793,24 @@ export default function Lesson() {
                       <div className="space-y-4 mt-4">
                         <div className="border-l-4 border-brand-500 pl-4">
                           <h3 className="font-semibold mb-2">Lesson Overview</h3>
+                          <div className="flex items-center gap-4 mb-6">
+                          <Input
+                            placeholder="Search content..."
+                            value={transcriptQuery}
+                            onChange={(e) => setTranscriptQuery(e.target.value)}
+                            ref={searchInputRef}
+                            className="text-sm"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setTranscriptQuery("")}
+                            className="h-8"
+                          >
+                            Clear
+                          </Button>
+                          
+                        </div>
                           <div
                             className="prose prose-sm max-w-none"
                             dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }}
@@ -816,6 +823,8 @@ export default function Lesson() {
                       <kbd className="bg-muted px-1 rounded text-xs">/</kbd> to search transcript,{' '}
                       <kbd className="bg-muted px-1 rounded text-xs">N</kbd> to focus notes.
                     </p>
+                   {/* Sandbox */}
+               <SandboxPlayground />
                   </>
                 );
 
@@ -1127,66 +1136,6 @@ export default function Lesson() {
               </div>
               
               <div className="space-y-4 flex-shrink-0 min-h-0">
-                {/* Right-hand additional content panel for video lessons */}
-                {(current?.type === 'video') && (
-                  <Card className="w-80 flex-shrink-0">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Lesson Content</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mt-4">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Input
-                            placeholder="Search content..."
-                            value={transcriptQuery}
-                            onChange={(e) => setTranscriptQuery(e.target.value)}
-                            ref={searchInputRef}
-                            className="text-sm"
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setTranscriptQuery("")}
-                            className="h-8"
-                          >
-                            Clear
-                          </Button>
-                        </div>
-                        
-                        {transcriptQuery ? (
-                          <>
-                            <div className="text-xs text-muted-foreground mb-2">
-                              {transcriptText.split("\n").filter(line => line.toLowerCase().includes(transcriptQuery.toLowerCase())).length} result{transcriptText.split("\n").filter(line => line.toLowerCase().includes(transcriptQuery.toLowerCase())).length !== 1 ? 's' : ''}
-                            </div>
-                            <ScrollArea className="h-80 overflow-y-auto">
-                              <div className="text-sm">
-                                {transcriptText
-                                  .split("\n")
-                                  .filter(line => line.toLowerCase().includes(transcriptQuery.toLowerCase()))
-                                  .map((line, i) => (
-                                    <div 
-                                      key={i} 
-                                      className="py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0 break-words p-2 bg-muted/20 rounded"
-                                      dangerouslySetInnerHTML={{ 
-                                        __html: highlight(line, transcriptQuery) 
-                                      }} 
-                                    />
-                                  ))}
-                              </div>
-                            </ScrollArea>
-                          </>
-                        ) : (
-                          <ScrollArea className="h-80 overflow-y-auto">
-                            <div className="text-sm text-muted-foreground prose prose-sm max-w-none break-words">
-                              <div dangerouslySetInnerHTML={{ __html: mdToHtml(transcriptText) }} />
-                            </div>
-                          </ScrollArea>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                
                 {/* Notes panel - always visible */}
                 <Card className="w-80 flex-shrink-0">
                   <CardHeader>
