@@ -554,6 +554,23 @@ export default function Learning() {
 
         {/* Main Content */}
         <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+          {/* Welcome back section - show when just signed in */}
+          {(() => {
+            const justSignedIn = sessionStorage.getItem('just_signed_in') === 'true';
+            if (justSignedIn) {
+              sessionStorage.removeItem('just_signed_in'); // Clear flag after showing
+              const displayName = user?.name?.split(" ")[0] || user?.email?.split("@")[0] || "there";
+              const hasProgress = completedLessons > 0;
+              return (
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold">{hasProgress ? `Welcome back, ${displayName}!` : `Hello ${displayName}!`}</h1>
+                  <p className="text-muted-foreground">{hasProgress ? "Continue your AI mastery journey" : "Begin your AI mastery journey"}</p>
+                </div>
+              );
+            }
+            return null;
+          })()}
+          
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>

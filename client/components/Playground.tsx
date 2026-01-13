@@ -99,14 +99,20 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
     const loadModels = async () => {
       try {
         const { models } = await sandboxApi.getModels();
-        setAvailableModels(models);
-        if (models.length > 0 && !selectedModel) {
+        setAvailableModels(models.length > 0 ? models : modelOptions);
+        // Default to first available model
+        if (models.length > 0) {
           setSelectedModel(models[0].id);
+        } else if (modelOptions.length > 0) {
+          setSelectedModel(modelOptions[0].id);
         }
       } catch (error) {
         console.error('Failed to load models:', error);
         // Fallback to default models
         setAvailableModels(modelOptions);
+        if (modelOptions.length > 0) {
+          setSelectedModel(modelOptions[0].id);
+        }
       }
     };
     loadModels();
@@ -130,6 +136,18 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
       });
       console.log("Playground API response:", res);
 
+      // Calculate overall effectiveness score as mean of sub-scores (not sum)
+      const clarity = res.feedback?.clarity ?? 0;
+      const context = res.feedback?.context ?? 0;
+      const constraints = res.feedback?.constraints ?? 0;
+      const effectiveness = res.feedback?.effectiveness ?? 0;
+      
+      // Calculate mean of sub-scores
+      const subScores = [clarity, context, constraints, effectiveness].filter(s => s > 0);
+      const overallScore = subScores.length > 0 
+        ? Math.round(subScores.reduce((sum, s) => sum + s, 0) / subScores.length)
+        : (res.feedback?.score ?? 0);
+
       // Create execution object
       const newExecution: PromptExecution = {
         id: res.id || "unknown-id",
@@ -140,12 +158,12 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
         response: res.content || "",
         tokens: res.tokens?.total || 0,
         cost: res.cost || 0,
-        score: res.feedback?.score ?? 0,
+        score: overallScore,
         feedback: {
-          clarity: res.feedback?.clarity ?? 0,
-          context: 0,
-          constraints: res.feedback?.constraints ?? 0,
-          effectiveness: 0,
+          clarity: clarity,
+          context: context,
+          constraints: constraints,
+          effectiveness: effectiveness,
           suggestions: res.feedback?.notes ? [res.feedback.notes] : ["No suggestions returned"],
         },
       };
@@ -153,7 +171,7 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
       // Update UI
       setCurrentExecution(newExecution);
       setTotalCost(res.cost || 0);
-      setPromptOptimizationScore(newExecution.score);
+      setPromptOptimizationScore(overallScore);
 
     } catch (err: any) {
       console.error(err);
@@ -261,7 +279,8 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4">
               <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
-                <div className="space-y-2">
+                {/* System Message - Commented out (not saveable, so removed per requirements) */}
+                {/* <div className="space-y-2">
                   <Label>System Message</Label>
                   <Textarea
                     value={systemMessage}
@@ -269,7 +288,7 @@ export default function Playground({ initialPrompt = "", onClose }: PlaygroundPr
                     placeholder="Set the AI's role and behavior..."
                     className="min-h-[100px]"
                   />
-                </div>
+                </div> */}
                 
                 {/* Prompt Optimization Score */}
                 {promptOptimizationScore > 0 && (

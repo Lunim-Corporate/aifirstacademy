@@ -34,9 +34,10 @@ export default function MarketingFooter() {
             </div>
           </div>
           <div>
-            <h3 className="font-semibold mb-4">Resources</h3>
+           {/* <h3 className="font-semibold mb-4">Resources</h3> */}
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><SafeLink to="/faq" className="hover:text-foreground transition-colors">FAQ</SafeLink></li>
+              {/* FAQ link removed */}
+              {/* <li><SafeLink to="/faq" className="hover:text-foreground transition-colors">FAQ</SafeLink></li> */}
             </ul>
           </div>
           <div>

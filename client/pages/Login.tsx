@@ -155,7 +155,8 @@ export default function Login() {
       }
       
       window.dispatchEvent(new Event('auth-changed'));
-      navigate("/dashboard");
+      sessionStorage.setItem("just_signed_in", "true");
+      navigate("/learning");
     } catch (e: any) {
       alert(e?.message || "SSO sign-in failed");
     }

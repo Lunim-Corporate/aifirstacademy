@@ -104,8 +104,8 @@ export default function FAQ() {
         </div>
       </section>
 
-      {/* Featured cards */}
-      <section className="py-10">
+      {/* Featured cards - Commented out */}
+      {/* <section className="py-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-3 gap-6">
           {categories.slice(0,3).map((c,i)=> (
             <motion.div key={c.title} initial={{opacity:0, y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.05}}>
@@ -121,7 +121,7 @@ export default function FAQ() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* All FAQs */}
       <section className="py-10">

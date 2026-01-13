@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { copyText } from "@/lib/utils";
 import { Check, Play, BookOpen, Video, FileText, Code, ChevronLeft, ChevronRight, Search, PlusCircle, Trash2, Award, Target, HelpCircle, Lock, Terminal, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import type { Track, TrackModule, TrackModuleLesson, LessonContent, LessonType } from "@shared/api";
@@ -441,6 +442,24 @@ export default function Lesson() {
     return checkLessonLocked(track, moduleId, lessonId, userProgress, trackId);
   }, [track, moduleId, lessonId, userProgress, trackId]);
 
+  // Check if next lesson is locked
+  const nextLessonLocked = useMemo(() => {
+    const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
+    if (!nextLesson) return false;
+    return checkLessonLocked(track, nextLesson.moduleId, nextLesson.lessonId, userProgress, trackId);
+  }, [lesson, track, moduleId, lessonId, userProgress, trackId]);
+
+  // Check if prev lesson exists and is accessible
+  const hasPrevLesson = useMemo(() => {
+    return !!(lesson?.prev || findPrevLesson(track, moduleId, lessonId));
+  }, [lesson, track, moduleId, lessonId]);
+
+  // Check if next lesson exists and is accessible
+  const hasNextLesson = useMemo(() => {
+    const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
+    return !!nextLesson && !nextLessonLocked;
+  }, [lesson, track, moduleId, lessonId, nextLessonLocked]);
+
   // Update lesson status to in_progress when lesson loads (if not locked)
   useEffect(() => {
     if (track && moduleId && lessonId && !lessonLocked && userProgress && trackId) {
@@ -480,14 +499,14 @@ export default function Lesson() {
 
   // Compute if there is a previous lesson
   // Compute if there is a previous lesson
-  const hasPrevLesson = useMemo(() => {
+  {/* const hasPrevLesson = useMemo(() => {
     return !!lesson?.prev || !!findPrevLesson(track, moduleId, lessonId);
-  }, [lesson, track, moduleId, lessonId]);
+  }, [lesson, track, moduleId, lessonId]); 
 
   // Compute if there is a next lesson
   const hasNextLesson = useMemo(() => {
     return !!lesson?.next || !!findNextLesson(track, moduleId, lessonId);
-  }, [lesson, track, moduleId, lessonId]);
+  }, [lesson, track, moduleId, lessonId]); */}
 
   // Helper function to handle API calls for marking lesson complete
   const markLessonCompleteApi = async () => {
@@ -627,10 +646,21 @@ export default function Lesson() {
   // Compute next lesson navigation
   const goNext = () => {
     const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
-    if (nextLesson && !navigating) {
-      setNavigating(true);
-      navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+    if (!nextLesson || navigating) return;
+    
+    // Check if next lesson is locked
+    const isLocked = checkLessonLocked(track, nextLesson.moduleId, nextLesson.lessonId, userProgress, trackId);
+    if (isLocked) {
+      toast({
+        title: "Lesson Locked",
+        description: "Please complete the previous lesson before accessing this one.",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    setNavigating(true);
+    navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
   };
 
 
@@ -811,10 +841,39 @@ export default function Lesson() {
                           </Button>
                           
                         </div>
-                          <div
-                            className="prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }}
-                          />
+                          {(() => {
+                            const contentHtml = mdToHtml(current.content);
+                            if (!transcriptQuery.trim()) {
+                              return (
+                                <div
+                                  className="prose prose-sm max-w-none"
+                                  dangerouslySetInnerHTML={{ __html: contentHtml }}
+                                />
+                              );
+                            }
+                            // Filter content by search query
+                            const query = transcriptQuery.toLowerCase();
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = contentHtml;
+                            const textContent = tempDiv.textContent || '';
+                            if (textContent.toLowerCase().includes(query)) {
+                              // Highlight matching text
+                              const regex = new RegExp(`(${transcriptQuery})`, 'gi');
+                              const highlighted = contentHtml.replace(regex, '<mark>$1</mark>');
+                              return (
+                                <div
+                                  className="prose prose-sm max-w-none"
+                                  dangerouslySetInnerHTML={{ __html: highlighted }}
+                                />
+                              );
+                            } else {
+                              return (
+                                <div className="text-sm text-muted-foreground">
+                                  No results found for "{transcriptQuery}"
+                                </div>
+                              );
+                            }
+                          })()}
                         </div>
                       </div>
                     )}
@@ -1085,26 +1144,53 @@ export default function Lesson() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={goPrev}
-                  disabled={!lesson?.prev && !findPrevLesson(track, moduleId, lessonId) || navigating}
-                  aria-label="Previous lesson"
-                  className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1 text-white" />
-                  Prev
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={goNext}
-                  disabled={!lesson?.next && !findNextLesson(track, moduleId, lessonId) || navigating}
-                  aria-label="Next lesson"
-                  className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1 text-white" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          onClick={goPrev}
+                          disabled={!hasPrevLesson || navigating}
+                          aria-label="Previous lesson"
+                          className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1 text-white" />
+                          Prev
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!hasPrevLesson && (
+                      <TooltipContent>
+                        <p>No previous lesson available</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          onClick={goNext}
+                          disabled={!hasNextLesson || navigating}
+                          aria-label="Next lesson"
+                          className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4 ml-1 text-white" />
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!hasNextLesson && (
+                      <TooltipContent>
+                        <p>{nextLessonLocked ? "Please complete the current lesson first" : "No next lesson available"}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
 
                 <Button
                   onClick={markComplete}

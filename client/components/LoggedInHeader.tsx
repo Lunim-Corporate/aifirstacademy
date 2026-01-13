@@ -63,7 +63,7 @@ export default function LoggedInHeader() {
   return (
     <header className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-6">
-        <Link to="/dashboard" className="flex items-center space-x-4">
+        <Link to="/" className="flex items-center space-x-4">
           <BrainCircuit className="h-8 w-8 text-primary-600" />
           <span className="text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
         </Link>

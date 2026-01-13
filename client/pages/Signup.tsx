@@ -75,7 +75,8 @@ export default function Signup() {
     // If already authenticated (e.g., via SSO), just proceed
     const existing = localStorage.getItem("auth_token");
     if (existing) {
-      navigate("/dashboard");
+      sessionStorage.setItem("just_signed_in", "true");
+      navigate("/learning");
       return;
     }
     
@@ -112,7 +113,8 @@ export default function Signup() {
       const { token } = await apiOAuthMock(provider, email, name);
       localStorage.setItem("auth_token", token);
       window.dispatchEvent(new Event('auth-changed'));
-      navigate("/dashboard");
+      sessionStorage.setItem("just_signed_in", "true");
+      navigate("/learning");
     } catch (e: any) {
       alert(e?.message || "SSO sign-up failed");
     }

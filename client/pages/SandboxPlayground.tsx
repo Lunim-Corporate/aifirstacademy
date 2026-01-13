@@ -61,10 +61,10 @@ const promptTemplates = [
 
 
 const modelOptions = [
-  { id: "gpt-4", name: "GPT-4", cost: "$0.03/1K tokens", speed: "Moderate" },
-  { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", cost: "$0.002/1K tokens", speed: "Fast" },
-  { id: "claude-3", name: "Claude 3 Sonnet", cost: "$0.015/1K tokens", speed: "Moderate" },
-  { id: "llama-2", name: "Llama 2 70B", cost: "$0.001/1K tokens", speed: "Fast" },
+  { id: "GPT-4", name: "GPT-4", cost: "$0.03/1K tokens", speed: "Moderate" },
+  // { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", cost: "$0.002/1K tokens", speed: "Fast" },
+  // { id: "claude-3", name: "Claude 3 Sonnet", cost: "$0.015/1K tokens", speed: "Moderate" },
+  // { id: "llama-2", name: "Llama 2 70B", cost: "$0.001/1K tokens", speed: "Fast" },
 ];
 
 interface PromptExecution {
@@ -126,7 +126,6 @@ export default function SandboxPlayground() {
     useEffect(() => { const t = setTimeout(() => setBootLoading(false), 700); return () => clearTimeout(t); }, []);
     const [systemMessage, setSystemMessage] = useState("You are a helpful AI assistant specialized in software development. Provide clear, practical advice with code examples when relevant.");
     const [userPrompt, setUserPrompt] = useState("");
-    const [selectedModel, setSelectedModel] = useState("gpt-4");
     const [temperature, setTemperature] = useState(0.7);
     const [maxTokens, setMaxTokens] = useState(1000);
     const [isLoading, setIsLoading] = useState(false);
@@ -144,7 +143,7 @@ export default function SandboxPlayground() {
     // Enhanced multi-model states
     const [availableModels, setAvailableModels] = useState<any[]>([]);
     const [compareMode, setCompareMode] = useState(false);
-    const [selectedModels, setSelectedModels] = useState<string[]>(["gpt-4"]);
+    const selectedModel = "GPT-4";
     const [comparisonResults, setComparisonResults] = useState<any[]>([]);
     const [totalCost, setTotalCost] = useState(0);
     const [promptOptimizationScore, setPromptOptimizationScore] = useState(0);
@@ -164,23 +163,31 @@ export default function SandboxPlayground() {
     }, []);
   
     // Load available AI models
-    useEffect(() => {
+    {/* useEffect(() => {
       const loadModels = async () => {
         try {
           const { models } = await sandboxApi.getModels();
-          setAvailableModels(models);
-          if (models.length > 0 && !selectedModels.includes(models[0].id)) {
-            setSelectedModels([models[0].id]);
+          setAvailableModels(models.length > 0 ? models : modelOptions);
+          // Default to first available model
+          if (models.length > 0) {
+            if (!selectedModels.includes(models[0].id)) {
+              setSelectedModels([models[0].id]);
+            }
             setSelectedModel(models[0].id);
+          } else if (modelOptions.length > 0) {
+            setSelectedModel(modelOptions[0].id);
           }
         } catch (error) {
           console.error('Failed to load models:', error);
           // Fallback to default models
           setAvailableModels(modelOptions);
+          if (modelOptions.length > 0) {
+            setSelectedModel(modelOptions[0].id);
+          }
         }
       };
       loadModels();
-    }, []);
+    }, []); */}
   
     useEffect(() => {
     const fetchRemainingRuns = async () => {
@@ -230,25 +237,27 @@ export default function SandboxPlayground() {
     setIsLoading(true);
   
     try {
-      if (compareMode && selectedModels.length > 1) {
-        // ----------------- 🧠 Multi-model comparison -----------------
-        const comparisonResult = await sandboxApi.comparePrompt({
-          prompt: userPrompt.trim(),
-          models: selectedModels,
-        });
-  
-        setComparisonResults(comparisonResult.responses);
-        setTotalCost(comparisonResult.comparison?.totalCost || 0);
-  
-        // Calculate prompt optimization score
-        const avgScore =
-          comparisonResult.responses.reduce(
-            (sum, r) => sum + (r.feedback?.score || 75),
-            0
-          ) / comparisonResult.responses.length;
-        setPromptOptimizationScore(Math.round(avgScore));
-  
-      } else {
+      // Multi-model comparison - Commented out (too advanced for target audience)
+      // if (compareMode && selectedModels.length > 1) {
+      //   // ----------------- 🧠 Multi-model comparison -----------------
+      //   const comparisonResult = await sandboxApi.comparePrompt({
+      //     prompt: userPrompt.trim(),
+      //     models: selectedModels,
+      //   });
+      //
+      //   setComparisonResults(comparisonResult.responses);
+      //   setTotalCost(comparisonResult.comparison?.totalCost || 0);
+      //
+      //   // Calculate prompt optimization score
+      //   const avgScore =
+      //     comparisonResult.responses.reduce(
+      //       (sum, r) => sum + (r.feedback?.score || 75),
+      //       0
+      //     ) / comparisonResult.responses.length;
+      //   setPromptOptimizationScore(Math.round(avgScore));
+      //
+      // } else {
+      {
         // ----------------- 1️⃣ Run the prompt normally -----------------
         const res: AIResponse = await apiSandboxRun({
           prompt: userPrompt,
@@ -291,6 +300,22 @@ export default function SandboxPlayground() {
         }
   
         // ----------------- 3️⃣ Merge evaluation into execution -----------------
+        // Calculate sub-scores
+        const clarity = evalData.categories?.clarity ?? 0;
+        const context = evalData.categories?.context ?? 0;
+        const constraints = evalData.categories?.constraints ?? 0;
+        const effectiveness = evalData.categories?.effectiveness ??
+          Math.round(
+            ((evalData.categories?.clarity ?? 0) +
+              (evalData.categories?.context ?? 0)) / 2
+          );
+        
+        // Calculate overall score as mean of sub-scores (not sum)
+        const subScores = [clarity, context, constraints, effectiveness].filter(s => s > 0);
+        const overallScore = subScores.length > 0 
+          ? Math.round(subScores.reduce((sum, s) => sum + s, 0) / subScores.length)
+          : (evalData.score ?? res.feedback?.score ?? 0);
+        
         const newExecution: PromptExecution = {
           id: res.id || "unknown-id",
           timestamp: res?.timings?.end ? new Date(res.timings.end) : new Date(),
@@ -300,17 +325,12 @@ export default function SandboxPlayground() {
           response: evalData.optimizedPrompt || userPrompt,
           tokens: res.tokens?.total || 0,
           cost: res.cost || 0,
-          score: evalData.score ?? res.feedback?.score ?? 0,
+          score: overallScore,
           feedback: {
-            clarity: evalData.categories?.clarity ?? 0,
-            context: evalData.categories?.context ?? 0,
-            constraints: evalData.categories?.constraints ?? 0,
-            effectiveness:
-              evalData.categories?.effectiveness ??
-              Math.round(
-                ((evalData.categories?.clarity ?? 0) +
-                  (evalData.categories?.context ?? 0)) / 2
-              ),
+            clarity: clarity,
+            context: context,
+            constraints: constraints,
+            effectiveness: effectiveness,
             suggestions:
               Array.isArray(evalData.suggestions) && evalData.suggestions.length > 0
                 ? Array.from(
@@ -321,12 +341,12 @@ export default function SandboxPlayground() {
                 : ["No suggestions returned"],
           },
         };
-  
+
         // ----------------- 4️⃣ Update UI -----------------
         setCurrentExecution(newExecution);
         setExecutions((prev) => [newExecution, ...prev]);
         setTotalCost(res.cost || 0);
-        setPromptOptimizationScore(newExecution.score);
+        setPromptOptimizationScore(overallScore);
       }
   
     } catch (err: any) {
@@ -355,7 +375,8 @@ export default function SandboxPlayground() {
                <div className="border-b border-border/40 p-4">
                  <div className="flex items-center justify-between mb-4">
                    <h1 className="text-2xl font-bold">Prompt Sandbox</h1>
-                   <div className="flex items-center space-x-2">
+                   {/* History, Save, Share buttons - Commented out (dead links) */}
+                   {/* <div className="flex items-center space-x-2">
                      <Button
                        variant="outline"
                        size="sm"
@@ -380,170 +401,100 @@ export default function SandboxPlayground() {
                        <Share className="h-4 w-4 mr-2 text-white" />
                        Share
                      </Button>
-                   </div>
+                   </div> */}
                  </div>
    
                  {/* Model Settings */}
-                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                   <div className="space-y-2">
-                     <Label>Model</Label>
-                     <Select value={selectedModel} onValueChange={setSelectedModel}>
-                       <SelectTrigger className="text-white [&>span]:text-white">
-                         <SelectValue placeholder="Select a model" className="text-white" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         {modelOptions.map((model) => (
-                           <SelectItem key={model.id} value={model.id}>
-                             <div>
-                               <div className="font-medium">{model.name}</div>
-                               <div className="text-xs text-muted-foreground">{model.cost}</div>
-                             </div>
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
-                     </Select>
-                   </div>
-                   
-                   {/* <div className="space-y-2">
-                     <Label>Temperature: {temperature}</Label>
-                     <Slider
-                       value={[temperature]}
-                       onValueChange={(value) => setTemperature(value[0])}
-                       max={1}
-                       min={0}
-                       step={0.1}
-                       className="w-full"
-                     />
-                   </div>
-                  
-                   <div className="space-y-2">
-                     <Label>Max Tokens</Label>
-                     <Input
-                       type="number"
-                       value={maxTokens}
-                       onChange={(e) => setMaxTokens(Number(e.target.value))}
-                       min={1}
-                       max={4000}
-                     />
-                   </div>  */}
-   
-                 </div>
+              {/* Model Settings */}
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+  <div className="space-y-2">
+    <Label>Model</Label>
+
+    <div className="p-3 border rounded-md bg-muted/40 text-white">
+      <div className="font-medium">GPT-4</div>
+      <div className="text-xs text-muted-foreground">$0.03 / 1K tokens</div>
+    </div>
+  </div>
+</div>
+
    
                  {/* Advanced Settings */}
-                 <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-                   <CollapsibleTrigger asChild>
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       className="bg-black text-white border-white hover:bg-black hover:text-white"
-                     >
-                       {showAdvanced ? (
-                         <ChevronUp className="h-4 w-4 mr-2 text-white" />
-                       ) : (
-                         <ChevronDown className="h-4 w-4 text-white" />
-                       )}
-                       Advanced Settings
-                     </Button>
-                   </CollapsibleTrigger>
-                   <CollapsibleContent className="mt-4">
-                     <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
-                       <div className="space-y-2">
-                         <Label>System Message</Label>
-                         <Textarea
-                           value={systemMessage}
-                           onChange={(e) => setSystemMessage(e.target.value)}
-                           placeholder="Set the AI's role and behavior..."
-                           className="min-h-[100px]"
-                         />
-                       </div>
-                       
-                       {/* Multi-model Comparison Toggle */}
-                       <div className="flex items-center justify-between p-3 border rounded-lg">
-                         <div>
-                           <div className="font-medium">Multi-Model Comparison</div>
-                           <div className="text-sm text-muted-foreground">
-                             Compare responses across different AI models
-                           </div>
-                         </div>
-                         <Button
-                           size="sm"
-                           onClick={() => setCompareMode(!compareMode)}
-                           className={
-                             compareMode
-                               ? "bg-[#BBFEFF] text-black hover:bg-[#BBFEFF]"
-                               : "bg-black text-white border-white hover:bg-black hover:text-white"
-                           }
-                           variant={compareMode ? "default" : "outline"}
-                         >
-                           {compareMode ? "Enabled" : "Enable"}
-                         </Button>
-                       </div>
-                       
-                       {/* Model Selection for Comparison */}
-                       {compareMode && (
-                         <div className="space-y-3">
-                           <Label>Select Models to Compare</Label>
-                           <div className="grid grid-cols-2 gap-2">
-                             {availableModels.map((model) => (
-                               <div key={model.id} className="flex items-center space-x-2">
-                                 <input
-                                   type="checkbox"
-                                   id={`model-${model.id}`}
-                                   checked={selectedModels.includes(model.id)}
-                                   onChange={(e) => {
-                                     if (e.target.checked) {
-                                       setSelectedModels(prev => [...prev, model.id]);
-                                     } else {
-                                       setSelectedModels(prev => prev.filter(id => id !== model.id));
-                                     }
-                                   }}
-                                   className="rounded border-border"
-                                 />
-                                 <label htmlFor={`model-${model.id}`} className="text-sm cursor-pointer">
-                                   {model.name}
-                                   <div className="text-xs text-muted-foreground">
-                                     {model.cost || `$${model.costPer1kTokens?.input || 0}/1K tokens`}
-                                   </div>
-                                 </label>
-                               </div>
-                             ))}
-                           </div>
-                           
-                           {/* Cost Estimation */}
-                           {selectedModels.length > 1 && (
-                             <div className="p-3 bg-muted/50 rounded-lg">
-                               <div className="text-sm">
-                                 <span className="font-medium">Estimated Cost:</span>
-                                 <span className="ml-2 text-brand-600">
-                                   ${(selectedModels.length * 0.015).toFixed(4)} for ~1K tokens
-                                 </span>
-                               </div>
-                               <div className="text-xs text-muted-foreground mt-1">
-                                 {selectedModels.length} models selected • Varies by actual usage
-                               </div>
-                             </div>
-                           )}
-                         </div>
-                       )}
-                       
-                       {/* Prompt Optimization Score */}
-                       {promptOptimizationScore > 0 && (
-                         <div className="space-y-2">
-                           <Label>Prompt Quality Score</Label>
-                           <div className="flex items-center space-x-3">
-                             <Progress value={promptOptimizationScore} className="flex-1" />
-                             <Badge variant={promptOptimizationScore >= 80 ? "default" : "outline"}>
-                               {promptOptimizationScore}/100
-                             </Badge>
-                           </div>
-                           <div className="text-xs text-muted-foreground">
-                             Based on clarity, specificity, and expected effectiveness
-                           </div>
-                         </div>
-                       )}
-                     </div>
-                   </CollapsibleContent>
-                 </Collapsible>
+                <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+  {/* <CollapsibleTrigger asChild>
+    <Button
+      variant="outline"
+      size="sm"
+      className="bg-black text-white border-white hover:bg-black hover:text-white"
+    >
+      {showAdvanced ? (
+        <ChevronUp className="h-4 w-4 mr-2 text-white" />
+      ) : (
+        <ChevronDown className="h-4 w-4 mr-2 text-white" />
+      )}
+      Advanced Settings
+    </Button>
+  </CollapsibleTrigger> */}
+
+  <CollapsibleContent className="mt-4">
+    <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
+
+      {/* System Message (disabled – not saveable) */}
+      {/*
+      <div className="space-y-2">
+        <Label>System Message</Label>
+        <Textarea
+          value={systemMessage}
+          onChange={(e) => setSystemMessage(e.target.value)}
+          placeholder="Set the AI's role and behavior..."
+          className="min-h-[100px]"
+        />
+      </div>
+      */}
+
+      {/* Multi-model Comparison (disabled – too advanced) */}
+      {/*
+      <div className="flex items-center justify-between p-3 border rounded-lg">
+        <div>
+          <div className="font-medium">Multi-Model Comparison</div>
+          <div className="text-sm text-muted-foreground">
+            Compare responses across different AI models
+          </div>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => setCompareMode(!compareMode)}
+          className={
+            compareMode
+              ? "bg-[#BBFEFF] text-black hover:bg-[#BBFEFF]"
+              : "bg-black text-white border-white hover:bg-black hover:text-white"
+          }
+          variant={compareMode ? "default" : "outline"}
+        >
+          {compareMode ? "Enabled" : "Enable"}
+        </Button>
+      </div>
+      */}
+
+      {/* Prompt Optimization Score */}
+      {promptOptimizationScore > 0 && (
+        <div className="space-y-2">
+          <Label>Prompt Quality Score</Label>
+          <div className="flex items-center space-x-3">
+            <Progress value={promptOptimizationScore} className="flex-1" />
+            <Badge variant={promptOptimizationScore >= 80 ? "default" : "outline"}>
+              {promptOptimizationScore}/100
+            </Badge>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Based on clarity, specificity, and expected effectiveness
+          </div>
+        </div>
+      )}
+
+    </div>
+  </CollapsibleContent>
+</Collapsible>
+
                </div>
                  {selectedTemplate?.variables.map((variable) => (
                    <div key={variable} className="mb-2">
@@ -574,7 +525,7 @@ export default function SandboxPlayground() {
                    <Textarea
                      value={userPrompt}
                      onChange={(e) => setUserPrompt(e.target.value)}
-                     placeholder="Enter your prompt here... Try asking the AI to help with code, explain concepts, or solve problems."
+                     placeholder="Enter your prompt here and check your prompt score after running it."
                      className="min-h-[500px] font-mono"
                    />
                  </div>
@@ -606,37 +557,14 @@ export default function SandboxPlayground() {
    
              {/* Results Panel */}
              <div className="flex-[2] border-l border-border/40 flex flex-col">
-               {(currentExecution || comparisonResults.length > 0) ? (
+               {currentExecution ? (
                  <div className="flex-1 flex flex-col">
                    {/* Header with stats */}
                    <div className="border-b border-border/40 p-4">
                      <div className="flex items-center justify-between mb-4">
-                       <h2 className="font-semibold">
-                         {comparisonResults.length > 1 ? "Model Comparison" : "Results"}
-                       </h2>
+                       <h2 className="font-semibold">Results</h2>
                        <div className="flex items-center space-x-2">
-                         {comparisonResults.length > 1 ? (
-                           <>
-                             <Badge variant="outline">
-                               <Target className="h-3 w-3 mr-1" />
-                               {comparisonResults.length} models
-                             </Badge>
-                             <Badge variant="outline">
-                               <DollarSign className="h-3 w-3 mr-1" />
-                               ${totalCost.toFixed(4)}
-                             </Badge>
-                             {promptOptimizationScore > 0 && (
-                               <Badge className={`${
-                                 promptOptimizationScore >= 80 ? "bg-success" :
-                                 promptOptimizationScore >= 60 ? "bg-warning" :
-                                 "bg-destructive"
-                               } text-white`}>
-                                 <Star className="h-3 w-3 mr-1" />
-                                 {promptOptimizationScore}/100
-                               </Badge>
-                             )}
-                           </>
-                         ) : currentExecution ? (
+                         {currentExecution ? (
                            <>
                              <Badge variant="outline">
                                <Clock className="h-3 w-3 mr-1" />
@@ -663,83 +591,12 @@ export default function SandboxPlayground() {
                    {/* Results Content */}
                    <ScrollArea className="flex-1 p-4">
                      <div className="space-y-4">
-                       {comparisonResults.length > 1 ? (
-                         // Multi-model comparison view
-                         <>
-                           {comparisonResults.map((result, index) => (
-                             <Card key={result.id || index} className="border-l-4 border-l-brand-500">
-                               <CardHeader>
-                                 <div className="flex items-center justify-between">
-                                   <CardTitle className="text-base flex items-center">
-                                     <Badge variant="secondary" className="mr-2">
-                                       {result.model}
-                                     </Badge>
-                                     {result.error ? (
-                                       <Badge variant="destructive">Error</Badge>
-                                     ) : (
-                                       <Badge variant="outline">
-                                         {result.responseTime}ms
-                                       </Badge>
-                                     )}
-                                   </CardTitle>
-                                   <div className="flex items-center space-x-2">
-                                     {result.tokens && (
-                                       <Badge variant="outline" className="px-2 py-1 text-sm">
-                                         {result.tokens} tokens
-                                       </Badge>
-                                     )}
-                                     {result.cost && (
-                                       <Badge variant="outline" className="px-2 py-1 text-sm">
-                                         ${result.cost.toFixed(4)}
-                                       </Badge>
-                                     )}
-                                   </div>
-                                 </div>
-                               </CardHeader>
-                               <CardContent>
-                                 {result.error ? (
-                                   <div className="text-destructive text-sm">
-                                     <AlertTriangle className="h-4 w-4 inline mr-2" />
-                                     {result.error}
-                                   </div>
-                                 ) : (
-                                   <pre className="whitespace-pre-wrap text-sm max-h-64 overflow-y-auto">
-                                     {result.content}
-                                   </pre>
-                                 )}
-                               </CardContent>
-                             </Card>
-                           ))}
-                           
-                           {/* Comparison Summary */}
-                           <Card className="bg-muted/30">
-                             <CardHeader>
-                               <CardTitle className="text-base">Comparison Summary</CardTitle>
-                             </CardHeader>
-                             <CardContent>
-                               <div className="grid grid-cols-3 gap-4 text-sm">
-                                 <div>
-                                   <span className="font-medium">Best Response Time:</span>
-                                   <div className="text-brand-600">
-                                     {Math.min(...comparisonResults.map(r => r.responseTime || 0))}ms
-                                   </div>
-                                 </div>
-                                 <div>
-                                   <span className="font-medium">Total Cost:</span>
-                                   <div className="text-brand-600">${totalCost.toFixed(4)}</div>
-                                 </div>
-                                 <div>
-                                   <span className="font-medium">Success Rate:</span>
-                                   <div className="text-brand-600">
-                                     {Math.round((comparisonResults.filter(r => !r.error).length / comparisonResults.length) * 100)}%
-                                   </div>
-                                 </div>
-                               </div>
-                             </CardContent>
-                           </Card>
-                         </>
-                       ) : currentExecution ? (
-                         // Single model view
+                       {/* Multi-model comparison view - Commented out (too advanced for target audience) */}
+                       {/* {comparisonResults.length > 1 ? (
+                         // Multi-model comparison view code...
+                       ) : */}
+                       {/* Single model view */}
+                       {currentExecution && (
                          <>
                            <Card>
                              <CardHeader>
@@ -803,7 +660,7 @@ export default function SandboxPlayground() {
                              </Card>
                            )}
                          </>
-                       ) : null}
+                       )}
                      </div>
                    </ScrollArea>
                  </div>

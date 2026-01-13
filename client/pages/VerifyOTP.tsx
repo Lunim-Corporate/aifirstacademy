@@ -107,8 +107,11 @@ export default function VerifyOTP() {
       sessionStorage.removeItem("auth_pending_email");
       sessionStorage.removeItem("auth_flow");
       
-      // Auto redirect after success
-      setTimeout(() => navigate("/dashboard", { replace: true }), 800);
+      // Set flag to show welcome message on courses page
+      sessionStorage.setItem("just_signed_in", "true");
+      
+      // Auto redirect after success - go to courses page
+      setTimeout(() => navigate("/learning", { replace: true }), 800);
     } catch (err: any) {
       setError(err.message || "Verification failed");
     } finally {
@@ -221,10 +224,10 @@ export default function VerifyOTP() {
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Submit Button - Primary button: black on Lumim blue/cyan */}
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-primary-700 to-brand-700 hover:from-primary-800 hover:to-brand-800 text-white disabled:opacity-50 transition-all duration-200"
+                className="w-full bg-black text-[#bdeeff] hover:bg-black/90 disabled:opacity-50 transition-all duration-200"
                 disabled={verifying || code.length < 6}
               >
                 {verifying ? (
@@ -264,10 +267,9 @@ export default function VerifyOTP() {
                     Resend Code
                   </Button>
                 ) : (
-                  <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>Resend available in {resendCountdown}s</span>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Resend available in {resendCountdown}s
+                  </p>
                 )}
                 
                 {isBlocked && (

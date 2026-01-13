@@ -18,7 +18,7 @@ export const getProduct: RequestHandler = (_req, res) => {
     },
     features: [
       { id: "sandbox", title: "Interactive Sandbox", description: "Practice with real LLMs and get instant scoring.", icon: "Code" },
-      { id: "tracks", title: "Structured Tracks", description: "Role-based paths across engineering, marketing, and more.", icon: "BookOpen" },
+      { id: "tracks", title: "Structured Tracks", description: "Tailored learning paths for marketing professionals.", icon: "BookOpen" },
       { id: "teams", title: "Team Management", description: "Cohorts, analytics, certificates, and SSO.", icon: "Users" },
       { id: "community", title: "Community Gallery", description: "Share prompts and learn from peers.", icon: "Target" }
     ],
