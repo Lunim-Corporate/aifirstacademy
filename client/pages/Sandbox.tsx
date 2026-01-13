@@ -429,7 +429,7 @@ const filteredTemplates = useMemo(() => {
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
           <Sidebar />
-          <SandboxPlayground />
+         {/* <SandboxPlayground lessonId={lessonId}/> */}
          <main className="flex-1 flex overflow-y-auto">
             <div className="flex-1 flex flex-col">
               <div className="border-b border-border/40 p-4">
@@ -473,7 +473,7 @@ const filteredTemplates = useMemo(() => {
 
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         <Sidebar />
-        <SandboxPlayground />
+        {/* <SandboxPlayground lessonId={lessonId}/> */}  
       </div>
     </div>
   );

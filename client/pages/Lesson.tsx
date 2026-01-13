@@ -351,7 +351,7 @@ export default function Lesson() {
   const [saving, setSaving] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const [userProgress, setUserProgress] = useState<any[]>([]);
-  const [showPlayground, setShowPlayground] = useState(false);
+  // const [showPlayground, setShowPlayground] = useState(false);
 
   const [transcriptQuery, setTranscriptQuery] = useState("");
   const noteInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -883,7 +883,7 @@ export default function Lesson() {
                       <kbd className="bg-muted px-1 rounded text-xs">N</kbd> to focus notes.
                     </p>
                    {/* Sandbox */}
-               <SandboxPlayground />
+               <SandboxPlayground lessonId={lessonId}/>
                   </>
                 );
 
@@ -973,15 +973,7 @@ export default function Lesson() {
                                   >
                                     <Check className="h-4 w-4 mr-1" />Copy
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      setShowPlayground(true);
-                                    }}
-                                    aria-label="Open in Playground"
-                                  >
-                                    <Terminal className="h-4 w-4 mr-1" />Open in Playground
-                                  </Button>
+                                  <SandboxPlayground lessonId={lessonId}/>
                                 </div>
                               </CardContent>
                             </Card>
@@ -1052,14 +1044,14 @@ export default function Lesson() {
           })()}
 
           {/* Playground - Always render when showPlayground is true */}
-          {showPlayground && (
+        {/*}  {showPlayground && (
             <div className="my-6">
               <Playground
                 initialPrompt={current?.content ? extractPromptFromContent(current.content) : current?.title || ""}
                 onClose={() => setShowPlayground(false)}
               />
             </div>
-          )}
+          )} */}
         </div>
       );
   };

@@ -27,8 +27,6 @@ import { apiSandboxRun } from "@/lib/api";
 import { sandboxApi } from "@/lib/sandboxApi";
 import { useAuth } from "@/context/AuthContext";
 
-/* 🔽 EVERYTHING BELOW IS COPIED 1:1 FROM YOUR SANDBOX PAGE 🔽 */
-
 const promptTemplates = [
   {
     id: "code-review",
@@ -104,9 +102,12 @@ interface AIResponse {
     notes?: string;
   };
 }
+type SandboxPlaygroundProps = {
+  lessonId: string;
+};
 
 
-export default function SandboxPlayground() {
+export default function ({ lessonId }: SandboxPlaygroundProps) {
   // 🔥 ALL state, effects, handlers copied exactly
   // (same as in sandbox.tsx)
 
@@ -122,6 +123,13 @@ export default function SandboxPlayground() {
         }
       }
     }, [user, authLoading]);
+
+    useEffect(() => {
+      setCurrentExecution(null);
+      setComparisonResults([]);
+      setPromptOptimizationScore(0);
+    }, [lessonId]);
+    
     
     useEffect(() => { const t = setTimeout(() => setBootLoading(false), 700); return () => clearTimeout(t); }, []);
     const [systemMessage, setSystemMessage] = useState("You are a helpful AI assistant specialized in software development. Provide clear, practical advice with code examples when relevant.");
@@ -656,6 +664,18 @@ export default function SandboxPlayground() {
                                      </li>
                                    ))}
                                  </ul>
+                                 <div className="mt-4">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setCurrentExecution(null);
+                                        setPromptOptimizationScore(0);
+                                      }}
+                                    >
+                                      Clear Response
+                                    </Button>
+                                  </div>
                                </CardContent>
                              </Card>
                            )}
