@@ -553,7 +553,7 @@ export default function Learning() {
         <Sidebar />
 
         {/* Main Content */}
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
           {/* Welcome back section - show when just signed in */}
           {(() => {
             const justSignedIn = sessionStorage.getItem('just_signed_in') === 'true';
@@ -572,9 +572,9 @@ export default function Learning() {
           })()}
           
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold">Courses</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Courses</h1>
               <p className="text-muted-foreground">
                 Master AI skills tailored to your {(() => {
                   const currentRole = roleOptions.find(r => r.value === userRole);
@@ -672,8 +672,8 @@ export default function Learning() {
                         }`}
                       >
                         <CollapsibleTrigger asChild>
-                          <CardHeader className={`flex flex-row items-center justify-between space-y-0 cursor-pointer ${isExpanded ? 'bg-muted/30' : ''}`}>
-                            <div className="flex items-center space-x-4">
+                          <CardHeader className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 space-y-0 cursor-pointer ${isExpanded ? 'bg-muted/30' : ''}`}>
+                            <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
                               <div
                                 className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
                                   isCompleted
@@ -689,7 +689,7 @@ export default function Learning() {
                                   <span className="text-sm font-semibold">{moduleIndex + 1}</span>
                                 )}
                               </div>
-                              <div className="text-left">
+                              <div className="text-left min-w-0">
                                 <CardTitle>{module.title}</CardTitle>
                                 <CardDescription>
                                   {module.description}
@@ -701,8 +701,8 @@ export default function Learning() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center space-x-4">
-                              <div className="flex flex-col items-end space-y-1">
+                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                              <div className="flex flex-col items-start sm:items-end space-y-1">
                                 <div className="text-sm font-medium">{hours}h</div>
                                 <div className="text-xs text-muted-foreground">
                                   {completedCount} of {module.lessons.length} lessons
@@ -732,7 +732,7 @@ export default function Learning() {
                             </div>
                           </CardHeader>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="px-6 pb-6 pt-2">
+                        <CollapsibleContent className="px-3 sm:px-6 pb-4 sm:pb-6 pt-2">
                           <div className="space-y-3 mt-2">
                             {module.lessons.map((lesson: any, lessonIndex: number) => {
                               // Check if lesson is locked based on progression rules
@@ -748,7 +748,7 @@ export default function Learning() {
                               return (
                                 <div 
                                   key={lesson.id}
-                                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border ${
                                     lessonLocked 
                                       ? "opacity-60 cursor-not-allowed" 
                                       : "hover:bg-muted/50 cursor-pointer"
@@ -759,7 +759,7 @@ export default function Learning() {
                                     }
                                   }}
                                 >
-                                  <div className="flex items-center space-x-3">
+                                  <div className="flex items-start sm:items-center gap-3 min-w-0">
                                     <div className={`p-2 rounded-full ${isLessonCompleted ? "bg-success text-white" : lessonLocked ? "bg-muted text-muted-foreground" : isActiveLesson ? "bg-[#bdeeff] text-black" : "bg-brand-100 text-brand-600"}`}>
                                       {isLessonCompleted ? (
                                         <CheckCircle className="h-4 w-4" />
@@ -767,8 +767,8 @@ export default function Learning() {
                                         <LessonIcon className="h-4 w-4" />
                                       )}
                                     </div>
-                                    <div>
-                                      <div className="font-medium text-sm">{lesson.title}</div>
+                                    <div className="min-w-0">
+                                      <div className="font-medium text-sm break-words">{lesson.title}</div>
                                       <div className="text-xs text-muted-foreground flex items-center space-x-2">
                                         <span>{lesson.durationMin || 0} min</span>
                                         {lessonLocked && (
@@ -780,7 +780,7 @@ export default function Learning() {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center space-x-2">
+                                  <div className="flex items-center justify-end space-x-2">
                                     <Badge 
                                       variant="outline" 
                                       className={`text-xs ${
@@ -791,9 +791,8 @@ export default function Learning() {
                                             : "bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100"
                                       }`}
                                       onClick={() => {
-                                        if (!lessonLocked) {
-                                          startLesson(selectedTrack.id, module.id, lesson.id, false); // Don't check locked status when clicking badge
-                                        }
+                                        // Keep strict gating: no bypass path.
+                                        if (!lessonLocked) startLesson(selectedTrack.id, module.id, lesson.id, true);
                                       }}
                                     >
                                       {isLessonCompleted 

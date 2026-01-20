@@ -264,7 +264,7 @@ export default function Settings() {
                       {profile.lastName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                     <Button
                       size="sm"
                       onClick={() => {
@@ -288,7 +288,7 @@ export default function Settings() {
                         input.click();
                       }}
                     >
-                      <Upload className="h-4 w-4 mr-2" />
+                      <Upload className="w-full sm:w-auto" />
                       Change Avatar
                     </Button>
                     <Button
@@ -299,7 +299,7 @@ export default function Settings() {
                         showAlert("success", "Avatar removed! Don't forget to save your changes.");
                       }}
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="w-full sm:w-auto" />
                       Remove
                     </Button>
                   </div>

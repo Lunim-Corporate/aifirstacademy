@@ -33,6 +33,7 @@ import { apiMarketingProduct, apiDashboard, apiLearningTracks, apiGetProgress, a
 import type { MarketingProductResponse, DashboardResponse } from "@shared/api";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
+import LoggedInHeader from "@/components/LoggedInHeader";
 
 export default function Index() {
   const { user, loading: authLoading } = useAuth();
@@ -138,57 +139,22 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <SafeLink to="/" className="flex-shrink-0 flex items-center">
-                <BrainCircuit className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600" />
-                <span className="ml-2 text-base sm:text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
-              </SafeLink>
-              <div className="hidden md:ml-10 md:flex space-x-8">
-                {/* Navigation links removed */}
+      {user ? (
+        <LoggedInHeader />
+      ) : (
+        <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex items-center">
+                <SafeLink to="/" className="flex-shrink-0 flex items-center">
+                  <BrainCircuit className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600" />
+                  <span className="ml-2 text-base sm:text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
+                </SafeLink>
+                <div className="hidden md:ml-10 md:flex space-x-8">
+                  {/* Navigation links removed */}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2">
-                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
-                        <AvatarFallback className="flex items-center justify-center bg-gray-300 text-gray-700 text-lg font-semibold">
-                          {user?.name
-                            ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
-                            : "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="space-y-1">
-                      <div className="text-sm font-medium">{user?.name || user?.email || "Account"}</div>
-                      {user?.email && <div className="text-xs text-muted-foreground">{user.email}</div>}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <Settings className="mr-2 h-4 w-4" /> Settings
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={async()=>{ 
-                      try { 
-                        await apiLogout(); 
-                      } catch {} 
-                      try { 
-                        localStorage.removeItem("auth_token"); 
-                        window.dispatchEvent(new Event('auth-changed')); 
-                      } catch {} 
-                      window.location.replace("/login");
-                    }}>
-                      <span className="mr-2">Sign out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <>
                   <Button variant="ghost" size="sm" className="text-xs sm:text-sm" asChild>
                     <SafeLink to="/login">Login</SafeLink>
@@ -197,11 +163,11 @@ export default function Index() {
                     <SafeLink to="/signup">Create Free Account</SafeLink>
                   </Button>
                 </>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       {/* Layout: Sidebar + Main Content when signed in */}
       {user ? (
@@ -249,7 +215,7 @@ export default function Index() {
                       </CardContent>
                     </Card>
                     {/* Prompt Playground */}
-                    <div className="relative transform rotate-4 translate-y-2 translate-x-2 scale-105">
+                    <div className="relative transform sm:rotate-4 sm:translate-y-2 sm:translate-x-2 sm:scale-105">
                       <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-primary-400/20 rounded-2xl blur-3xl" />
                       <Card className="relative bg-background/80 backdrop-blur border-gray-200 dark:border-gray-700/50 shadow-2xl">
                         <CardHeader>
@@ -449,31 +415,40 @@ export default function Index() {
                     </CardContent>
                   </Card>
                   {/* Prompt Playground */}
-                  <div className="relative transform rotate-4 translate-y-2 translate-x-2 scale-105">
-                    <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-primary-400/20 rounded-2xl blur-3xl" />
-                    <Card className="relative bg-background/80 backdrop-blur border-gray-200 dark:border-gray-700/50 shadow-2xl">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="bg-gradient-to-r from-primary-600 to-brand-600 text-white">Prompt Playground</Badge>
-                          <div className="flex space-x-1">
-                            <div className="w-3 h-3 bg-destructive rounded-full" />
-                            <div className="w-3 h-3 bg-warning rounded-full" />
-                            <div className="w-3 h-3 bg-success rounded-full" />
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm">
-                          <div className="text-brand-600 mb-2">// Your prompt:</div>
-                          <div className="text-foreground">Generate a React component for a user profile card with avatar, name, and badges.</div>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="text-success flex items-center"><Check className="h-4 w-4 mr-1" />Score: 87/100</div>
-                          <div className="text-muted-foreground">GPT-4 • 245 tokens</div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <div className="w-full max-w-3xl mx-auto px-0">
+  <div className="relative transform rotate-0 scale-100">
+    <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-primary-400/20 rounded-2xl blur-3xl" />
+    <Card className="relative bg-background/80 backdrop-blur border-gray-200 dark:border-gray-700/50 shadow-2xl">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <Badge variant="secondary" className="bg-gradient-to-r from-primary-600 to-brand-600 text-white">
+            Prompt Playground
+          </Badge>
+          <div className="flex space-x-1">
+            <div className="w-3 h-3 bg-destructive rounded-full" />
+            <div className="w-3 h-3 bg-warning rounded-full" />
+            <div className="w-3 h-3 bg-success rounded-full" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm">
+          <div className="text-brand-600 mb-2">// Your prompt:</div>
+          <div className="text-foreground">
+            Generate a React component for a user profile card with avatar, name, and badges.
+          </div>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <div className="text-success flex items-center">
+            <Check className="h-4 w-4 mr-1" />Score: 87/100
+          </div>
+          <div className="text-muted-foreground">GPT-4 • 245 tokens</div>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+</div>
+
                 </div>
               </div>
             </div>

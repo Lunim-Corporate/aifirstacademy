@@ -376,7 +376,7 @@ export default function ({ lessonId }: SandboxPlaygroundProps) {
     };
 
   return (
-    <main className="flex-1 flex overflow-y-auto">
+    <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto">
              {/* Prompt Editor */}
              <div className="flex-[3] flex flex-col">
                {/* Controls */}
@@ -564,7 +564,7 @@ export default function ({ lessonId }: SandboxPlaygroundProps) {
              </div>
    
              {/* Results Panel */}
-             <div className="flex-[2] border-l border-border/40 flex flex-col">
+             <div className="flex-[2] lg:border-l border-border/40 flex flex-col">
                {currentExecution ? (
                  <div className="flex-1 flex flex-col">
                    {/* Header with stats */}

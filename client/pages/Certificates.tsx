@@ -60,7 +60,7 @@ function CertificatePreview({
   onShare: (platform: string) => void 
 }) {
   return (
-    <div className="relative mx-auto aspect-[1.414] w-full max-w-4xl bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 border-2 border-blue-100 rounded-2xl p-12 shadow-2xl print:shadow-none print:border-0">
+    <div className="relative mx-auto aspect-[1.414] w-full max-w-4xl bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 border-2 border-blue-100 rounded-2xl p-4 sm:p-8 lg:p-12 shadow-2xl print:shadow-none print:border-0 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_30%_20%,theme(colors.blue.500),transparent_50%),radial-gradient(circle_at_70%_80%,theme(colors.indigo.500),transparent_50%)]" />
       
@@ -122,7 +122,7 @@ function CertificatePreview({
       {/* Credential ID - positioned separately to avoid QR code overlap */}
       <div className="absolute bottom-32 left-8 text-left">
         <div className="text-xs text-slate-500 mb-1">Credential ID</div>
-        <div className="font-mono text-sm font-semibold text-slate-700 break-all max-w-[200px]">
+        <div className="font-mono text-sm font-semibold text-slate-700 break-all max-w-[140px] sm:max-w-[200px]">
           {certificate?.credentialId || 'AIA-ENG-001-240115'}
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function Certificates() {
         const certifications = tracks.map((track: any) => {
           const totalLessons = track.modules.reduce((sum: number, module: any) => sum + module.lessons.length, 0);
           const completedLessons = progress.filter((p: any) => 
-            p.trackId === track.id && p.status === 'completed'
+            p.track_id === track.id && p.status === 'completed'
           ).length;
           
           const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
@@ -409,8 +409,8 @@ export default function Certificates() {
         <Sidebar />
 
         {/* Main Content */}
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto">
-          <div className="flex items-center justify_between">
+        <main className="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Achievements</h1>
               <p className="text-muted-foreground">Track your marketing AI skills and earned certificates.</p>
@@ -418,7 +418,7 @@ export default function Certificates() {
           </div>
 
           {/* Progress Overview & Skills Assessment */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Certificates Earned</CardTitle>
@@ -503,7 +503,7 @@ export default function Certificates() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <CardTitle className="text-lg">{cert.title}</CardTitle>
+                          <CardTitle className="text-lg break-words">{cert.title}</CardTitle>
                           {cert.status === "earned" && (
                             <Badge className="bg-success text-white">
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -553,7 +553,7 @@ export default function Certificates() {
                         </div>
                         <div>
                           <span className="text-muted-foreground">Credential ID:</span>
-                          <div className="font-medium font-mono text-xs">{cert.credentialId}</div>
+                          <div className="font-medium font-mono text-xs break-all">{cert.credentialId}</div>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Status:</span>
@@ -648,13 +648,15 @@ export default function Certificates() {
               <CardDescription>See what your certificate will look like</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="scale-75 origin-top-left" style={{ width: '133%', height: '133%' }}>
+              <div className="overflow-x-auto">
+                <div className="origin-top-left md:scale-75 md:origin-top-left md:w-[133%] md:h-[133%]">
                 <CertificatePreview 
                   certificate={mockCertificates[0]} 
                   user={user} 
                   onDownload={() => {}} 
                   onShare={() => {}}
                 />
+                </div>
               </div>
             </CardContent>
           </Card>

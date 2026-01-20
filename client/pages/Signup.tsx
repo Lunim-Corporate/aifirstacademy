@@ -228,12 +228,27 @@ export default function Signup() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a secure password (min. 8 characters)"
+                    placeholder="Create a secure password (min. 8 chars, 1 uppercase, 1 digit, 1 special char)"
                     value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    onChange={(e) => {
+                      handleInputChange("password", e.target.value);
+
+                      // Password validation
+                      const value = e.target.value;
+                      let errorMsg = "";
+                      if (value.length < 8) {
+                        errorMsg = "Password must be at least 8 characters long";
+                      } else if (!/[A-Z]/.test(value)) {
+                        errorMsg = "Password must contain at least one uppercase letter";
+                      } else if (!/[0-9]/.test(value)) {
+                        errorMsg = "Password must contain at least one digit";
+                      } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+                        errorMsg = "Password must contain at least one special character";
+                      }
+                      setPasswordError(errorMsg);
+                    }}
                     required
                     className={passwordError ? "border-red-500 focus-visible:ring-red-500" : ""}
-                    minLength={8}
                   />
                   <Button
                     type="button"
@@ -242,27 +257,24 @@ export default function Signup() {
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+
                 {passwordError && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                      <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {passwordError}
                   </p>
                 )}
-                {formData.password.length > 0 && formData.password.length < 8 && !passwordError && (
-                  <p className="text-xs text-muted-foreground">
-                    Password must be at least 8 characters long
-                  </p>
-                )}
               </div>
+
 
               <div className="space-y-2">
                 <Label htmlFor="company">Company (Optional)</Label>

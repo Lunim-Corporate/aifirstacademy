@@ -69,8 +69,8 @@ function mdToHtml(src: string): string {
           }
           
           if (hasSeparator) {
-            // Convert to HTML table
-            let tableHtml = '<table class="border-collapse border border-gray-300 my-4">';
+            // Convert to HTML table (wrap to prevent mobile overflow)
+            let tableHtml = '<div class="my-4 overflow-x-auto"><table class="min-w-full border-collapse border border-gray-300">';
             let inHeader = true;
             
             for (const tableLine of tableLines) {
@@ -106,7 +106,7 @@ function mdToHtml(src: string): string {
             }
             
             if (tableHtml.includes('<tbody>')) tableHtml += '</tbody>';
-            tableHtml += '</table>';
+            tableHtml += '</table></div>';
             
             result.push(tableHtml);
             i = tableEnd;
@@ -293,6 +293,19 @@ function isLastLesson(track: Track | null, moduleId: string, lessonId: string): 
 }
 
 // Check if lesson is locked based on progress
+function findProgressEntry(userProgress: any[], trackId: string, moduleId: string, lessonId: string) {
+  return userProgress.find((p: any) =>
+    // accept both snake_case and camelCase shapes to be resilient across API/clients
+    (p.track_id ?? p.trackId) === trackId &&
+    (p.module_id ?? p.moduleId) === moduleId &&
+    (p.lesson_id ?? p.lessonId) === lessonId
+  );
+}
+
+function getProgressStatus(userProgress: any[], trackId: string, moduleId: string, lessonId: string) {
+  return findProgressEntry(userProgress, trackId, moduleId, lessonId)?.status;
+}
+
 function checkLessonLocked(track: Track | null, moduleId: string, lessonId: string, userProgress: any[], trackId: string): boolean {
   if (!track || !moduleId || !lessonId || !userProgress || !trackId) {
     return false;
@@ -332,11 +345,7 @@ function checkLessonLocked(track: Track | null, moduleId: string, lessonId: stri
   if (!previousLessonId) return false;
 
   // Check if that specific previous lesson is completed
-  const previousProgress = userProgress.find((p: any) =>
-    p.track_id === trackId &&
-    p.module_id === previousLessonModuleId &&
-    p.lesson_id === previousLessonId
-  );
+  const previousProgress = findProgressEntry(userProgress, trackId, previousLessonModuleId, previousLessonId);
 
   // The lesson is locked if the previous lesson is NOT completed
   return previousProgress?.status !== 'completed';
@@ -350,7 +359,14 @@ export default function Lesson() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [navigating, setNavigating] = useState(false);
-  const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [userProgress, setUserProgress] = useState<any[]>(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem("userProgressCache") || "[]");
+      return Array.isArray(cached) ? cached : [];
+    } catch {
+      return [];
+    }
+  });
   // const [showPlayground, setShowPlayground] = useState(false);
 
   const [transcriptQuery, setTranscriptQuery] = useState("");
@@ -410,9 +426,7 @@ export default function Lesson() {
         }
       } catch (error) {
         // console.warn('Could not load user progress:', error);
-        if (mounted) {
-          setUserProgress([]);
-        }
+        // If API fails, keep whatever we already have (cache-backed) so completion state doesn't "reset" visually.
       }
 
       finally {
@@ -421,12 +435,6 @@ export default function Lesson() {
     })();
     return () => {
       mounted = false;
-      // Clear progress cache when component unmounts to avoid stale data
-      try {
-        localStorage.removeItem('userProgressCache');
-      } catch (e) {
-        console.warn('Could not clear progress cache:', e);
-      }
     };
   }, [trackId, moduleId, lessonId]);
 
@@ -471,14 +479,12 @@ export default function Lesson() {
         }
       };
 
-      // Only update if not already completed
-      const currentLessonProgress = userProgress.find((p: any) =>
-        p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId
-      );
-
-      if (currentLessonProgress?.status !== 'completed') {
-        updateProgress();
-      }
+      // IMPORTANT: never downgrade a completed lesson to in_progress.
+      // Also, wait until we have *some* progress data loaded (cache or API) before writing.
+      if (!Array.isArray(userProgress) || userProgress.length === 0) return;
+      const currentStatus = getProgressStatus(userProgress, trackId, moduleId, lessonId);
+      if (currentStatus === "completed") return;
+      updateProgress();
     }
   }, [track, moduleId, lessonId, lessonLocked, userProgress, trackId]);
 
@@ -489,11 +495,7 @@ export default function Lesson() {
       return false;
     }
 
-    const progress = userProgress.find((p: any) =>
-      p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId
-    );
-
-    const isCompleted = progress?.status === 'completed';
+    const isCompleted = getProgressStatus(userProgress, trackId, moduleId, lessonId) === "completed";
     return isCompleted;
   }, [trackId, moduleId, lessonId, userProgress]);
 
@@ -529,7 +531,11 @@ export default function Lesson() {
     // Update local progress state
     const updatedProgress = [
       ...userProgress.filter((p: any) =>
-        !(p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId)
+        !(
+          (p.track_id ?? p.trackId) === trackId &&
+          (p.module_id ?? p.moduleId) === moduleId &&
+          (p.lesson_id ?? p.lessonId) === lessonId
+        )
       ),
       {
         track_id: trackId,
@@ -540,6 +546,7 @@ export default function Lesson() {
       }
     ];
     setUserProgress(updatedProgress);
+    try { localStorage.setItem("userProgressCache", JSON.stringify(updatedProgress)); } catch {}
 
     return result;
   };
@@ -846,7 +853,7 @@ export default function Lesson() {
                             if (!transcriptQuery.trim()) {
                               return (
                                 <div
-                                  className="prose prose-sm max-w-none"
+                                  className="prose prose-sm max-w-none overflow-x-auto break-words [&_pre]:max-w-full [&_code]:break-words [&_table]:max-w-full"
                                   dangerouslySetInnerHTML={{ __html: contentHtml }}
                                 />
                               );
@@ -862,7 +869,7 @@ export default function Lesson() {
                               const highlighted = contentHtml.replace(regex, '<mark>$1</mark>');
                               return (
                                 <div
-                                  className="prose prose-sm max-w-none"
+                                  className="prose prose-sm max-w-none overflow-x-auto break-words [&_pre]:max-w-full [&_code]:break-words [&_table]:max-w-full"
                                   dangerouslySetInnerHTML={{ __html: highlighted }}
                                 />
                               );
@@ -891,7 +898,7 @@ export default function Lesson() {
                 return (
                   <>
                     {current.content ? (
-                      <div className="prose prose-gray dark:prose-invert max-w-none">
+                      <div className="prose prose-gray dark:prose-invert max-w-none overflow-x-auto break-words [&_pre]:max-w-full [&_code]:break-words [&_table]:max-w-full">
                         <div dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
                       </div>
                     ) : (
@@ -911,12 +918,12 @@ export default function Lesson() {
                     {current.content ? (
                       <>
                         {/* Lesson instructions */}
-                        <div className="bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 rounded-lg p-6">
+                        <div className="bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 rounded-lg p-4 sm:p-6 overflow-hidden">
                           <div className="flex items-start gap-3">
                             <Code className="h-6 w-6 text-brand-600 mt-1 flex-shrink-0" />
                             <div>
                               <h3 className="font-semibold text-brand-900 dark:text-brand-100 mb-2">Playground Exercise</h3>
-                              <div className="prose prose-sm prose-brand max-w-none" dangerouslySetInnerHTML={{
+                              <div className="prose prose-sm prose-brand max-w-none overflow-x-auto break-words [&_pre]:max-w-full [&_code]:break-words [&_table]:max-w-full" dangerouslySetInnerHTML={{
                                 __html: mdToHtml(
                                   current.content
                                     .split('\n')
@@ -930,7 +937,7 @@ export default function Lesson() {
 
                         {/* Extract and display code/prompt */}
                         {(() => {
-                          const codeMatch = current.content.match(/```[\w]*\n([[\\\\s\\\\S]*?S]*?)```/);
+                          const codeMatch = current.content.match(/```[\w]*\n([\s\S]*?)```/);
                           const promptContent = codeMatch ? codeMatch[1].trim() :
                             // Fallback: look for lines that seem like prompts
                             current.content.split('\n').find(line =>
@@ -938,7 +945,7 @@ export default function Lesson() {
                             ) || current.content.split('\n').slice(-3).join('\n');
 
                           return promptContent && (
-                            <Card className="border-gray-200 dark:border-gray-700/50">
+                            <Card className="border-gray-200 dark:border-gray-700/50 overflow-hidden">
                               <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                   <Target className="h-5 w-5" />
@@ -949,10 +956,10 @@ export default function Lesson() {
                                 </CardDescription>
                               </CardHeader>
                               <CardContent>
-                                <div className="bg-muted rounded-md p-4 font-mono text-sm overflow-auto max-h-64" aria-label="Playground prompt">
-                                  <pre className="whitespace-pre-wrap">{promptContent}</pre>
+                                <div className="bg-muted/50 rounded-lg border border-border/60 p-3 sm:p-4 font-mono text-sm overflow-x-auto" aria-label="Playground prompt">
+                                  <pre className="whitespace-pre-wrap break-words">{promptContent}</pre>
                                 </div>
-                                <div className="flex gap-3 justify-end mt-4">
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:justify-end mt-4">
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -973,12 +980,16 @@ export default function Lesson() {
                                   >
                                     <Check className="h-4 w-4 mr-1" />Copy
                                   </Button>
-                                  <SandboxPlayground lessonId={lessonId}/>
                                 </div>
                               </CardContent>
                             </Card>
                           );
                         })()}
+
+                        {/* Playground UI (separate section for clean mobile layout) */}
+                        <div className="mt-4">
+                          <SandboxPlayground lessonId={lessonId} />
+                        </div>
 
                         {/* Additional content after the code block */}
                         {(() => {
@@ -986,7 +997,7 @@ export default function Lesson() {
                           const additionalContent = afterCodeMatch ? afterCodeMatch[1].trim() : null;
 
                           return additionalContent && (
-                            <div className="prose prose-sm max-w-none pt-4 border-t">
+                            <div className="prose prose-sm max-w-none pt-4 border-t overflow-x-auto break-words [&_pre]:max-w-full [&_code]:break-words [&_table]:max-w-full">
                               <div dangerouslySetInnerHTML={{
                                 __html: mdToHtml(additionalContent)
                               }} />
@@ -1003,7 +1014,7 @@ export default function Lesson() {
                         </div>
 
                         {current.content && (
-                          <div className="prose prose-gray dark:prose-invert max-w-none border-t pt-6">
+                          <div className="prose prose-gray dark:prose-invert max-w-none border-t pt-6 overflow-x-auto break-words [&_pre]:max-w-full [&_code]:break-words [&_table]:max-w-full">
                             <div dangerouslySetInnerHTML={{ __html: mdToHtml(current.content) }} />
                           </div>
                         )}
@@ -1098,7 +1109,7 @@ export default function Lesson() {
       <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">
           <div
-            className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-4"
+            className="px-3 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-3 sm:gap-4"
             role="region"
             aria-label="Progress bar"
           >
@@ -1115,9 +1126,9 @@ export default function Lesson() {
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="flex items-center justify-between gap-4 mb-2">
-              <div className="flex items-center gap-3">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-2">
+              <div className="flex items-start sm:items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1128,14 +1139,14 @@ export default function Lesson() {
                   Back to Courses
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold">{current?.title ?? ""}</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold break-words">{current?.title ?? ""}</h1>
                   <p className="text-sm text-muted-foreground">
                     {track?.title} • Module{" "}
                     {(track?.modules || []).findIndex((x) => x.id === moduleId) + 1}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -1206,16 +1217,16 @@ export default function Lesson() {
               </div>
             </div>
 
-            <div className="flex gap-6 min-h-0">
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
               <div className="flex-1 min-w-0 min-h-0">
                 <Card className="h-full">
                   <CardContent className="pt-6 h-full">{renderContent()}</CardContent>
                 </Card>
               </div>
               
-              <div className="space-y-4 flex-shrink-0 min-h-0">
+              <div className="space-y-4 flex-shrink-0 min-h-0 w-full lg:w-auto">
                 {/* Notes panel - always visible */}
-                <Card className="w-80 flex-shrink-0">
+                <Card className="w-full lg:w-80 flex-shrink-0">
                   <CardHeader>
                     <CardTitle className="text-lg">Notes</CardTitle>
                     <CardDescription>
