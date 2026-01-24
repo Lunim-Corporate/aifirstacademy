@@ -198,6 +198,8 @@ export const getTrack: RequestHandler = async (req, res) => {
 export const getLesson: RequestHandler = async (req, res) => {
   try {
     const { trackId, moduleId, lessonId } = req.params;
+    const userId = getUserId(req);
+
     
     // First get the lesson with its module and track context
     const lessonResult = await withRetry(() =>
@@ -233,6 +235,19 @@ export const getLesson: RequestHandler = async (req, res) => {
     if (lesson?.track_modules?.tracks?.id !== trackId) {
       return res.status(404).json({ error: 'Lesson not found in specified track' });
     }
+    let lessonProgress: any = null;
+
+    if (userId) {
+      const { data } = await supabaseAdmin
+        .from("user_lesson_progress")
+        .select("status, completed_at")
+        .eq("user_id", userId)
+        .eq("lesson_id", lessonId)
+        .single();
+
+      lessonProgress = data;
+    }
+
 
     // Get all lessons in this module for navigation
     const moduleLessonsResult = await withRetry(() =>
@@ -328,7 +343,8 @@ export const getLesson: RequestHandler = async (req, res) => {
       ...lesson,
       moduleTitle: lesson.track_modules?.title || '',
       trackTitle: lesson.track_modules?.tracks?.title || '',
-    };
+      progressStatus: lessonProgress?.status || "not_started"
+    };    
 
     res.json({
       trackId,

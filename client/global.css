@@ -137,6 +137,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -172,6 +173,52 @@
   input[type="button"],
   input[type="submit"] {
   }
+
+  /* Make lesson content safe on mobile (avoid pushing layout off-screen) */
+  .prose {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .prose * {
+    max-width: 100%;
+  }
+  .prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .prose pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .prose {
+    max-width: 100%;
+    overflow-x: auto;
+    word-wrap: break-word;      /* ensures long text breaks */
+    word-break: break-word;     /* extra safety for mobile */
+  }
+  .prose * {
+    max-width: 100%;
+    box-sizing: border-box;     /* prevents padding/margin from breaking layout */
+  }
+  
+  .prose code {
+    word-break: break-word;
+  }
+  .prose img,
+.prose iframe,
+.prose video {
+  max-width: 100%;
+  height: auto;
+  display: block;  /* removes inline spacing issues */
+}
+.prose table,
+.prose pre {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 }
 
 @layer components {

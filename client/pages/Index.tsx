@@ -144,26 +144,43 @@ export default function Index() {
       ) : (
         <nav className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <SafeLink to="/" className="flex-shrink-0 flex items-center">
-                  <BrainCircuit className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600" />
-                  <span className="ml-2 text-base sm:text-xl font-bold" style={{color: 'white'}}>AI-First Marketing Academy</span>
-                </SafeLink>
-                <div className="hidden md:ml-10 md:flex space-x-8">
-                  {/* Navigation links removed */}
-                </div>
+            {/* Top row */}
+            <div className="flex h-16 items-center justify-between">
+              {/* Brand */}
+              <SafeLink to="/" className="flex items-center gap-2 min-w-0">
+                <BrainCircuit className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 shrink-0" />
+                <span className="text-sm sm:text-xl font-bold text-white truncate">
+                  AI-First Marketing Academy
+                </span>
+              </SafeLink>
+
+              {/* Desktop auth buttons */}
+              <div className="hidden sm:flex items-center gap-3">
+                <Button variant="ghost" size="sm" asChild>
+                  <SafeLink to="/login">Login</SafeLink>
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
+                  asChild
+                >
+                  <SafeLink to="/signup">Create Free Account</SafeLink>
+                </Button>
               </div>
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <>
-                  <Button variant="ghost" size="sm" className="text-xs sm:text-sm" asChild>
-                    <SafeLink to="/login">Login</SafeLink>
-                  </Button>
-                  <Button size="sm" className="text-xs sm:text-sm bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black" asChild>
-                    <SafeLink to="/signup">Create Free Account</SafeLink>
-                  </Button>
-                </>
-              </div>
+            </div>
+
+            {/* Mobile auth row */}
+            <div className="sm:hidden flex gap-2 pb-3">
+              <Button variant="outline" size="sm" className="flex-1" asChild>
+                <SafeLink to="/login">Login</SafeLink>
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 bg-[#bdeeff] hover:bg-[#bdeeff]/90 text-black"
+                asChild
+              >
+                <SafeLink to="/signup">Sign up</SafeLink>
+              </Button>
             </div>
           </div>
         </nav>

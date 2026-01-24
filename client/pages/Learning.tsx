@@ -109,7 +109,14 @@ export default function Learning() {
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const [userStats, setUserStats] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
-  
+  const [locallyCompleted, setLocallyCompleted] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("locallyCompletedLessons");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   // Redirect to login if not authenticated
   useEffect(() => {
     console.log('Auth check:', { authLoading, user });
@@ -184,7 +191,24 @@ export default function Learning() {
           // Process progress data
           const userProgress = progressResult.status === 'fulfilled' ? (progressResult.value.progress || []) : [];
           setUserProgress(userProgress);
-          
+          try { localStorage.setItem("userProgressCache", JSON.stringify(userProgress)); } catch {}
+          // Sync locally completed lessons with API progress
+          const newLocallyCompleted = new Set<string>();
+          userProgress.forEach((p: any) => {
+            if (p.status === 'completed') {
+              const key = `${p.track_id ?? p.trackId}-${p.module_id ?? p.moduleId}-${p.lesson_id ?? p.lessonId}`;
+              newLocallyCompleted.add(key);
+            }
+          });
+          // Also load from localStorage
+          try {
+            const stored = localStorage.getItem("locallyCompletedLessons");
+            if (stored) {
+              const storedArray: string[] = JSON.parse(stored);
+    storedArray.forEach((key: string) => newLocallyCompleted.add(key));
+            }
+          } catch {}
+          setLocallyCompleted(newLocallyCompleted);
           // Calculate user stats and recommendations
           try {
             const totalLessonsCount = roleTracks.reduce((total: number, track: any) => 
@@ -255,6 +279,12 @@ export default function Learning() {
   };
   
   const getLessonStatus = (trackId: string, moduleId: string, lessonId: string) => {
+    // Check local completion tracking first (most reliable)
+    const localKey = `${trackId}-${moduleId}-${lessonId}`;
+    if (locallyCompleted.has(localKey)) {
+      return 'completed';
+    }
+    // Then check API progress
     const progress = userProgress.find((p: any) => 
       p.track_id === trackId && p.module_id === moduleId && p.lesson_id === lessonId
     );
@@ -746,30 +776,22 @@ export default function Learning() {
                               const isActiveLesson = location.pathname === `/learning/${selectedTrack.id}/${module.id}/${lesson.id}`;
                               
                               return (
-                                <div 
+                                <div
                                   key={lesson.id}
                                   className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border ${
                                     lessonLocked 
                                       ? "opacity-60 cursor-not-allowed" 
                                       : "hover:bg-muted/50 cursor-pointer"
                                   } ${isLessonCompleted ? "bg-success/10 border-success/20" : ""}`}
-                                  onClick={() => {
-                                    if (!lessonLocked) {
-                                      startLesson(selectedTrack.id, module.id, lesson.id, true);
-                                    }
-                                  }}
+                                  onClick={() => startLesson(selectedTrack.id, module.id, lesson.id, true)} // always allow navigation
                                 >
-                                  <div className="flex items-start sm:items-center gap-3 min-w-0">
-                                    <div className={`p-2 rounded-full ${isLessonCompleted ? "bg-success text-white" : lessonLocked ? "bg-muted text-muted-foreground" : isActiveLesson ? "bg-[#bdeeff] text-black" : "bg-brand-100 text-brand-600"}`}>
-                                      {isLessonCompleted ? (
-                                        <CheckCircle className="h-4 w-4" />
-                                      ) : (
-                                        <LessonIcon className="h-4 w-4" />
-                                      )}
+                                  <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1 overflow-hidden">
+                                    <div className={`p-2 rounded-full flex-shrink-0 ${isLessonCompleted ? "bg-success text-white" : lessonLocked ? "bg-muted text-muted-foreground" : isActiveLesson ? "bg-[#bdeeff] text-black" : "bg-brand-100 text-brand-600"}`}>
+                                      {isLessonCompleted ? <CheckCircle className="h-4 w-4" /> : <LessonIcon className="h-4 w-4" />}
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="font-medium text-sm break-words">{lesson.title}</div>
-                                      <div className="text-xs text-muted-foreground flex items-center space-x-2">
+                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                      <div className="font-medium text-sm break-words truncate">{lesson.title}</div>
+                                      <div className="text-xs text-muted-foreground flex items-center space-x-2 break-words">
                                         <span>{lesson.durationMin || 0} min</span>
                                         {lessonLocked && (
                                           <span className="flex items-center">
@@ -780,27 +802,27 @@ export default function Learning() {
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center justify-end space-x-2">
-                                    <Badge 
-                                      variant="outline" 
-                                      className={`text-xs ${
-                                        isLessonCompleted 
-                                          ? "bg-success/10 text-success border-success/20" 
-                                          : lessonLocked 
-                                            ? "bg-muted text-muted-foreground" 
-                                            : "bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100"
-                                      }`}
-                                      onClick={() => {
-                                        // Keep strict gating: no bypass path.
-                                        if (!lessonLocked) startLesson(selectedTrack.id, module.id, lesson.id, true);
-                                      }}
-                                    >
-                                      {isLessonCompleted 
-                                        ? "Completed" 
-                                        : lessonLocked 
-                                          ? "Locked" 
-                                          : "Ready"}
-                                    </Badge>
+                                  <div className="flex items-center justify-end space-x-2 flex-shrink-0">
+                                    { !isLessonCompleted && !lessonLocked && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs bg-blue-50 text-blue-700 cursor-pointer hover:bg-blue-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation(); // prevent navigating away if user clicks the badge
+                                          startLesson(selectedTrack.id, module.id, lesson.id, true);
+                                        }}
+                                      >
+                                        Ready
+                                      </Badge>
+                                    )}
+                                    { isLessonCompleted && (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs bg-success/10 text-success border-success/20 cursor-not-allowed"
+                                      >
+                                        Completed
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                               );

@@ -527,10 +527,10 @@ export default function Certificates() {
                             <Eye className="h-4 w-4 mr-2" />
                             Preview
                           </Button>
-                          <Button variant="outline" size="sm" onClick={async()=>{ const v = await apiVerifyCertificate(cert.credentialId); const url = v.valid && v.verifyUrl ? v.verifyUrl : `${window.location.origin}/verify/${encodeURIComponent(cert.credentialId)}`; window.open(url, "_blank"); }}>
+                        {/*}  <Button variant="outline" size="sm" onClick={async()=>{ const v = await apiVerifyCertificate(cert.credentialId); const url = v.valid && v.verifyUrl ? v.verifyUrl : `${window.location.origin}/verify/${encodeURIComponent(cert.credentialId)}`; window.open(url, "_blank"); }}>
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Verify
-                          </Button>
+                          </Button> */}
                           <Button variant="outline" size="sm" onClick={()=>{ const url = `${window.location.origin}/verify/${encodeURIComponent(cert.credentialId)}`; window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank"); }}>
                             <Share className="h-4 w-4 mr-2" />
                             Share

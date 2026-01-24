@@ -28,6 +28,68 @@ function isPreviewHost() {
 // Simple markdown to HTML converter for lesson content
 function mdToHtml(src: string): string {
   try {
+    // Normalize common "table-like" content that comes in as tab-separated columns.
+    // This is common when lesson content is pasted from Google Docs/Sheets.
+    // Example:
+    // Conversion Rate\tConversions\tImpact
+    // 2%\t200\tBaseline
+    // 4%\t400\t+100% revenue
+    const tsvToHtml = (block: string) => {
+      const rows = block
+        .split("\n")
+        .map((l) => l.trimEnd())
+        .filter(Boolean)
+        .map((l) => l.split("\t").map((c) => c.trim()));
+      if (rows.length < 2) return block;
+      const maxCols = Math.max(...rows.map((r) => r.length));
+      if (maxCols < 2) return block;
+      const escape = (s: string) =>
+        s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      const header = rows[0];
+      const body = rows.slice(1);
+      let html =
+        '<div class="my-4 overflow-x-auto"><table class="min-w-full border-collapse border border-gray-300">';
+      html += '<thead class="bg-gray-100"><tr>';
+      for (const cell of header) html += `<th class="border border-gray-300 px-4 py-2 font-semibold text-gray-900">${escape(cell)}</th>`;
+      html += "</tr></thead><tbody>";
+      for (const row of body) {
+        html += "<tr>";
+        for (let i = 0; i < header.length; i++) {
+          html += `<td class="border border-gray-300 px-4 py-2">${escape(row[i] || "")}</td>`;
+        }
+        html += "</tr>";
+      }
+      html += "</tbody></table></div>";
+      return html;
+    };
+    // Convert any consecutive block of tab-separated lines into a table.
+    // We only do this if we detect at least 2 consecutive lines containing tabs.
+    if (src.includes("\t")) {
+      const lines = src.split("\n");
+      const out: string[] = [];
+      let i = 0;
+      while (i < lines.length) {
+        const line = lines[i];
+        const hasTabs = line.includes("\t");
+        const nextHasTabs = (lines[i + 1] || "").includes("\t");
+        if (hasTabs && nextHasTabs) {
+          const start = i;
+          let end = i + 1;
+          while (end < lines.length && lines[end].includes("\t")) end++;
+          out.push(tsvToHtml(lines.slice(start, end).join("\n")));
+          i = end;
+          continue;
+        }
+        out.push(line);
+        i++;
+      }
+      src = out.join("\n");
+    }
     // Process tables first (most complex)
     let processed = src;
     
@@ -39,15 +101,24 @@ function mdToHtml(src: string): string {
     while (i < lines.length) {
       const line = lines[i].trim();
       
-      // Check for table start (line with pipes)
-      if (line.startsWith('|') && line.endsWith('|')) {
+      // Check for markdown table start (supports tables with or without leading/trailing pipes)
+      // Examples:
+      // | A | B |
+      // |---|---|
+      // A | B
+      // ---|---
+      const nextLine = (lines[i + 1] || "").trim();
+      const looksLikeHeaderRow = line.includes("|");
+      const looksLikeSeparatorRow = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/.test(nextLine);
+      if (looksLikeHeaderRow && looksLikeSeparatorRow) {
         const tableStart = i;
         let tableEnd = i;
         
         // Find table bounds
         while (tableEnd < lines.length) {
           const currentLine = lines[tableEnd].trim();
-          if (currentLine.startsWith('|') && currentLine.endsWith('|')) {
+          // Continue while rows still look like pipe-delimited rows
+          if (currentLine.includes("|")) {
             tableEnd++;
           } else {
             break;
@@ -88,17 +159,19 @@ function mdToHtml(src: string): string {
                 .replace(/\|$/, '')
                 .split('|')
                 .map(cell => cell.trim());
+              // Guard against empty leading/trailing cells from "A | B |" patterns
+              const normalizedCells = cells.filter((c, idx) => !(c === "" && (idx === 0 || idx === cells.length - 1)));
               
               if (inHeader) {
                 tableHtml += '<thead class="bg-gray-100"><tr>';
-                for (const cell of cells) {
+                for (const cell of normalizedCells) {
                   tableHtml += `<th class="border border-gray-300 px-4 py-2 font-semibold text-gray-900">${cell}</th>`;
                 }
                 tableHtml += '</tr></thead>';
               } else {
                 if (!tableHtml.includes('<tbody>')) tableHtml += '<tbody>';
                 tableHtml += '<tr>';
-                for (const cell of cells) {
+                for (const cell of normalizedCells) {
                   tableHtml += `<td class="border border-gray-300 px-4 py-2">${cell}</td>`;
                 }
                 tableHtml += '</tr>';
@@ -149,8 +222,8 @@ function mdToHtml(src: string): string {
 
 function formatProgress(track: Track | null, current: { moduleId: string; lessonId: string }, userProgress: any[] = []) {
   const modules = track?.modules || [];
-  const allLessons = modules.flatMap((m) => m.lessons.map((l) => ({ m: m.id, l: l.id })));
-  const idx = allLessons.findIndex((x) => x.m === current.moduleId && x.l === current.lessonId);
+  const allLessons = modules.flatMap((m) => m.lessons.map((l) => ({ m: String(m.id), l: String(l.id) })));
+  const idx = allLessons.findIndex((x) => x.m === String(current.moduleId) && x.l === String(current.lessonId));
 
   // Count only completed lessons for progress percentage
   const completedCount = userProgress.filter((p: any) => p.status === 'completed').length;
@@ -195,12 +268,12 @@ function findNextLesson(track: Track | null, moduleId: string, lessonId: string)
   if (!track) return null;
 
   const modules = track.modules || [];
-  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  const moduleIndex = modules.findIndex(m => String(m.id) === String(moduleId));
   if (moduleIndex === -1) return null;
 
   const currentModule = modules[moduleIndex];
   const lessons = currentModule.lessons || [];
-  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  const lessonIndex = lessons.findIndex(l => String(l.id) === String(lessonId));
   if (lessonIndex === -1) return null;
 
   // If not the last lesson in the module, go to next lesson in same module
@@ -236,12 +309,12 @@ function findPrevLesson(track: Track | null, moduleId: string, lessonId: string)
   if (!track) return null;
 
   const modules = track.modules || [];
-  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  const moduleIndex = modules.findIndex(m => String(m.id) === String(moduleId));
   if (moduleIndex === -1) return null;
 
   const currentModule = modules[moduleIndex];
   const lessons = currentModule.lessons || [];
-  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  const lessonIndex = lessons.findIndex(l => String(l.id) === String(lessonId));
   if (lessonIndex === -1) return null;
 
   // If not the first lesson in the module, go to previous lesson in same module
@@ -277,12 +350,12 @@ function isLastLesson(track: Track | null, moduleId: string, lessonId: string): 
   if (!track) return false;
 
   const modules = track.modules || [];
-  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  const moduleIndex = modules.findIndex(m => String(m.id) === String(moduleId));
   if (moduleIndex === -1) return false;
 
   const currentModule = modules[moduleIndex];
   const lessons = currentModule.lessons || [];
-  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  const lessonIndex = lessons.findIndex(l => String(l.id) === String(lessonId));
   if (lessonIndex === -1) return false;
 
   // Check if this is the last lesson in the last module
@@ -296,9 +369,9 @@ function isLastLesson(track: Track | null, moduleId: string, lessonId: string): 
 function findProgressEntry(userProgress: any[], trackId: string, moduleId: string, lessonId: string) {
   return userProgress.find((p: any) =>
     // accept both snake_case and camelCase shapes to be resilient across API/clients
-    (p.track_id ?? p.trackId) === trackId &&
-    (p.module_id ?? p.moduleId) === moduleId &&
-    (p.lesson_id ?? p.lessonId) === lessonId
+    String(p.track_id ?? p.trackId) === String(trackId) &&
+    String(p.module_id ?? p.moduleId) === String(moduleId) &&
+    String(p.lesson_id ?? p.lessonId) === String(lessonId)
   );
 }
 
@@ -313,12 +386,12 @@ function checkLessonLocked(track: Track | null, moduleId: string, lessonId: stri
 
   // Find the current lesson's position in the track
   const modules = track.modules || [];
-  const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  const moduleIndex = modules.findIndex(m => String(m.id) === String(moduleId));
   if (moduleIndex === -1) return false;
 
   const currentModule = modules[moduleIndex];
   const lessons = currentModule.lessons || [];
-  const lessonIndex = lessons.findIndex(l => l.id === lessonId);
+  const lessonIndex = lessons.findIndex(l => String(l.id) === String(lessonId));
   if (lessonIndex === -1) return false;
 
   // First lesson of first module is never locked
@@ -365,6 +438,16 @@ export default function Lesson() {
       return Array.isArray(cached) ? cached : [];
     } catch {
       return [];
+    }
+  });
+  const [progressLoaded, setProgressLoaded] = useState<boolean>(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem("userProgressCache") || "[]");
+      if (!Array.isArray(cached)) return false;
+      // Only treat as loaded if we can determine *this* lesson's status from cache
+      return !!findProgressEntry(cached, trackId, moduleId, lessonId);
+    } catch {
+      return false;
     }
   });
   // const [showPlayground, setShowPlayground] = useState(false);
@@ -417,16 +500,54 @@ export default function Lesson() {
         const progressData = await apiGetProgress();
         if (mounted) {
           setUserProgress(progressData.progress || []);
+          setProgressLoaded(true);
           // Update cache with fresh data
           try {
             localStorage.setItem('userProgressCache', JSON.stringify(progressData.progress || []));
           } catch (e) {
             console.warn('Could not update progress cache:', e);
           }
+          
+          // Sync locally completed lessons with API progress
+          const newLocallyCompleted = new Set(locallyCompleted);
+          (progressData.progress || []).forEach((p: any) => {
+            if (p.status === 'completed') {
+              const key = `${p.track_id ?? p.trackId}-${p.module_id ?? p.moduleId}-${p.lesson_id ?? p.lessonId}`;
+              newLocallyCompleted.add(key);
+            }
+          });
+          setLocallyCompleted(newLocallyCompleted);
+          localStorage.setItem("locallyCompletedLessons", JSON.stringify([...newLocallyCompleted]));
         }
       } catch (error) {
         // console.warn('Could not load user progress:', error);
-        // If API fails, keep whatever we already have (cache-backed) so completion state doesn't "reset" visually.
+        // If API fails, keep whatever we already have (cache-backed) but DO NOT
+        // mark as loaded unless cache can determine this lesson's status.
+        if (mounted) {
+          try {
+            const cached: any[] = JSON.parse(localStorage.getItem("userProgressCache") || "[]");
+            if (Array.isArray(cached) && findProgressEntry(cached, trackId, moduleId, lessonId)) {
+              setUserProgress(cached);
+              setProgressLoaded(true);
+              
+              // Sync locally completed from cache
+              const newLocallyCompleted = new Set(locallyCompleted);
+              cached.forEach((p: any) => {
+                if (p.status === 'completed') {
+                  const key = `${p.track_id ?? p.trackId}-${p.module_id ?? p.moduleId}-${p.lesson_id ?? p.lessonId}`;
+                  newLocallyCompleted.add(key);
+                }
+              });
+              setLocallyCompleted(newLocallyCompleted);
+              localStorage.setItem("locallyCompletedLessons", JSON.stringify([...newLocallyCompleted]));
+            } else {
+              setProgressLoaded(false);
+            }
+          } catch {
+            setUserProgress([]);
+            setProgressLoaded(false);
+          }
+        }
       }
 
       finally {
@@ -437,10 +558,6 @@ export default function Lesson() {
       mounted = false;
     };
   }, [trackId, moduleId, lessonId]);
-
-
-
-
 
   const moduleList: TrackModule[] = useMemo(() => track?.modules || [], [track]);
   const progress = useMemo(() => formatProgress(track, { moduleId, lessonId }, userProgress), [track, moduleId, lessonId, userProgress]);
@@ -462,11 +579,45 @@ export default function Lesson() {
     return !!(lesson?.prev || findPrevLesson(track, moduleId, lessonId));
   }, [lesson, track, moduleId, lessonId]);
 
+  const [locallyCompleted, setLocallyCompleted] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("locallyCompletedLessons");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
   // Check if next lesson exists and is accessible
-  const hasNextLesson = useMemo(() => {
-    const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
-    return !!nextLesson && !nextLessonLocked;
-  }, [lesson, track, moduleId, lessonId, nextLessonLocked]);
+  const lessonCompleted = useMemo(() => {
+    if (!trackId || !moduleId || !lessonId) return false;
+    
+    // Check local completion tracking first (most reliable)
+    const localKey = `${trackId}-${moduleId}-${lessonId}`;
+    if (locallyCompleted.has(localKey)) return true;
+    
+    // Then check userProgress
+    if (!userProgress || userProgress.length === 0) return false;
+  
+    return userProgress.some((p: any) => 
+      String(p.track_id ?? p.trackId) === String(trackId) &&
+      String(p.module_id ?? p.moduleId) === String(moduleId) &&
+      String(p.lesson_id ?? p.lessonId) === String(lessonId) &&
+      p.status === "completed"
+    );
+  }, [trackId, moduleId, lessonId, userProgress, locallyCompleted]);
+  
+const hasNextLesson = useMemo(() => {
+  const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
+  if (!nextLesson) return false;
+  
+  // If current lesson is completed, next lesson should be accessible
+  if (lessonCompleted) return true;
+  
+  // Otherwise check if next lesson is locked
+  const isNextLocked = checkLessonLocked(track, nextLesson.moduleId, nextLesson.lessonId, userProgress, trackId);
+  return !isNextLocked;
+}, [lesson, track, moduleId, lessonId, userProgress, trackId, lessonCompleted]);
 
   // Update lesson status to in_progress when lesson loads (if not locked)
   useEffect(() => {
@@ -489,15 +640,6 @@ export default function Lesson() {
   }, [track, moduleId, lessonId, lessonLocked, userProgress, trackId]);
 
   // Compute if current lesson is completed
-  const lessonCompleted = useMemo(() => {
-
-    if (!trackId || !moduleId || !lessonId || !userProgress) {
-      return false;
-    }
-
-    const isCompleted = getProgressStatus(userProgress, trackId, moduleId, lessonId) === "completed";
-    return isCompleted;
-  }, [trackId, moduleId, lessonId, userProgress]);
 
   // Compute if there is a previous lesson
   // Compute if there is a previous lesson
@@ -651,36 +793,41 @@ export default function Lesson() {
   };
 
   // Compute next lesson navigation
-  const goNext = () => {
-    const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
-    if (!nextLesson || navigating) return;
-    
-    // Check if next lesson is locked
-    const isLocked = checkLessonLocked(track, nextLesson.moduleId, nextLesson.lessonId, userProgress, trackId);
-    if (isLocked) {
-      toast({
-        title: "Lesson Locked",
-        description: "Please complete the previous lesson before accessing this one.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+const goNext = () => {
+  const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
+  if (!nextLesson || navigating) return;
+  
+  // If current lesson is completed, allow navigation to next lesson
+  if (lessonCompleted) {
     setNavigating(true);
     navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
-  };
+    return;
+  }
+  // Otherwise, check if next lesson is locked
+  const isLocked = checkLessonLocked(track, nextLesson.moduleId, nextLesson.lessonId, userProgress, trackId);
+  if (isLocked) {
+    toast({
+      title: "Lesson Locked",
+      description: "Please complete the current lesson before accessing this one.",
+      variant: "destructive",
+    });
+    return;
+  }
+  
+  setNavigating(true);
+  navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
+};
 
 
 
   const markComplete = async () => {
     if (!lesson) return;
-
-    // Debug authentication
-    // const token = localStorage.getItem("auth_token");
-    // console.log('Mark complete - Auth token:', token ? 'Present' : 'Missing');
-
+    if (!progressLoaded) return;
+  
+    const localKey = `${trackId}-${moduleId}-${lessonId}`;
+  
     // Don't allow marking a completed lesson again
-    if (lessonCompleted) {
+    if (lessonCompleted || locallyCompleted.has(localKey)) {
       // Navigate to next lesson if available
       const nextLesson = lesson?.next || findNextLesson(track, moduleId, lessonId);
       if (nextLesson) {
@@ -688,7 +835,6 @@ export default function Lesson() {
         navigate(`/learning/${nextLesson.trackId}/${nextLesson.moduleId}/${nextLesson.lessonId}`);
         return;
       }
-
       // If we can't compute next lesson, show a message
       toast({
         title: 'Already Completed',
@@ -697,7 +843,6 @@ export default function Lesson() {
       });
       return;
     }
-
     // Don't allow marking a locked lesson
     if (lessonLocked) {
       toast({
@@ -707,22 +852,26 @@ export default function Lesson() {
       });
       return;
     }
-
     setSaving(true);
-
     try {
+      // IMMEDIATELY mark as locally completed to prevent double-clicks
+      const newCompleted = new Set(locallyCompleted);
+      newCompleted.add(localKey);
+      setLocallyCompleted(newCompleted);
+      localStorage.setItem("locallyCompletedLessons", JSON.stringify([...newCompleted]));
       // 1. Mark lesson as completed via API
       await markLessonCompleteApi();
-
       // 2. Navigate to next lesson
       await navigateAfterComplete();
-
     } catch (e: any) {
       console.error('Failed to mark lesson complete:', e);
-
+      // On error, remove from local completion tracking
+      const newCompleted = new Set(locallyCompleted);
+      newCompleted.delete(localKey);
+      setLocallyCompleted(newCompleted);
+      localStorage.setItem("locallyCompletedLessons", JSON.stringify([...newCompleted]));
       // Provide more specific error messages
       let errorMessage = 'Failed to save your progress.';
-
       if (e?.message?.includes('Unauthorized')) {
         errorMessage = 'Your session has expired. Please log in again to save your progress.';
         localStorage.removeItem('auth_token');
@@ -1142,7 +1291,7 @@ export default function Lesson() {
                   <h1 className="text-xl sm:text-2xl font-bold break-words">{current?.title ?? ""}</h1>
                   <p className="text-sm text-muted-foreground">
                     {track?.title} • Module{" "}
-                    {(track?.modules || []).findIndex((x) => x.id === moduleId) + 1}
+                    {(track?.modules || []).findIndex((x) => String(x.id) === String(moduleId)) + 1}
                   </p>
                 </div>
               </div>
@@ -1178,7 +1327,7 @@ export default function Lesson() {
                         <Button
                           variant="outline"
                           onClick={goNext}
-                          disabled={!hasNextLesson || navigating}
+                          disabled={!hasNextLesson || navigating || (!lessonCompleted && nextLessonLocked)}
                           aria-label="Next lesson"
                           className="bg-black text-white border-white hover:bg-black hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                         >
@@ -1189,15 +1338,19 @@ export default function Lesson() {
                     </TooltipTrigger>
                     {!hasNextLesson && (
                       <TooltipContent>
-                        <p>{nextLessonLocked ? "Please complete the current lesson first" : "No next lesson available"}</p>
+                        <p>{nextLessonLocked && !lessonCompleted ? "Please complete the current lesson first" : "No next lesson available"}</p>
                       </TooltipContent>
                     )}
                   </Tooltip>
                 </TooltipProvider>
-
-                <Button
+                {/*{!lessonCompleted && !lessonLocked && (
+                  <Button onClick={markComplete} disabled={saving}>
+                    {saving ? "Saving..." : "Mark Complete"}
+                  </Button>
+                )} */}
+                 <Button
                   onClick={markComplete}
-                  disabled={saving || lessonLocked || lessonCompleted || navigating}
+                  disabled={saving || lessonLocked || lessonCompleted || navigating || (!progressLoaded && !lessonCompleted)}
                   aria-label="Mark lesson complete"
                 >
                   <Check className="h-4 w-4 mr-1" />
@@ -1208,6 +1361,8 @@ export default function Lesson() {
                     </>
                   ) : lessonCompleted ? (
                     "Completed"
+                  ) : !progressLoaded ? (
+                    "Loading..."
                   ) : saving ? (
                     "Saving..."
                   ) : (
@@ -1219,8 +1374,12 @@ export default function Lesson() {
 
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
               <div className="flex-1 min-w-0 min-h-0">
-                <Card className="h-full">
-                  <CardContent className="pt-6 h-full">{renderContent()}</CardContent>
+                <Card className="h-full min-w-[110%] sm:min-w-full ">
+                <CardContent className="pt-6 h-full ">
+                <div className="break-words min-w-[100%] sm:min-w-full ">
+                {renderContent()}
+                </div>
+              </CardContent>
                 </Card>
               </div>
               
