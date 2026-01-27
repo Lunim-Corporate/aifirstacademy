@@ -582,8 +582,8 @@ export default function Learning() {
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         <Sidebar />
 
-        {/* Main Content */}
-        <main className="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+        {/* Main Content - 8px horizontal padding on mobile, left/right aligned */}
+        <main className="flex-1 px-2 py-3 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
           {/* Welcome back section - show when just signed in */}
           {(() => {
             const justSignedIn = sessionStorage.getItem('just_signed_in') === 'true';
@@ -628,20 +628,19 @@ export default function Learning() {
             </div>
           </div>
           
-          {/* Learning Stats Dashboard */}
-          {/* Overall progress - kept, now full width and simpler */}
+          {/* Learning Stats Dashboard - stacked on mobile, side-by-side on desktop */}
           {userStats && (
             <div className="grid grid-cols-1 gap-4">
-              <Card>
+              <Card className="rounded-none border-0 bg-transparent shadow-none sm:rounded-lg sm:border sm:bg-card sm:shadow-sm">
                 <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="text-2xl font-bold">{progressPercentage}%</div>
                       <p className="text-xs text-muted-foreground">
                         Overall progress across all marketing courses
                       </p>
                     </div>
-                    <div className="w-48">
+                    <div className="w-full sm:w-48">
                       <Progress value={progressPercentage} className="h-2" />
                       <p className="mt-1 text-[11px] text-muted-foreground text-right">
                         {completedLessons} of {totalLessons} lessons completed • {availableLessons} unlocked
@@ -705,7 +704,7 @@ export default function Learning() {
                           <CardHeader className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 space-y-0 cursor-pointer ${isExpanded ? 'bg-muted/30' : ''}`}>
                             <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
                               <div
-                                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                                className={`w-8 h-8 min-w-8 min-h-8 flex-shrink-0 aspect-square rounded-full border-2 flex items-center justify-center ${
                                   isCompleted
                                     ? "bg-success border-success text-white"
                                     : isInProgress
@@ -762,7 +761,7 @@ export default function Learning() {
                             </div>
                           </CardHeader>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="px-3 sm:px-6 pb-4 sm:pb-6 pt-2">
+                        <CollapsibleContent className="px-2 sm:px-6 pb-4 sm:pb-6 pt-2">
                           <div className="space-y-3 mt-2">
                             {module.lessons.map((lesson: any, lessonIndex: number) => {
                               // Check if lesson is locked based on progression rules
@@ -786,7 +785,7 @@ export default function Learning() {
                                   onClick={() => startLesson(selectedTrack.id, module.id, lesson.id, true)} // always allow navigation
                                 >
                                   <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1 overflow-hidden">
-                                    <div className={`p-2 rounded-full flex-shrink-0 ${isLessonCompleted ? "bg-success text-white" : lessonLocked ? "bg-muted text-muted-foreground" : isActiveLesson ? "bg-[#bdeeff] text-black" : "bg-brand-100 text-brand-600"}`}>
+                                    <div className={`w-8 h-8 min-w-8 min-h-8 flex-shrink-0 aspect-square rounded-full flex items-center justify-center ${isLessonCompleted ? "bg-success text-white" : lessonLocked ? "bg-muted text-muted-foreground" : isActiveLesson ? "bg-[#bdeeff] text-black" : "bg-brand-100 text-brand-600"}`}>
                                       {isLessonCompleted ? <CheckCircle className="h-4 w-4" /> : <LessonIcon className="h-4 w-4" />}
                                     </div>
                                     <div className="min-w-0 flex-1 overflow-hidden">

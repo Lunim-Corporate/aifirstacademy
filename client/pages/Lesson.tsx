@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import LoggedInHeader from "@/components/LoggedInHeader";
+import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1238,15 +1239,18 @@ const goNext = () => {
     return (
       <div className="min-h-screen bg-background">
         <LoggedInHeader />
-        <div className="h-[calc(100vh-4rem)] flex flex-col">
-          <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700/40">
-            <Skeleton className="h-3 w-40" />
+        <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
+          <Sidebar />
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="px-2 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700/40">
+              <Skeleton className="h-3 w-40" />
+            </div>
+            <main className="flex-1 px-2 py-3 sm:p-6 space-y-4 overflow-y-auto">
+              <Skeleton className="h-8 w-72" />
+              <Skeleton className="h-5 w-96" />
+              <Skeleton className="h-80 w-full" />
+            </main>
           </div>
-          <main className="flex-1 p-6 space-y-4 overflow-y-auto">
-            <Skeleton className="h-8 w-72" />
-            <Skeleton className="h-5 w-96" />
-            <Skeleton className="h-80 w-full" />
-          </main>
         </div>
       </div>
     );
@@ -1255,10 +1259,11 @@ const goNext = () => {
   return (
     <div className="min-h-screen bg-background">
       <LoggedInHeader />
-      <div className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
-        <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <div
-            className="px-3 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-3 sm:gap-4"
+            className="px-2 sm:px-6 py-3 border-b border-gray-200 dark:border-gray-700/40 flex items-center gap-3 sm:gap-4"
             role="region"
             aria-label="Progress bar"
           >
@@ -1275,9 +1280,9 @@ const goNext = () => {
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+          <div className="flex-1 overflow-y-auto px-2 py-3 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-2">
-              <div className="flex items-start sm:items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1374,9 +1379,9 @@ const goNext = () => {
 
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
               <div className="flex-1 min-w-0 min-h-0">
-                <Card className="h-full min-w-[110%] sm:min-w-full ">
+                <Card className="h-full min-w-0 sm:min-w-full rounded-none border-0 bg-transparent shadow-none sm:rounded-lg sm:border sm:bg-card sm:shadow-sm">
                 <CardContent className="pt-6 h-full ">
-                <div className="break-words min-w-[100%] sm:min-w-full ">
+                <div className="break-words min-w-0">
                 {renderContent()}
                 </div>
               </CardContent>

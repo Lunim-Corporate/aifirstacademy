@@ -516,9 +516,9 @@ export default function ({ lessonId }: SandboxPlaygroundProps) {
                      />
                    </div>
                  ))}
-               {/* Prompt Editor */}
-               <div className="flex-1 p-4">
-                 <div className="space-y-2 h-full">
+               {/* Prompt Editor - Run Prompt aligned with textarea border */}
+               <div className="flex-1 p-4 flex flex-col min-h-0">
+                 <div className="space-y-2 flex-1 min-h-0 flex flex-col">
                    <div className="flex items-center justify-between">
                      <Label>Your Prompt</Label>
                      <div className="flex items-center space-x-2">
@@ -534,33 +534,32 @@ export default function ({ lessonId }: SandboxPlaygroundProps) {
                      value={userPrompt}
                      onChange={(e) => setUserPrompt(e.target.value)}
                      placeholder="Enter your prompt here and check your prompt score after running it."
-                     className="min-h-[500px] font-mono"
+                     className="min-h-[500px] flex-1 font-mono w-full"
                    />
                  </div>
-               </div>
-                  <div className="flex items-end flex-col w-full">
-                     <Button 
-                       onClick={handleRunPrompt}
-                       disabled={isLoading || !userPrompt.trim() || remainingRuns === 0}
-                       className="w-full bg-[#bdeeff] hover:bg-[#bdeeff] text-black font-medium"
-                     >
-                       {isLoading ? (
-                         <>
-                           <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                           Running...
-                         </>
-                       ) : (
-                         <>
-                           <Play className="h-4 w-4 mr-2" />
-                           Run Prompt
-                         </>
-                       )}
-                     </Button>
-                     {/* ----------------- Remaining Runs Display ----------------- */}
-                     <div className="mt-2 text-sm text-gray-500 w-full text-right">
-                       🌟 Remaining runs this month: {remainingRuns !== undefined ? remainingRuns : 100}
-                     </div>
+                 <div className="mt-3 space-y-2">
+                   <Button 
+                     onClick={handleRunPrompt}
+                     disabled={isLoading || !userPrompt.trim() || remainingRuns === 0}
+                     className="w-full bg-[#bdeeff] hover:bg-[#bdeeff] text-black font-medium"
+                   >
+                     {isLoading ? (
+                       <>
+                         <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                         Running...
+                       </>
+                     ) : (
+                       <>
+                         <Play className="h-4 w-4 mr-2" />
+                         Run Prompt
+                       </>
+                     )}
+                   </Button>
+                   <div className="text-sm text-gray-500 text-right">
+                     🌟 Remaining runs this month: {remainingRuns !== undefined ? remainingRuns : 100}
                    </div>
+                 </div>
+               </div>
              </div>
    
              {/* Results Panel */}

@@ -93,9 +93,9 @@ export default function Sidebar({ currentPath, additionalItems = [] }: SidebarPr
         />
       )}
 
-      {/* Sidebar - Desktop and Mobile */}
+      {/* Sidebar - Desktop and Mobile; opaque black on mobile so nav items are legible */}
       <aside
-  className={`fixed sm:static top-16 left-0 z-50 w-64 bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-[calc(100vh-4rem)] overflow-y-auto transition-transform duration-300 ${
+  className={`fixed sm:static top-16 left-0 z-50 w-64 bg-black sm:bg-muted/30 border-r border-gray-200 dark:border-gray-700/40 h-[calc(100vh-4rem)] overflow-y-auto transition-transform duration-300 ${
     mobileMenuOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"
   }`}
 >

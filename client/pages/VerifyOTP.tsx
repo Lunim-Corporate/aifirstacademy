@@ -224,10 +224,11 @@ export default function VerifyOTP() {
                 </div>
               )}
 
-              {/* Submit Button - Primary button: black on Lumim blue/cyan */}
+              {/* Submit Button - Primary */}
               <Button 
                 type="submit" 
-                className="w-full bg-black text-[#bdeeff] hover:bg-black/90 disabled:opacity-50 transition-all duration-200"
+                variant="default"
+                className="w-full"
                 disabled={verifying || code.length < 6}
               >
                 {verifying ? (
@@ -241,11 +242,11 @@ export default function VerifyOTP() {
               </Button>
             </form>
 
-            {/* Code expiry notice */}
-            <div className="text-center text-xs text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <Clock className="w-4 h-4 inline mr-1" />
+            {/* Code expiry notice - plain text, not button-like */}
+            <p className="text-center text-xs text-muted-foreground">
+              <Clock className="w-4 h-4 inline mr-1 align-middle" />
               Code expires in 10 minutes
-            </div>
+            </p>
 
             {/* Resend Code Section */}
             <div className="border-t pt-4">

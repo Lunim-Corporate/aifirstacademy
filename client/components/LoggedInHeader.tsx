@@ -27,7 +27,7 @@ export default function LoggedInHeader() {
   );
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-700/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-b border-gray-200 dark:border-gray-700/40 bg-black sm:bg-background/95 sm:backdrop-blur supports-[backdrop-filter]:sm:bg-background/60">
       <div className="flex h-16 items-center px-4 sm:px-6 relative">
   {/* Hamburger - move to far left on mobile */}
   <button

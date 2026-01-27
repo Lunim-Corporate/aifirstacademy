@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { BrainCircuit, Github, Linkedin, Twitter } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import SafeLink from "@/components/SafeLink";
 
 export default function MarketingFooter() {
@@ -15,23 +14,6 @@ export default function MarketingFooter() {
             <p className="text-muted-foreground text-sm">
               Practical AI workflow training for marketers. Learn, practice, and certify your AI skills.
             </p>
-            <div className="flex space-x-4">
-              <Button size="sm" variant="ghost" asChild>
-                <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter">
-                  <Twitter className="h-4 w-4" />
-                </a>
-              </Button>
-              <Button size="sm" variant="ghost" asChild>
-                <a href="https://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn">
-                  <Linkedin className="h-4 w-4" />
-                </a>
-              </Button>
-              <Button size="sm" variant="ghost" asChild>
-                <a href="https://github.com" target="_blank" rel="noreferrer" aria-label="GitHub">
-                  <Github className="h-4 w-4" />
-                </a>
-              </Button>
-            </div>
           </div>
           <div>
            {/* <h3 className="font-semibold mb-4">Resources</h3> */}
