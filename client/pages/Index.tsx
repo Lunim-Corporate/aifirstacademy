@@ -213,7 +213,7 @@ export default function Index() {
                     </div>
                   </div>
                   <div className="space-y-6">
-                    {/* Why AI-First Academy box - moved from Product page */}
+                    {/* Why AI-First Academy box - aligned with Prompt Playground */}
                     <Card className="border-gray-200 dark:border-gray-700/50 bg-background/80 backdrop-blur">
                       <CardHeader>
                         <CardTitle>Why AI-First Marketing Academy</CardTitle>
@@ -231,8 +231,8 @@ export default function Index() {
                         ))}
                       </CardContent>
                     </Card>
-                    {/* Prompt Playground */}
-                    <div className="relative transform sm:rotate-4 sm:translate-y-2 sm:translate-x-2 sm:scale-105">
+                    {/* Prompt Playground - borders aligned with Why AI-First Marketing Academy card */}
+                    <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-primary-400/20 rounded-2xl blur-3xl" />
                       <Card className="relative bg-background/80 backdrop-blur border-gray-200 dark:border-gray-700/50 shadow-2xl">
                         <CardHeader>

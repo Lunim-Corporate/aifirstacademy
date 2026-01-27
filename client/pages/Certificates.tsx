@@ -60,38 +60,44 @@ function CertificatePreview({
   onShare: (platform: string) => void 
 }) {
   return (
-    <div className="relative mx-auto aspect-[1.414] w-full max-w-4xl bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 border-2 border-blue-100 rounded-2xl p-4 sm:p-8 lg:p-12 shadow-2xl print:shadow-none print:border-0 overflow-hidden">
+    <div className="relative mx-auto aspect-[1.414] w-full max-w-full sm:max-w-4xl bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 border border-blue-100 sm:border-2 rounded-xl sm:rounded-2xl p-3 sm:p-6 lg:p-10 shadow-xl sm:shadow-2xl print:shadow-none print:border-0 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_30%_20%,theme(colors.blue.500),transparent_50%),radial-gradient(circle_at_70%_80%,theme(colors.indigo.500),transparent_50%)]" />
       
       {/* Header */}
-      <div className="relative z-10 flex items-center justify-between mb-12">
+      <div className="relative z-10 flex items-center justify-between mb-6 sm:mb-10">
         <div className="flex-1">
-          <div className="text-center space-y-2">
-            <div className="text-xs uppercase tracking-[0.3em] text-slate-500 font-semibold">AI-First Academy</div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Certificate of Completion</h1>
+          <div className="text-center space-y-1 sm:space-y-2">
+            <div className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-slate-500 font-semibold">AI-First Academy</div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Certificate of Completion
+            </h1>
           </div>
         </div>
-        <div className="absolute top-0 right-0 w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xl">
-          <Award className="w-10 h-10 text-white" />
+        <div className="absolute top-0 right-0 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-xl">
+          <Award className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 text-center mb-16">
-        <div className="space-y-8">
+      <div className="relative z-10 text-center mb-8 sm:mb-12">
+        <div className="space-y-6 sm:space-y-8">
           <div>
-            <div className="text-lg text-slate-600 mb-4">This certifies that</div>
-            <div className="text-5xl font-bold text-slate-800 mb-2">{user?.name}</div>
+            <div className="text-sm sm:text-base text-slate-600 mb-3 sm:mb-4">This certifies that</div>
+            <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-800 mb-2 truncate px-2 sm:px-0">
+              {user?.name}
+            </div>
             <div className="w-32 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 mx-auto rounded-full" />
           </div>
           
-          <div>
-            <div className="text-lg text-slate-600 mb-4">has successfully completed the program</div>
-            <div className="text-3xl font-semibold text-slate-700">{certificate?.title || 'AI Prompt Engineering Fundamentals'}</div>
+          <div className="px-4 sm:px-0">
+            <div className="text-sm sm:text-base text-slate-600 mb-3 sm:mb-4">has successfully completed the program</div>
+            <div className="text-xl sm:text-2xl lg:text-3xl font-semibold text-slate-700 break-words">
+              {certificate?.title || 'AI Prompt Engineering Fundamentals'}
+            </div>
           </div>
           
-          <div className="text-lg text-center">
+          <div className="text-sm sm:text-base text-center">
             <span className="text-slate-600">Completed on </span>
             <span className="font-semibold text-slate-800">
               {certificate?.issuedAt ? new Date(certificate.issuedAt).toLocaleDateString('en-US', { 
@@ -103,7 +109,7 @@ function CertificatePreview({
       </div>
 
       {/* Footer */}
-      <div className="relative z-10 grid grid-cols-2 gap-8 items-end border-t border-slate-200 pt-8 pr-32">
+      <div className="relative z-10 grid grid-cols-2 gap-4 sm:gap-8 items-end border-t border-slate-200 pt-6 sm:pt-8 pr-0 sm:pr-32">
         <div className="text-center">
           <div className="w-24 h-0.5 bg-slate-300 mx-auto mb-3" />
           <div className="font-semibold text-slate-700">Dr. Sarah Chen</div>
@@ -119,25 +125,33 @@ function CertificatePreview({
         </div>
       </div>
       
-      {/* Credential ID - positioned separately to avoid QR code overlap */}
-      <div className="absolute bottom-32 left-8 text-left">
+      {/* Credential ID - desktop / tablet */}
+      <div className="hidden sm:block absolute bottom-32 left-8 text-left">
         <div className="text-xs text-slate-500 mb-1">Credential ID</div>
-        <div className="font-mono text-sm font-semibold text-slate-700 break-all max-w-[140px] sm:max-w-[200px]">
+        <div className="font-mono text-sm font-semibold text-slate-700 break-all max-w-[200px]">
           {certificate?.credentialId || 'AIA-ENG-001-240115'}
         </div>
       </div>
       
       {/* QR Code */}
-      <div className="absolute bottom-8 right-8 text-center">
-        <div className="text-xs text-slate-500 mb-2">Scan to verify</div>
-        <div className="w-20 h-20 bg-white rounded-lg shadow-md flex items-center justify-center border border-slate-200">
+      <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 text-center">
+        <div className="text-[10px] sm:text-xs text-slate-500 mb-1 sm:mb-2">Scan to verify</div>
+        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-lg shadow-md flex items-center justify-center border border-slate-200">
           <img 
             src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(
               `${window.location.origin}/verify/${certificate?.credentialId || 'demo'}`
-            )}`} 
+            )}`}
             alt="Verification QR Code"
-            className="w-16 h-16"
+            className="w-12 h-12 sm:w-16 sm:h-16"
           />
+        </div>
+      </div>
+
+      {/* Mobile Credential ID below QR for better spacing */}
+      <div className="absolute left-4 right-4 bottom-24 sm:hidden text-left">
+        <div className="text-[10px] text-slate-500 mb-1">Credential ID</div>
+        <div className="font-mono text-[11px] font-semibold text-slate-700 break-all">
+          {certificate?.credentialId || 'AIA-ENG-001-240115'}
         </div>
       </div>
       
@@ -356,7 +370,7 @@ export default function Certificates() {
   };
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <LoggedInHeader />
         <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
           <Sidebar />
@@ -401,11 +415,11 @@ export default function Certificates() {
     );
   }
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <LoggedInHeader />
 
-      <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
+      <div className="h-[calc(100vh-4rem)] flex overflow-hidden overflow-x-hidden">
         <Sidebar />
 
         {/* Main Content */}
@@ -498,9 +512,9 @@ export default function Certificates() {
             </Card>
 
               {(earnedCertificates.length > 0 ? earnedCertificates : mockCertificates).map((cert: any) => (
-                <Card key={cert.id} className={cert.status === "earned" ? "border-success/20 bg-success/5" : ""}>
+                <Card key={cert.id} className={`${cert.status === "earned" ? "border-success/20 bg-success/5" : ""} max-w-full`}>
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <CardTitle className="text-lg break-words">{cert.title}</CardTitle>
@@ -520,10 +534,15 @@ export default function Certificates() {
                         <CardDescription>{cert.description}</CardDescription>
                         <Badge variant="outline">{cert.track} Track</Badge>
                       </div>
-                      
+
                       {cert.status === "earned" && (
-                        <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleCertificatePreview(cert)}>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto md:justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                            onClick={() => handleCertificatePreview(cert)}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             Preview
                           </Button>
@@ -531,7 +550,12 @@ export default function Certificates() {
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Verify
                           </Button> */}
-                          <Button variant="outline" size="sm" onClick={()=>{ const url = `${window.location.origin}/verify/${encodeURIComponent(cert.credentialId)}`; window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank"); }}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                            onClick={()=>{ const url = `${window.location.origin}/verify/${encodeURIComponent(cert.credentialId)}`; window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank"); }}
+                          >
                             <Share className="h-4 w-4 mr-2" />
                             Share
                           </Button>
@@ -543,11 +567,11 @@ export default function Certificates() {
                   <CardContent>
                     {cert.status === "earned" && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-muted-foreground">Date Earned:</span>
                           <div className="font-medium">{new Date(cert.issuedAt!).toLocaleDateString()}</div>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <span className="text-muted-foreground">Score:</span>
                           <div className="font-medium">{cert.score}%</div>
                         </div>
@@ -569,15 +593,21 @@ export default function Certificates() {
                             <span className="text-muted-foreground">{cert.progress}%</span>
                           </div>
                           <Progress value={cert.progress} className="h-2" />
-                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-muted-foreground">
                             <span>Expected completion: {cert.expectedDate || 'In progress'}</span>
-                            <Button size="sm" onClick={() => {
-                              // Find the track and navigate to first incomplete lesson
-                              const track = availableCertifications.find(c => c.title === cert.title);
-                              if (track) {
-                                window.location.href = '/learning';
-                              }
-                            }}>Continue Learning</Button>
+                            <Button
+                              size="sm"
+                              className="w-full sm:w-auto"
+                              onClick={() => {
+                                // Find the track and navigate to first incomplete lesson
+                                const track = availableCertifications.find(c => c.title === cert.title);
+                                if (track) {
+                                  window.location.href = '/learning';
+                                }
+                              }}
+                            >
+                              Continue Learning
+                            </Button>
                           </div>
                         </div>
                     )}
@@ -649,13 +679,15 @@ export default function Certificates() {
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <div className="origin-top-left md:scale-75 md:origin-top-left md:w-[133%] md:h-[133%]">
-                <CertificatePreview 
-                  certificate={mockCertificates[0]} 
-                  user={user} 
-                  onDownload={() => {}} 
-                  onShare={() => {}}
-                />
+                <div className="flex justify-center">
+                  <div className="w-full lg:w-[1200px] transform origin-top">
+                    <CertificatePreview 
+                      certificate={mockCertificates[0]} 
+                      user={user} 
+                      onDownload={() => {}} 
+                      onShare={() => {}}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -668,7 +700,7 @@ export default function Certificates() {
               {availableCertifications.map((cert) => (
                 <Card key={cert.id}>
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                       <div className="space-y-2">
                         <CardTitle className="text-lg">{cert.title}</CardTitle>
                         <CardDescription>{cert.description}</CardDescription>
@@ -680,7 +712,7 @@ export default function Certificates() {
                           <Badge variant="outline">{cert.difficulty}</Badge>
                         </div>
                       </div>
-                      <Button>
+                      <Button className="w-full md:w-auto">
                         <Target className="h-4 w-4 mr-2" />
                         Start Track
                       </Button>
@@ -717,12 +749,20 @@ export default function Certificates() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-4">
-                <Button variant="outline" onClick={()=> window.location.href = `/verify/${encodeURIComponent(demoCredentialId)}`}>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={()=> window.location.href = `/verify/${encodeURIComponent(demoCredentialId)}`}
+                >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Verify a Certificate
                 </Button>
-                <Button variant="outline" onClick={()=> window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(demoVerifyUrl)}`, "_blank") }>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={()=> window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(demoVerifyUrl)}`, "_blank") }
+                >
                   <Share className="h-4 w-4 mr-2" />
                   Add to LinkedIn
                 </Button>
