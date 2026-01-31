@@ -1068,12 +1068,18 @@ const goNext = () => {
                     {current.content ? (
                       <>
                         {/* Lesson instructions */}
-                        <div className="bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 rounded-lg p-4 sm:p-6 overflow-hidden">
+                        <div className="bg-brand-50 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-800 rounded-lg px-3 py-4 sm:px-4 sm:py-5 overflow-hidden">
                           <div className="flex items-start gap-3">
                             <Code className="h-6 w-6 text-brand-600 mt-1 flex-shrink-0" />
                             <div>
                               <h3 className="font-semibold text-brand-900 dark:text-brand-100 mb-2">Playground Exercise</h3>
-                              <div className="prose prose-sm prose-brand max-w-none overflow-x-auto break-words [&_pre]:max-w-full [&_code]:break-words [&_table]:max-w-full" dangerouslySetInnerHTML={{
+                              <div
+                                className="
+                                  prose prose-sm prose-brand max-w-none overflow-x-auto break-words
+                                  -ml-8 sm:-ml-8
+                                  pl-0
+                                "
+                              dangerouslySetInnerHTML={{
                                 __html: mdToHtml(
                                   current.content
                                     .split('\n')
@@ -1380,7 +1386,7 @@ const goNext = () => {
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 min-h-0">
               <div className="flex-1 min-w-0 min-h-0">
                 <Card className="h-full min-w-0 sm:min-w-full rounded-none border-0 bg-transparent shadow-none sm:rounded-lg sm:border sm:bg-card sm:shadow-sm">
-                <CardContent className="pt-6 h-full ">
+                <CardContent className="pt-6 px-0 sm:px-6 h-full ">
                 <div className="break-words min-w-0">
                 {renderContent()}
                 </div>

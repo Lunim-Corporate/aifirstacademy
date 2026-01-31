@@ -101,54 +101,84 @@ export default function VerifyCertificate() {
       <main className="max-w-3xl mx-auto p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Certificate Verification</h1>
-          <div className="flex gap-2">
-            <Button variant="outline" asChild>
-              <Link to="/certificates"><ArrowLeft className="h-4 w-4 mr-2" />Back</Link>
-            </Button>
-            <Button variant="outline" onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, "_blank") }>
-              <Share2 className="h-4 w-4 mr-2" />Share on LinkedIn
-            </Button>
-            <Button variant="outline" onClick={() => window.open(result?.verifyUrl || shareUrl, "_blank") }>
-              <ExternalLink className="h-4 w-4 mr-2" />Open Verify API
-            </Button>
-          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+  <Button className="w-full sm:w-auto" variant="outline" asChild>
+    <Link to="/certificates"><ArrowLeft className="h-4 w-4 mr-2" />Back</Link>
+  </Button>
+  <Button className="w-full sm:w-auto" variant="outline" onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, "_blank") }>
+    <Share2 className="h-4 w-4 mr-2" />Share on LinkedIn
+  </Button>
+ {/*  <Button className="w-full sm:w-auto" variant="outline" onClick={() => window.open(result?.verifyUrl || shareUrl, "_blank") }>
+    <ExternalLink className="h-4 w-4 mr-2" />Open Verify API
+  </Button> */}
+</div>
         </div>
 
-        <Card className={result?.valid ? "border-green-200 bg-green-50/40 dark:bg-green-950/20" : "border-red-200 bg-red-50/40 dark:bg-red-950/20"}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center">
-                  {result?.valid ? (
-                    <><CheckCircle2 className="h-5 w-5 text-green-600 mr-2" /> Status: Valid</>
-                  ) : (
-                    <><AlertCircle className="h-5 w-5 text-red-600 mr-2" /> Status: Invalid / Not Found</>
-                  )}
-                </CardTitle>
-                <CardDescription>Verification for credential ID <span className="font-mono">{credentialId}</span></CardDescription>
-              </div>
-              <Badge variant="outline">AIFS Academy</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {result?.valid && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 text-sm">
-                  <div><span className="text-muted-foreground">Learner:</span> <span className="font-medium">{cert?.userId || "Learner"}</span></div>
-                  <div><span className="text-muted-foreground">Program:</span> <span className="font-medium">{cert?.title}</span></div>
-                  <div><span className="text-muted-foreground">Date:</span> <span className="font-medium">{new Date(cert?.issuedAt).toLocaleDateString()}</span></div>
-                  <div><span className="text-muted-foreground">Certificate ID:</span> <span className="font-medium font-mono text-xs">{cert?.credentialId}</span></div>
-                </div>
-                <div className="flex items-center md:justify-end">
-                  <img className="w-32 h-32 bg-white p-2 rounded border" src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(shareUrl)}`} alt="QR code linking to verification page" />
-                </div>
-              </div>
-            )}
-            {!result?.valid && (
-              <div className="text-sm text-muted-foreground">Certificate not valid. Please check the ID and try again.</div>
-            )}
-          </CardContent>
-        </Card>
+        <Card
+  className={
+    result?.valid
+      ? "!bg-green-100 !border-green-300 text-green-950 dark:!bg-green-950/40 dark:!border-green-800 dark:text-green-50"
+      : "!bg-red-100 !border-red-300 text-red-950 dark:!bg-red-950/40 dark:!border-red-800 dark:text-red-50"
+  }
+>
+  <CardHeader className="[&_.text-muted-foreground]:text-current/80">
+    <div className="flex justify-between items-start w-full">
+      <div>
+        <CardTitle className="flex items-center gap-2">
+          {result?.valid ? (
+            <>
+              <CheckCircle2 className="h-5 w-5 text-green-600" /> Status: Valid
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-5 w-5 text-red-600" /> Status: Invalid / Not Found
+            </>
+          )}
+        </CardTitle>
+        <CardDescription>
+          Verification for credential ID <span className="font-mono text-current">{credentialId}</span>
+        </CardDescription>
+      </div>
+      <Badge variant="outline">AIFS Academy</Badge>
+    </div>
+  </CardHeader>
+
+  <CardContent className="[&_.text-muted-foreground]:text-current/80">
+    {result?.valid ? (
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2 text-sm">
+          <div>
+            <span className="text-muted-foreground">Learner:</span>{" "}
+            <span className="font-medium text-current">{cert?.userId || "Learner"}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Program:</span>{" "}
+            <span className="font-medium text-current">{cert?.title}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Date:</span>{" "}
+            <span className="font-medium text-current">{new Date(cert?.issuedAt).toLocaleDateString()}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Certificate ID:</span>{" "}
+            <span className="font-medium font-mono text-xs text-current">{cert?.credentialId}</span>
+          </div>
+        </div>
+        <div className="flex items-center md:justify-end">
+          <img
+            className="w-32 h-32 bg-white p-2 rounded border"
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(shareUrl)}`}
+            alt="QR code linking to verification page"
+          />
+        </div>
+      </div>
+    ) : (
+      <div className="text-sm text-current">
+        Certificate not valid. Please check the ID and try again.
+      </div>
+    )}
+  </CardContent>
+</Card>
       </main>
     </div>
   );

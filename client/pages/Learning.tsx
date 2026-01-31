@@ -582,7 +582,7 @@ export default function Learning() {
       <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
         <Sidebar />
 
-        {/* Main Content - 8px horizontal padding on mobile, left/right aligned */}
+        {/* Main Content - no horizontal padding on mobile, left/right aligned */}
         <main className="flex-1 px-2 py-3 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
           {/* Welcome back section - show when just signed in */}
           {(() => {
@@ -602,7 +602,7 @@ export default function Learning() {
           })()}
           
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-2 sm:px-0">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold">Courses</h1>
               <p className="text-muted-foreground">
@@ -632,7 +632,7 @@ export default function Learning() {
           {userStats && (
             <div className="grid grid-cols-1 gap-4">
               <Card className="rounded-none border-0 bg-transparent shadow-none sm:rounded-lg sm:border sm:bg-card sm:shadow-sm">
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 px-2 sm:px-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="text-2xl font-bold">{progressPercentage}%</div>

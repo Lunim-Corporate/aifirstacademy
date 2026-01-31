@@ -642,22 +642,22 @@ export default function Certificates() {
                 
                 {/* Action Buttons */}
                 <div className="flex-shrink-0 p-6 pt-0">
-                <div className="flex items-center justify-center border-t pt-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center border-t pt-4 gap-3 sm:gap-0">
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     {copiedText && (
-                      <span className="text-green-600 font-medium mr-4">{copiedText}</span>
+                      <span className="text-green-600 font-medium sm:mr-4">{copiedText}</span>
                     )}
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Button variant="outline" onClick={() => handleShare('copy')}>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                    <Button variant="outline" onClick={() => handleShare('copy')} className="w-full sm:w-auto">
                       <Copy className="h-4 w-4 mr-2" />
                       Copy Link
                     </Button>
-                    <Button variant="outline" onClick={() => handleShare('linkedin')}>
+                    <Button variant="outline" onClick={() => handleShare('linkedin')} className="w-full sm:w-auto">
                       <Linkedin className="h-4 w-4 mr-2" />
                       Share on LinkedIn
                     </Button>
-                    <Button onClick={handleDownload}>
+                    <Button onClick={handleDownload} className="w-full sm:w-auto">
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
                     </Button>

@@ -149,7 +149,7 @@ export default function Index() {
               {/* Brand */}
               <SafeLink to="/" className="flex items-center gap-2 min-w-0">
                 <BrainCircuit className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 shrink-0" />
-                <span className="text-sm sm:text-xl font-bold text-white truncate">
+                <span className="text-lg sm:text-xl font-bold text-white truncate">
                   AI-First Marketing Academy
                 </span>
               </SafeLink>
